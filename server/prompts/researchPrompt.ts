@@ -14,7 +14,19 @@ Guidelines:
 Format your response in Markdown. Use bold for emphasis and lists for readability.
 `;
 
-export const getResearchUserPrompt = (query: string) => `
+export const getResearchUserPrompt = (query: string, isFollowUp?: boolean) => {
+    if (isFollowUp) {
+        return `
+Follow-up Legal Query: ${query}
+
+Please analyze this follow-up query in the context of our previous conversation and provide:
+1. A concise direct answer or explanation.
+2. Key legal sections and statutes involved (if any new ones apply).
+3. Landmark cases or recent precedents (if any new ones apply).
+4. Practical implications or next steps.
+`;
+    }
+    return `
 Legal Query: ${query}
 
 Please analyze this query and provide:
@@ -23,3 +35,4 @@ Please analyze this query and provide:
 3. Landmark cases or recent precedents (if any).
 4. Practical implications or next steps.
 `;
+};

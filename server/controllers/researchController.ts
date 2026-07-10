@@ -6,18 +6,27 @@ import UsageRecord from '../models/UsageRecord';
 
 export const handleLegalResearch = async (req: any, res: Response) => {
     try {
-        const { query, model } = req.body;
+        const { query, model, history } = req.body;
 
         if (!query) {
             return res.status(400).json({ error: 'Query is required' });
         }
 
-        console.log(`[Research Controller] Performing research for: ${query} using model: ${model}`);
+        console.log(`[Research Controller] Performing research for: ${query} using model: ${model}. History length: ${history ? history.length : 0}`);
+
+        // Clean and format history to match LLMRequest's expected format
+        const formattedHistory = (history || []).map((msg: any) => ({
+            role: msg.role === 'assistant' ? 'assistant' as const : 'user' as const,
+            content: msg.content
+        }));
+
+        const isFollowUp = formattedHistory.length > 0;
 
         const result = await llmService.generate({
             model: model || 'gpt-4o',
             systemPrompt: getResearchSystemPrompt(),
-            userPrompt: getResearchUserPrompt(query)
+            userPrompt: getResearchUserPrompt(query, isFollowUp),
+            history: formattedHistory
         });
 
         // Log usage in UsageRecord

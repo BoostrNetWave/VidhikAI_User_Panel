@@ -24,6 +24,7 @@ import CorporateAuthorizationLetterAgreement from './pages/documents/corporate/C
 import PowerOfAttorneyCorporateAgreement from './pages/documents/corporate/PowerOfAttorneyCorporateAgreement'
 import ConvertibleNoteAgreement from './pages/documents/corporate/ConvertibleNoteAgreement'
 import ESOPPlanAgreement from './pages/documents/corporate/ESOPPlanAgreement'
+import DynamicDocumentGenerator from './pages/documents/DynamicDocumentGenerator'
 
 
 import ServiceAgreement from './pages/documents/commercial/ServiceAgreement'
@@ -45,6 +46,8 @@ import AdminSettings from './pages/admin/AdminSettings'
 import CasesPage from './pages/CasesPage'
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute'
 import ConsultationMeeting from './pages/ConsultationMeeting'
+import ConsultationsPage from './pages/ConsultationsPage'
+import ConsultationRoom from './pages/ConsultationRoom'
 
 function App() {
     return (
@@ -86,6 +89,7 @@ function App() {
                 <Route path="/documents/power-of-attorney-corporate" element={<PowerOfAttorneyCorporateAgreement />} />
                 <Route path="/documents/convertible-note" element={<ConvertibleNoteAgreement />} />
                 <Route path="/documents/esop-plan" element={<ESOPPlanAgreement />} />
+                <Route path="/documents/generate/:docId" element={<DynamicDocumentGenerator />} />
 
 
                 <Route path="/documents/service-agreement" element={<ServiceAgreement />} />
@@ -99,6 +103,8 @@ function App() {
                 <Route path="/lawyers/booking-success" element={<LawyerBookingSuccess />} />
                 <Route path="/cases" element={<CasesPage />} />
                 <Route path="/cases/:id/meet" element={<ConsultationMeeting />} />
+                <Route path="/consultations" element={<ConsultationsPage />} />
+                <Route path="/consultations/:id/meet" element={<ConsultationRoom />} />
                 <Route path="/billing" element={<BillingPlans />} />
                 <Route path="/billing/checkout" element={<BillingCheckout />} />
                 <Route path="/settings" element={<SettingsPage />} />

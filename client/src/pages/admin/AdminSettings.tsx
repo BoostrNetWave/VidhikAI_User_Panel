@@ -24,7 +24,8 @@ import {
     MessageSquare,
     Eye,
     Send,
-    Globe
+    Globe,
+    Video
 } from "lucide-react";
 
 const PANEL_SECTIONS = {
@@ -64,6 +65,7 @@ export default function AdminSettings() {
     const [cases, setCases] = useState<any[]>([]);
     const [tickets, setTickets] = useState<any[]>([]);
     const [documents, setDocuments] = useState<any[]>([]);
+    const [consultations, setConsultations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // User details modal state
@@ -223,6 +225,11 @@ export default function AdminSettings() {
                 const docData = await adminService.getAllDocuments();
                 setDocuments(docData);
             }
+
+            if (activeTab === 'consultations' || activeTab === 'overview') {
+                const consultationsData = await adminService.getAllConsultations();
+                setConsultations(consultationsData);
+            }
         } catch (error) {
             toast.error("Failed to load data");
         } finally {
@@ -263,7 +270,7 @@ export default function AdminSettings() {
         const activeTicketsCount = tickets.filter(t => t.status !== 'Closed').length;
         
         return (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-purple-100 rounded-xl text-purple-600">
@@ -283,6 +290,17 @@ export default function AdminSettings() {
                         <div>
                             <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Pending Lawyers</p>
                             <h3 className="text-2xl font-bold text-slate-900 mt-1">{pendingLawyers.length}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-violet-100 rounded-xl text-violet-650">
+                            <Video className="h-6 w-6 text-violet-600" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Consultations</p>
+                            <h3 className="text-2xl font-bold text-slate-900 mt-1">{consultations.length}</h3>
                         </div>
                     </div>
                 </div>
@@ -2130,6 +2148,7 @@ export default function AdminSettings() {
             case 'overview': return renderOverview();
             case 'lawyers': return renderLawyerApproval();
             case 'cases': return renderCasesAndPayouts();
+            case 'consultations': return renderConsultations();
             case 'users': return renderUserManagement();
             case 'tickets': return renderTickets();
             case 'documents': return renderDocuments();
@@ -2139,6 +2158,89 @@ export default function AdminSettings() {
             default: return renderOverview();
         }
     };
+
+    const renderConsultations = () => (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 className="font-bold text-lg text-slate-900">Live Video Consultations</h3>
+                    <p className="text-sm text-slate-500">Track and audit lawyer-client direct scheduled consultations.</p>
+                </div>
+                <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-150">
+                    {consultations.length} Booked
+                </span>
+            </div>
+
+            {consultations.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 font-medium">No live consultations recorded.</div>
+            ) : (
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Topic & Inquiry</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Client</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Lawyer</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Scheduled Time</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Shared Documents</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {consultations.map((c) => (
+                            <tr key={c._id} className="hover:bg-slate-50 transition-colors">
+                                <td className="px-6 py-4">
+                                    <div className="font-bold text-slate-900 text-sm">{c.title}</div>
+                                    <div className="text-[11px] text-slate-550 mt-1 max-w-[200px] truncate font-medium">{c.description}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="font-semibold text-slate-800 text-sm">{c.client?.fullName}</div>
+                                    <div className="text-xs text-slate-400">{c.client?.email}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="font-semibold text-slate-800 text-sm">{c.lawyer?.fullName}</div>
+                                    <div className="text-xs text-slate-400">{c.lawyer?.email}</div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600">
+                                    <div className="font-bold text-slate-800">{new Date(c.scheduledDate).toLocaleDateString()}</div>
+                                    <div className="text-[11px] text-slate-400 font-extrabold">{c.scheduledTime}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    {(!c.documents || c.documents.length === 0) ? (
+                                        <span className="text-xs text-slate-400">No uploads</span>
+                                    ) : (
+                                        <div className="space-y-1">
+                                            {c.documents.map((doc: any, dIdx: number) => (
+                                                <div key={dIdx}>
+                                                    <a 
+                                                        href={`/lawyer${doc.url}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-xs text-blue-600 font-bold hover:underline inline-flex items-center gap-1"
+                                                    >
+                                                        <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                                        <span className="truncate max-w-[120px]">{doc.name}</span>
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
+                                        c.status === 'scheduled' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                        c.status === 'pending_payment' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                                        c.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                                    }`}>
+                                        {c.status?.replace(/_/g, ' ')}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </div>
+    );
 
     return (
         <AdminLayout userNav={<UserNav />}>

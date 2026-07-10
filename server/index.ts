@@ -18,6 +18,7 @@ import adminRoutes from './routes/adminRoutes';
 import caseRoutes from './routes/caseRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import supportRoutes from './routes/supportRoutes';
+import consultationRoutes from './routes/consultationRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 5003;
@@ -42,6 +43,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/consultations', consultationRoutes);
 
 // Basic Route
 app.get('/api/health', (_req, res) => {

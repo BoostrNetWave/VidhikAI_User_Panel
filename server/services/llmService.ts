@@ -8,6 +8,7 @@ export interface LLMRequest {
     model: string;
     systemPrompt: string;
     userPrompt: string;
+    history?: { role: 'user' | 'assistant' | 'system'; content: string }[];
     temperature?: number;
     maxTokens?: number;
 }
@@ -57,6 +58,7 @@ class LLMService {
                     model: request.model,
                     messages: [
                         { role: 'system', content: request.systemPrompt },
+                        ...(request.history || []),
                         { role: 'user', content: request.userPrompt }
                     ],
                     temperature: request.temperature || 0.7,
@@ -99,6 +101,7 @@ class LLMService {
                 model: request.model,
                 messages: [
                     { role: 'system', content: request.systemPrompt },
+                    ...(request.history || []),
                     { role: 'user', content: request.userPrompt }
                 ],
                 temperature: request.temperature || 0.7,

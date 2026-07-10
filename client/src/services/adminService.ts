@@ -69,5 +69,10 @@ export const adminService = {
     async updateUserSubscription(id: string, subscription: string) {
         const response = await api.post(`/admin/users/${id}/subscription`, { subscription });
         return response.data;
+    },
+
+    async getAllConsultations() {
+        const response = await api.get('/admin/consultations');
+        return response.data;
     }
 };

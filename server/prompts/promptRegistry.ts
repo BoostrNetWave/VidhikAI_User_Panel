@@ -1502,63 +1502,127 @@ Your task is to generate a legally compliant ESOP Plan document for a private li
 The ESOP Plan must comply with the Companies Act, 2013 and applicable regulatory provisions.
 
 STRICT RULES:
-1. Output ONLY the final ESOP Plan document as pure HTML.
-2. No explanations, no commentary, no markdown.
-3. Do not invent missing facts.
-4. If required information is missing, insert: [REQUIRED INPUT MISSING: field_name]
-5. Use formal corporate legal tone.
-6. Ensure internal legal consistency.
-7. Ensure proper option pool mechanics.
-8. Avoid creating immediate equity grant unless specified.
-9. Ensure board and shareholder approval clauses are included.
-10. Use semantic HTML5 tags (<h1>, <h2>, <p>).
-11. **CRITICAL:** Use Calibri as the default font.
+1. Output ONLY the final ESOP Plan document as pure HTML (using semantic HTML5 tags like <h1>, <h2>, <p>, <ul>, <li>, etc.).
+2. No explanations.
+3. No commentary.
+4. No markdown formatting (do NOT include markdown formatting like ** or ##; only output HTML).
+5. Do not invent missing facts.
+6. If required information (present in the input data schema) is missing, insert: [REQUIRED INPUT MISSING: field_name]. If optional fields or definitions like 'Committee' are not specified in the input data, use standard legal fallbacks (e.g. 'the Board or a Committee constituted by the Board').
+7. Ensure internal legal consistency.
+8. Ensure proper option pool mechanics.
+9. Avoid creating immediate equity grant unless specified.
+10. Ensure board and shareholder approval clauses are included.
 
 ----------------------------------------
 MANDATORY STRUCTURE
 ----------------------------------------
-1. TITLE: “EMPLOYEE STOCK OPTION PLAN (ESOP)” (<h1>)
-2. EFFECTIVE DATE
-3. OBJECTIVE (Retention, Incentivization) (<h2>)
-4. DEFINITIONS: Board, Committee, Employee, Option, Exercise Price, Vesting Date, Exercise Period, Grant Date, FMV, Termination, Change in Control (<h2>)
-5. TOTAL OPTION POOL: Shares reserved, % of capital (<h2>)
-6. ELIGIBILITY: Permanent employees, Directors (excl. independent), Advisors (if allowed) (<h2>)
-7. GRANT OF OPTIONS: Authority, Grant letter, No shareholder rights until exercise (<h2>)
-8. VESTING SCHEDULE: Cliff, Accelerated vesting (if applicable) (<h2>)
-9. EXERCISE OF OPTIONS: Procedure, Period, Price, Payment (<h2>)
-10. LAPSE OF OPTIONS: Resignation, Termination, Death, Expiry (<h2>)
-11. LOCK-IN / TRANSFER RESTRICTIONS (<h2>)
-12. ADJUSTMENTS: Restructuring, Stock split, Bonus, Merger (<h2>)
-13. TAXATION: Perquisite tax, Capital gains (<h2>)
-14. ADMINISTRATION: Board/Committee role (<h2>)
-15. AMENDMENT & TERMINATION (<h2>)
-16. GOVERNING LAW: India (<h2>)
-17. APPROVAL CLAUSE: Board & Shareholder approval (<h2>)
+1. TITLE: “EMPLOYEE STOCK OPTION PLAN (ESOP)” (rendered as <h1>)
+2. EFFECTIVE DATE (rendered under the title)
+3. OBJECTIVE (rendered as <h2>)
+   - Retention
+   - Incentivization
+   - Alignment with company growth
+4. DEFINITIONS (rendered as <h2>)
+   Include definitions for:
+   - Board
+   - Committee (if applicable)
+   - Employee
+   - Option
+   - Exercise Price
+   - Vesting Date
+   - Exercise Period
+   - Grant Date
+   - Fair Market Value
+   - Termination
+   - Change in Control
+5. TOTAL OPTION POOL (rendered as <h2>)
+   - Total number of shares reserved
+   - Percentage of paid-up capital
+   - Type of shares (Equity shares)
+6. ELIGIBILITY (rendered as <h2>)
+   - Permanent employees
+   - Directors (excluding independent directors if required)
+   - Advisors (if allowed)
+   - Exclusions (if any)
+7. GRANT OF OPTIONS (rendered as <h2>)
+   - Authority of Board/Committee
+   - Grant letter issuance
+   - No shareholder rights until exercise
+8. VESTING SCHEDULE (rendered as <h2>)
+   - Standard vesting (e.g., 4 years with 1-year cliff)
+   - Accelerated vesting (if applicable)
+   - Conditions for vesting
+9. EXERCISE OF OPTIONS (rendered as <h2>)
+   - Exercise procedure
+   - Exercise period
+   - Exercise price
+   - Payment method
+10. LAPSE OF OPTIONS (rendered as <h2>)
+    - Upon resignation
+    - Upon termination for cause
+    - Death or disability
+    - Expiry of exercise period
+11. LOCK-IN / TRANSFER RESTRICTIONS (rendered as <h2>)
+    - Lock-in period (if applicable)
+    - Restrictions under Articles of Association
+12. ADJUSTMENTS (rendered as <h2>)
+    - Corporate restructuring
+    - Stock split
+    - Bonus issue
+    - Merger
+13. TAXATION (rendered as <h2>)
+    - Perquisite taxation at exercise
+    - Capital gains at sale
+    - Employee responsible for taxes
+14. ADMINISTRATION (rendered as <h2>)
+    - Role of Board or Compensation Committee
+    - Power to interpret plan
+15. AMENDMENT & TERMINATION (rendered as <h2>)
+    - Right of company to amend
+    - Shareholder approval requirement
+16. GOVERNING LAW (rendered as <h2>)
+    India
+17. APPROVAL CLAUSE (rendered as <h2>)
+    - Subject to board approval
+    - Subject to shareholder approval by special resolution
 
 ----------------------------------------
 HIGH-RISK SAFETY REQUIREMENTS
 ----------------------------------------
-- Options are NOT shares until exercise.
-- No voting/dividend rights until exercise.
+- Do NOT create actual share allotment.
+- Clearly state that options are not shares.
+- Clearly state no voting/dividend rights until exercise.
 - Ensure compliance with Companies Act.
-- Avoid independent directors if prohibited.
+- Avoid allowing independent directors if prohibited.
 - Include shareholder approval requirement.
 - Ensure dilution mechanism clarity.
+- Avoid creating guaranteed returns.
+- Avoid misleading tax statements.
 
 ----------------------------------------
 SPECIAL INSTRUCTIONS
 ----------------------------------------
-If STARTUP: Include funding round flexibility and accelerated vesting upon acquisition.
-If LISTED COMPANY: Include SEBI compliance clause.
-If ADVISORS INCLUDED: Clarify contractual basis and no employment rights.
-If FOREIGN EMPLOYEES: Mention FEMA compliance.
+If STARTUP:
+- Include flexibility for future funding rounds.
+- Include accelerated vesting upon acquisition (if specified).
+
+If LISTED COMPANY:
+- Include SEBI compliance clause.
+
+If ADVISORS INCLUDED:
+- Clarify contractual basis.
+- Clarify no employment rights created.
+
+If FOREIGN EMPLOYEES:
+- Mention FEMA compliance (if applicable).
 
 ----------------------------------------
 DRAFTING STYLE REQUIREMENTS
 ----------------------------------------
-- Formal corporate legal tone, Numbered sections.
-- Pure HTML output only.
-- No emojis, AI commentary, or markdown formatting.`,
+- Formal corporate legal tone.
+- Structured clauses with numbering.
+- Clear option mechanics.
+- Use only HTML tags; no markdown, no emojis, no commentary.`,
             userPrompt: `Generate the Employee Stock Option Plan document now based on the following input data:
 
 INPUT DATA (JSON):

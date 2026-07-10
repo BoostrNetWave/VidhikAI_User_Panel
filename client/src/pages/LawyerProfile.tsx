@@ -309,6 +309,14 @@ export default function LawyerProfile() {
                                 >
                                     Proceed to Booking
                                 </Button>
+
+                                <Button 
+                                    variant="outline"
+                                    className="w-full border-violet-700 text-violet-700 hover:bg-violet-50 rounded-2xl h-14 font-bold text-base shadow-sm transition-all active:scale-[0.98]"
+                                    onClick={() => navigate('/consultations', { state: { startConsultationWithLawyer: lawyer } })}
+                                >
+                                    Request Live Consultation
+                                </Button>
                                 
                                 <div className="flex flex-col items-center gap-4 pt-2">
                                     <div className="flex items-center gap-2">

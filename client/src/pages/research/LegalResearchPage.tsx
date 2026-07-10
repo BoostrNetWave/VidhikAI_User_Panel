@@ -94,6 +94,7 @@ export default function LegalResearchPage() {
     const recognitionRef = useRef<any>(null); // For Web Speech API
     const timerRef = useRef<any>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const fetchHistory = async () => {
         try {
@@ -107,6 +108,10 @@ export default function LegalResearchPage() {
     useEffect(() => {
         fetchHistory();
     }, []);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     const handleSuggestionClick = (type: 'draft' | 'precedent' | 'statute') => {
         let suggestion = "";
@@ -130,64 +135,52 @@ export default function LegalResearchPage() {
     const handleSearch = async (forcedQuery?: string) => {
         const searchQuery = forcedQuery || query;
         if (!searchQuery.trim() && !attachedFile && !audioBlob) return;
-        setIsSearching(true);
-        if (forcedQuery) setQuery(forcedQuery);
 
-        // Reset stages for new research
-        setResearchStages([
-            { id: 1, label: "Indexing Multi-State Statutes & Gazette Notifications", status: 'loading' },
-            { id: 2, label: "Cross-referencing Supreme Court & High Court Precedents", status: 'pending' },
-            { id: 3, label: "Synthesizing Jurisprudential Analysis & Citations", status: 'pending' }
-        ]);
-        setProgress(15);
-        setFilesScanned(0);
-        setTimeRemaining(12);
-
-        // Start dynamic counters
-        const counterInt = setInterval(() => {
-            setFilesScanned(prev => Math.min(prev + Math.floor(Math.random() * 200) + 50, 4820));
-        }, 150);
+        // Determine if it's a follow-up query
+        const isFollowUp = showResults && messages.length > 0;
         
-        const timeInt = setInterval(() => {
-            setTimeRemaining(prev => Math.max(prev - 1, 1));
-        }, 1000);
+        // Add the user message to UI immediately
+        const newUserMessage = {
+            role: 'user',
+            content: searchQuery || (attachedFile ? `Attached: ${attachedFile.name}` : "Voice Search Result")
+        };
+
+        const historyToSend = [...messages];
+
+        if (isFollowUp) {
+            setMessages(prev => [...prev, newUserMessage]);
+        } else {
+            setMessages([newUserMessage]);
+        }
+
+        // Switch to chat view and set searching state
+        setShowResults(true);
+        setIsSearching(true);
+        setQuery(""); // Clear the input field immediately
+        setAttachedFile(null);
+        setAudioBlob(null);
 
         try {
-            // Simulated stage transitions
-            setTimeout(() => {
-                setResearchStages(prev => prev.map(s => s.id === 1 ? { ...s, status: 'completed' } : s.id === 2 ? { ...s, status: 'loading' } : s));
-                setProgress(45);
-            }, 2000);
+            const payload: any = { query: searchQuery, model: selectedModel };
+            if (isFollowUp) {
+                payload.history = historyToSend;
+            }
 
-            setTimeout(() => {
-                setResearchStages(prev => prev.map(s => s.id === 2 ? { ...s, status: 'completed' } : s.id === 3 ? { ...s, status: 'loading' } : s));
-                setProgress(75);
-            }, 4500);
+            const response = await api.post('/research', payload);
 
-            setTimeout(() => {
-                setResearchStages(prev => prev.map(s => s.id === 3 ? { ...s, status: 'completed' } : s));
-                setProgress(100);
-                clearInterval(counterInt);
-                clearInterval(timeInt);
-                setFilesScanned(4820);
-                setTimeRemaining(0);
-            }, 7000);
-
-            const response = await api.post('/research', { query: searchQuery, model: selectedModel });
-
-            // Wait slightly for the final stage to show completion if needed
-            await new Promise(r => setTimeout(r, 7500));
-
-            setMessages([
-                { role: 'user', content: searchQuery || (attachedFile ? `Attached: ${attachedFile.name}` : "Voice Search Result") },
+            // Append assistant response to messages
+            setMessages(prev => [
+                ...prev,
                 { role: 'assistant', content: response.data.answer }
             ]);
-            setShowResults(true);
-            setAttachedFile(null);
-            setAudioBlob(null);
-            // Moved fetchHistory to handleSave to ensure results are only saved when explicitly requested
         } catch (err: any) {
             console.error("Research failed:", err);
+            // Append error message to chat history
+            setMessages(prev => [
+                ...prev,
+                { role: 'assistant', content: "Research failed. Please check your query or try again." }
+            ]);
+
             if (err.response?.status === 403 && err.response?.data?.error === 'limit_reached') {
                 toast.error('Subscription limit reached', {
                     description: err.response.data.message || 'You have reached the daily legal research query limit for your plan.',
@@ -209,13 +202,17 @@ export default function LegalResearchPage() {
         if (!messages.length || isSaved) return;
 
         try {
-            const assistantMessage = messages.find(m => m.role === 'assistant');
-            if (!assistantMessage) return;
+            const assistantMessages = messages.filter(m => m.role === 'assistant');
+            const latestAssistantMessage = assistantMessages[assistantMessages.length - 1];
+            if (!latestAssistantMessage) return;
+
+            const userMessage = messages.find(m => m.role === 'user');
+            const queryToSave = userMessage ? userMessage.content : query;
 
             await api.post('/research/save', {
-                query: query,
-                answer: assistantMessage.content,
-                title: query.length > 50 ? query.substring(0, 50) + '...' : query,
+                query: queryToSave,
+                answer: latestAssistantMessage.content,
+                title: queryToSave.length > 50 ? queryToSave.substring(0, 50) + '...' : queryToSave,
                 category: "Legal Research"
             });
 
@@ -522,14 +519,9 @@ export default function LegalResearchPage() {
                     <div className="flex flex-col gap-6 mb-8">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                                <span className="hover:text-violet-600 transition-colors cursor-pointer" onClick={() => { setShowResults(false); setIsSearching(false); setActiveTab('research'); }}>Vidhik Research</span>
+                                <span className="hover:text-violet-600 transition-colors cursor-pointer" onClick={() => { setShowResults(false); setIsSearching(false); setActiveTab('research'); setMessages([]); setQuery(""); }}>Vidhik Research</span>
                                 <ArrowRight className="h-4 w-4 text-gray-300" />
-                                <span className="text-gray-900 font-bold">{isSearching ? "Processing Query..." : showResults ? "Analysis Result" : activeTab === 'history' ? "History" : "New Search"}</span>
-                                {isSearching && (
-                                    <Badge className="ml-2 bg-violet-50 text-violet-600 border-none font-black text-[9px] px-2 py-0.5 tracking-widest uppercase animate-pulse">
-                                        ● PROCESSING
-                                    </Badge>
-                                )}
+                                <span className="text-gray-900 font-bold">{showResults ? "Analysis Result" : activeTab === 'history' ? "History" : "New Search"}</span>
                             </div>
 
                             <div className="flex bg-gray-100 p-1 rounded-2xl">
@@ -642,116 +634,6 @@ export default function LegalResearchPage() {
                                         </Card>
                                     ))}
                                 </div>
-                            </div>
-                        </div>
-                    ) : isSearching ? (
-                        <div className="flex flex-col items-center justify-center space-y-12 animate-in fade-in zoom-in-95 duration-1000 pt-10 relative">
-                            {/* Decorative Background Glows */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-400/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
-                            <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-400/5 rounded-full blur-[100px] -z-10"></div>
-
-                            {/* User Query Echo - Premium Version */}
-                            <div className="w-full max-w-2xl px-4">
-                                <div className="bg-white/40 backdrop-blur-md border border-white/20 rounded-[2.5rem] p-8 shadow-2xl shadow-violet-500/5 relative overflow-hidden group">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-violet-600"></div>
-                                    <p className="text-[10px] font-black text-violet-600 uppercase tracking-[0.2em] mb-3 opacity-60">Analyzing Legal Query</p>
-                                    <p className="text-xl font-bold text-gray-900 leading-relaxed italic">"{query}"</p>
-                                </div>
-                            </div>
-
-                            {/* Main Analysis Hub */}
-                            <div className="w-full max-w-3xl px-4">
-                                <Card className="rounded-[3.5rem] border border-white/40 bg-white/70 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden relative">
-                                    {/* Scanning Beam Animation */}
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-violet-500/50 to-transparent -translate-y-full animate-[scan_3s_ease-in-out_infinite]"></div>
-                                    <style>{`
-                                        @keyframes scan {
-                                            0% { transform: translateY(0); opacity: 0; }
-                                            50% { opacity: 1; }
-                                            100% { transform: translateY(600px); opacity: 0; }
-                                        }
-                                    `}</style>
-
-                                    <CardContent className="p-12 space-y-10">
-                                        {/* Dynamic Stats Row */}
-                                        <div className="grid grid-cols-3 gap-6">
-                                            <div className="space-y-1">
-                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Files Indexed</p>
-                                                <p className="text-2xl font-black text-gray-900 tabular-nums">{filesScanned.toLocaleString()}+</p>
-                                            </div>
-                                            <div className="space-y-1 text-center">
-                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Confidence</p>
-                                                <p className="text-2xl font-black text-violet-600">{(94 + Math.random() * 5).toFixed(1)}%</p>
-                                            </div>
-                                            <div className="space-y-1 text-right">
-                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Est. Ready In</p>
-                                                <p className="text-2xl font-black text-gray-900 tabular-nums">{timeRemaining}s</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Premium Glowing Progress */}
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-end">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-2 w-2 rounded-full bg-violet-600 animate-ping"></div>
-                                                    <p className="text-[10px] font-black text-violet-600 uppercase tracking-widest">Research Advancement</p>
-                                                </div>
-                                                <p className="text-lg font-black text-violet-600">{progress}%</p>
-                                            </div>
-                                            <div className="relative">
-                                                <div className="absolute -inset-1 bg-violet-400/20 blur-md rounded-full"></div>
-                                                <Progress value={progress} className="h-3 bg-violet-50 relative overflow-hidden">
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 to-transparent animate-shimmer" style={{ transform: 'skewX(-20deg)' }}></div>
-                                                </Progress>
-                                            </div>
-                                        </div>
-
-                                        {/* Expert Stages List */}
-                                        <div className="space-y-6 pt-4">
-                                            {researchStages.map((stage) => (
-                                                <div key={stage.id} className={`flex items-center gap-6 transition-all duration-500 ${stage.status === 'pending' ? 'opacity-30' : 'opacity-100'}`}>
-                                                    <div className="relative flex items-center justify-center w-10 h-10 shrink-0">
-                                                        {stage.status === 'completed' ? (
-                                                            <div className="h-10 w-10 rounded-2xl bg-green-500 flex items-center justify-center text-white shadow-lg shadow-green-100 animate-in zoom-in spin-in-12 duration-500">
-                                                                <Check className="h-5 w-5 stroke-[4]" />
-                                                            </div>
-                                                        ) : stage.status === 'loading' ? (
-                                                            <div className="h-10 w-10 rounded-2xl bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200">
-                                                                <Loader2 className="h-5 w-5 animate-spin" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="h-10 w-10 rounded-2xl border-2 border-gray-100 flex items-center justify-center text-gray-200">
-                                                                <div className="h-2 w-2 rounded-full bg-gray-100"></div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <span className={`text-lg font-bold block transition-all duration-300 ${stage.status === 'loading' ? 'text-violet-600 scale-105 origin-left' : stage.status === 'completed' ? 'text-gray-900' : 'text-gray-300'}`}>
-                                                            {stage.label}
-                                                        </span>
-                                                        {stage.status === 'loading' && (
-                                                            <p className="text-[10px] text-violet-400 font-bold uppercase tracking-wider animate-pulse italic">In Depth Analysis Underway...</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Bottom Status Bar */}
-                                        <div className="pt-8 border-t border-gray-100 flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center">
-                                                    <Globe className="h-4 w-4 text-gray-400 animate-spin-slow" />
-                                                </div>
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Vidhik AI clusters active</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <div className="h-1 w-1 rounded-full bg-green-500"></div>
-                                                <span className="text-[9px] font-bold text-green-600 uppercase">Secure Link</span>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
                             </div>
                         </div>
                     ) : !showResults ? (
@@ -892,7 +774,7 @@ export default function LegalResearchPage() {
                                     <Button 
                                         variant="ghost" 
                                         className="h-12 w-12 rounded-2xl hover:bg-gray-50 bg-white shadow-sm border border-gray-100 flex items-center justify-center transition-all hover:scale-105 active:scale-95" 
-                                        onClick={() => setShowResults(false)}
+                                        onClick={() => { setShowResults(false); setMessages([]); setQuery(""); }}
                                     >
                                         <Plus className="h-6 w-6 text-violet-600" />
                                     </Button>
@@ -976,7 +858,10 @@ export default function LegalResearchPage() {
                                                         </div>
                                                         <Button 
                                                             className="rounded-2xl h-14 bg-violet-600 hover:bg-violet-700 px-8 font-black gap-2"
-                                                            onClick={() => generatePDFReport(query, m.content)}
+                                                            onClick={() => {
+                                                                const userQuery = messages[i - 1]?.content || query;
+                                                                generatePDFReport(userQuery, m.content);
+                                                            }}
                                                         >
                                                             Generate Full Report
                                                             <ArrowRight className="h-5 w-5" />
@@ -987,6 +872,23 @@ export default function LegalResearchPage() {
                                         </div>
                                     </div>
                                 ))}
+                                {isSearching && (
+                                    <div className="flex gap-6 bg-violet-50/30 -mx-8 p-12 rounded-[3rem] animate-pulse">
+                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-violet-600 text-white animate-pulse">
+                                            <Loader2 className="h-6 w-6 animate-spin" />
+                                        </div>
+                                        <div className="space-y-4 flex-1">
+                                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Vidhik Legal Analysis</p>
+                                            <div className="flex items-center gap-2 mt-4">
+                                                <div className="h-3 w-3 bg-violet-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                                <div className="h-3 w-3 bg-violet-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                                <div className="h-3 w-3 bg-violet-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                                <span className="ml-2 text-sm text-gray-500 font-bold">Vidhik AI is researching...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
                             </div>
 
                             {/* Follow up Input */}
@@ -1015,6 +917,12 @@ export default function LegalResearchPage() {
                                         placeholder="Ask a follow up question..."
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSearch();
+                                            }
+                                        }}
                                     />
                                     <div className="flex items-center gap-2 pr-2">
                                         <Button variant="ghost" size="icon" className="rounded-full text-gray-400 hover:text-violet-600" onClick={() => fileInputRef.current?.click()}>

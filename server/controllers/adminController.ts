@@ -4,6 +4,7 @@ import User from '../models/User';
 import Case from '../models/Case';
 import SupportTicket from '../models/SupportTicket';
 import DocumentModel from '../models/Document';
+import LiveConsultation from '../models/LiveConsultation';
 
 /**
  * Admin Controller
@@ -300,6 +301,20 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
         res.json({ message: 'User subscription updated successfully', user });
     } catch (error) {
         res.status(500).json({ message: 'Error updating user subscription' });
+    }
+};
+
+// @desc    Get all live consultations
+// @route   GET /api/admin/consultations
+export const getAllConsultations = async (_req: Request, res: Response) => {
+    try {
+        const consultations = await LiveConsultation.find({})
+            .populate('client', 'fullName email')
+            .populate('lawyer', 'fullName email title expertise')
+            .sort({ createdAt: -1 });
+        res.json(consultations);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching consultations' });
     }
 };
 
