@@ -16,7 +16,8 @@ import {
     getAllDocuments,
     getUserDetails,
     updateUserSubscription,
-    getAllConsultations
+    getAllConsultations,
+    getLoginHistory
 } from '../controllers/adminController';
 import { protect, adminOnly } from '../middleware/authMiddleware';
 
@@ -44,6 +45,7 @@ router.get('/documents', protect, adminOnly, getAllDocuments);
 router.get('/users/:id/details', protect, adminOnly, getUserDetails);
 router.post('/users/:id/subscription', protect, adminOnly, updateUserSubscription);
 router.get('/consultations', protect, adminOnly, getAllConsultations);
+router.get('/login-history', protect, adminOnly, getLoginHistory);
 
 // Public routes (No auth required)
 router.get('/public/config', getConfigs);

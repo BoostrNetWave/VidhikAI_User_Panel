@@ -21,12 +21,19 @@ interface DocumentBaseGeneratorProps {
     description: string;
     documentType: string;
     initialFormData: any;
-    renderForm: (formData: any, handleInputChange: (e: any) => void, handleSelectChange: (name: string, value: string) => void, setFormData?: (data: any) => void) => ReactNode;
+    renderForm: (
+        formData: any, 
+        handleInputChange: (e: any) => void, 
+        handleSelectChange: (name: string, value: any) => void, 
+        setFormData?: (data: any) => void,
+        validationErrors?: Record<string, string>
+    ) => ReactNode;
 
 
     sidebarTips: { title: string; content: string }[];
     sidebarDescription: string;
     docxFilename: string;
+    requiredFields?: string[];
 }
 
 export default function DocumentBaseGenerator({
@@ -37,7 +44,8 @@ export default function DocumentBaseGenerator({
     renderForm,
     sidebarTips,
     sidebarDescription,
-    docxFilename
+    docxFilename,
+    requiredFields
 }: DocumentBaseGeneratorProps) {
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);

@@ -77,5 +77,47 @@
         @apply bg-background text-foreground font-sans antialiased;
         font-family: 'Inter', sans-serif;
     }
-
+    
+    .admin-theme {
+        --background: 240 14.3% 98%;      /* #FAFAFB */
+        --foreground: 220 17.6% 10%;      /* #15181E */
+        
+        --card: 0 0% 100%;                /* #FFFFFF (Surface) */
+        --card-foreground: 220 17.6% 10%; /* #15181E */
+        
+        --popover: 0 0% 100%;             /* #FFFFFF */
+        --popover-foreground: 220 17.6% 10%;
+        
+        --primary: 214 52% 24.5%;         /* #1E3A5F */
+        --primary-foreground: 216 33.3% 97.1%; /* #F5F7FA */
+        
+        --secondary: 228 17.6% 95.3%;     /* Muted for secondary */
+        --secondary-foreground: 220 17.6% 10%;
+        
+        --muted: 228 17.6% 95.3%;         /* #F1F2F6 */
+        --muted-foreground: 220 8.9% 46.1%; /* #6B7280 */
+        
+        --accent: 36 34% 51.6%;           /* #B08D57 */
+        --accent-foreground: 0 0% 100%;   /* White on accent */
+        
+        --destructive: 6 78.3% 46.1%;     /* #C0392B */
+        --destructive-foreground: 0 0% 100%;
+        
+        --border: 220 18% 91%;            /* #E3E6EC */
+        --input: 220 18% 91%;
+        --ring: 214 52% 24.5%;            /* #1E3A5F */
+        
+        --sidebar: 218 52% 12.4%;         /* #0F1B30 */
+        --sidebar-foreground: 219 28% 84%;/* #C9D2E3 */
+        
+        --success: 150 59.4% 30%;         /* #1F7A4D */
+        --success-foreground: 0 0% 100%;
+        
+        --warning: 43 89% 38.2%;          /* #B8860B */
+        --warning-foreground: 0 0% 100%;
+        
+        --radius: 0.625rem;               /* 10px */
+        
+        font-family: 'Geist Sans', 'Inter', sans-serif;
+    }
 }

@@ -1,0 +1,42 @@
+export const generateCodeOfConductPrompt = (formData: any): string => {
+    const data = {
+        company_name: formData.company_name,
+        company_type: formData.company_type || 'Private Limited',
+        document_version: formData.document_version || '1.0',
+        effective_date: formData.effective_date,
+        approved_by: formData.approved_by,
+        policy_owner: formData.policy_owner,
+        review_cycle: formData.review_cycle || 'Annually',
+        company_values: formData.company_values,
+        applicability: formData.applicability,
+        definitions: formData.definitions || '',
+        professional_conduct_policy: formData.professional_conduct_policy,
+        workplace_behaviour_policy: formData.workplace_behaviour_policy,
+        equal_opportunity_policy: formData.equal_opportunity_policy,
+        anti_harassment_policy: formData.anti_harassment_policy,
+        legal_compliance_policy: formData.legal_compliance_policy,
+        conflict_of_interest_policy: formData.conflict_of_interest_policy,
+        gifts_hospitality_policy: formData.gifts_hospitality_policy,
+        anti_bribery_policy: formData.anti_bribery_policy,
+        confidentiality_policy: formData.confidentiality_policy,
+        information_security_policy: formData.information_security_policy,
+        intellectual_property_policy: formData.intellectual_property_policy,
+        company_property_policy: formData.company_property_policy,
+        social_media_policy: formData.social_media_policy || '',
+        data_privacy_policy: formData.data_privacy_policy,
+        reporting_misconduct_policy: formData.reporting_misconduct_policy,
+        whistleblower_policy: formData.whistleblower_policy || '',
+        disciplinary_policy: formData.disciplinary_policy,
+        acknowledgment_text: formData.acknowledgment_text,
+        industry_type: formData.industry_type || 'Information Technology',
+        listed_company: !!formData.listed_company,
+        global_operations: !!formData.global_operations,
+        government_contractor: !!formData.government_contractor,
+        authorized_signatory: formData.authorized_signatory,
+        execution_place: formData.execution_place,
+        execution_date: formData.execution_date,
+        additional_policies: formData.additional_policies || ''
+    };
+
+    return JSON.stringify(data, null, 2);
+};

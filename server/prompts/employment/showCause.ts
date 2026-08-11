@@ -1,0 +1,40 @@
+export const generateShowCausePrompt = (formData: any): string => {
+    const data = {
+        company_name: formData.company_name,
+        company_type: formData.company_type || 'Private Limited',
+        cin: formData.cin || '',
+        registered_office: formData.registered_office,
+        notice_number: formData.notice_number || '',
+        issue_date: formData.issue_date,
+        employee_name: formData.employee_name,
+        employee_id: formData.employee_id,
+        designation: formData.designation,
+        department: formData.department,
+        subject: formData.subject,
+        incident_date: formData.incident_date,
+        incident_time: formData.incident_time || '',
+        incident_location: formData.incident_location || '',
+        allegation_details: formData.allegation_details,
+        policy_references: formData.policy_references,
+        evidence_list: formData.evidence_list,
+        witnesses: formData.witnesses || '',
+        response_deadline: formData.response_deadline,
+        response_submission_mode: formData.response_submission_mode,
+        response_recipient: formData.response_recipient,
+        consequences_of_non_response: formData.consequences_of_non_response || '',
+        suspension_pending_inquiry: !!formData.suspension_pending_inquiry,
+        financial_misconduct: !!formData.financial_misconduct,
+        information_security_incident: !!formData.information_security_incident,
+        attendance_misconduct: !!formData.attendance_misconduct,
+        posh_related: !!formData.posh_related,
+        safety_violation: !!formData.safety_violation,
+        hr_representative: formData.hr_representative || '',
+        authorized_signatory: formData.authorized_signatory,
+        execution_place: formData.execution_place,
+        execution_date: formData.execution_date,
+        annexures: formData.annexures || '',
+        additional_conditions: formData.additional_conditions || ''
+    };
+
+    return JSON.stringify(data, null, 2);
+};

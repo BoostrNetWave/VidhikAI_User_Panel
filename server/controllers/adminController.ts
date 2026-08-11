@@ -5,7 +5,7 @@ import Case from '../models/Case';
 import SupportTicket from '../models/SupportTicket';
 import DocumentModel from '../models/Document';
 import LiveConsultation from '../models/LiveConsultation';
-
+import LoginHistory from '../models/LoginHistory';
 /**
  * Admin Controller
  * Handles all requests from the Super Admin Panel
@@ -315,6 +315,17 @@ export const getAllConsultations = async (_req: Request, res: Response) => {
         res.json(consultations);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching consultations' });
+    }
+};
+
+// @desc    Get all login history
+// @route   GET /api/admin/login-history
+export const getLoginHistory = async (_req: Request, res: Response) => {
+    try {
+        const history = await LoginHistory.find({}).sort({ createdAt: -1 }).limit(200).populate('user', 'fullName email role');
+        res.json(history);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching login history' });
     }
 };
 

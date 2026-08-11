@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
+import LoginHistory from '../models/LoginHistory';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '../utils/emailService';
@@ -89,6 +90,12 @@ export const loginUser = async (req: Request, res: Response) => {
 
         if (!user) {
             console.log(`[LOGIN] User not found: ${email}`);
+            await LoginHistory.create({
+                email,
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent'],
+                status: 'failed'
+            });
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
@@ -105,6 +112,18 @@ export const loginUser = async (req: Request, res: Response) => {
 
         if (isPasswordValid) {
             console.log(`[LOGIN] Success for email: ${email}`);
+            
+            user.lastActiveAt = new Date();
+            await user.save();
+
+            await LoginHistory.create({
+                user: user._id,
+                email: user.email,
+                role: user.role,
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent'],
+                status: 'success'
+            });
             res.json({
                 _id: user._id,
                 userId: user.userId || user._id,
@@ -122,6 +141,14 @@ export const loginUser = async (req: Request, res: Response) => {
             });
         } else {
             console.log(`[LOGIN] Invalid password for email: ${email}`);
+            await LoginHistory.create({
+                user: user._id,
+                email: user.email,
+                role: user.role,
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent'],
+                status: 'failed'
+            });
             res.status(401).json({ message: 'Invalid email or password' });
         }
     } catch (error) {

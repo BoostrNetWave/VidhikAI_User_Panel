@@ -1,0 +1,41 @@
+export const generateNonCompetePrompt = (formData: any): string => {
+    const data = {
+        agreement_date: formData.agreement_date,
+        first_party_name: formData.first_party_name,
+        first_party_type: formData.first_party_type || 'Company',
+        first_party_address: formData.first_party_address,
+        second_party_name: formData.second_party_name,
+        second_party_type: formData.second_party_type || 'Individual',
+        second_party_address: formData.second_party_address,
+        relationship_type: formData.relationship_type || 'Employee',
+        purpose: formData.purpose,
+        business_interests: formData.business_interests,
+        confidential_information_definition: formData.confidential_information_definition,
+        trade_secret_definition: formData.trade_secret_definition || '',
+        restricted_activities: formData.restricted_activities,
+        restricted_period: formData.restricted_period || '',
+        restricted_territory: formData.restricted_territory || '',
+        non_solicitation: formData.non_solicitation || '',
+        intellectual_property_clause: formData.intellectual_property_clause,
+        consideration: formData.consideration,
+        exceptions: formData.exceptions || '',
+        confidentiality_required: !!formData.confidentiality_required,
+        term: formData.term,
+        termination_conditions: formData.termination_conditions,
+        notices: formData.notices,
+        governing_law: formData.governing_law,
+        dispute_resolution: formData.dispute_resolution,
+        cross_border: !!formData.cross_border,
+        founder_agreement: !!formData.founder_agreement,
+        business_sale: !!formData.business_sale,
+        employee_agreement: !!formData.employee_agreement,
+        consultant_agreement: !!formData.consultant_agreement,
+        authorized_signatories: formData.authorized_signatories,
+        witness_details: formData.witness_details || '',
+        execution_place: formData.execution_place,
+        execution_date: formData.execution_date,
+        additional_conditions: formData.additional_conditions || ''
+    };
+
+    return JSON.stringify(data, null, 2);
+};

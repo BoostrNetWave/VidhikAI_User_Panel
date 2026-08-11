@@ -1,0 +1,43 @@
+export const generateMutualNDAPrompt = (formData: any): string => {
+    const data = {
+        agreement_number: formData.agreement_number || '',
+        effective_date: formData.effective_date,
+        business_purpose: formData.business_purpose,
+        party_a: formData.party_a,
+        party_b: formData.party_b,
+        authorized_representatives: formData.authorized_representatives,
+        confidential_information_definition: formData.confidential_information_definition,
+        confidential_information_categories: formData.confidential_information_categories,
+        exclusions: formData.exclusions,
+        reciprocal_confidentiality_obligations: formData.reciprocal_confidentiality_obligations,
+        permitted_disclosures: formData.permitted_disclosures,
+        intellectual_property_clause: formData.intellectual_property_clause,
+        data_privacy_clause: formData.data_privacy_clause || '',
+        term_commencement: formData.term_commencement,
+        agreement_duration: formData.agreement_duration,
+        confidentiality_survival_period: formData.confidentiality_survival_period,
+        remedies: formData.remedies,
+        limitation_of_liability: formData.limitation_of_liability || '',
+        termination_clause: formData.termination_clause,
+        notice_details: formData.notice_details,
+        governing_law: formData.governing_law,
+        dispute_resolution: formData.dispute_resolution,
+        arbitration_details: formData.arbitration_details || '',
+        jurisdiction: formData.jurisdiction,
+        miscellaneous_clauses: formData.miscellaneous_clauses,
+        joint_venture: !!formData.joint_venture,
+        merger_acquisition: !!formData.merger_acquisition,
+        technology_collaboration: !!formData.technology_collaboration,
+        research_collaboration: !!formData.research_collaboration,
+        investor_discussions: !!formData.investor_discussions,
+        vendor_evaluation: !!formData.vendor_evaluation,
+        cross_border_transaction: !!formData.cross_border_transaction,
+        witnesses: formData.witnesses || '',
+        authorized_signatories: formData.authorized_signatories,
+        execution_place: formData.execution_place,
+        execution_date: formData.execution_date,
+        annexures: formData.annexures || ''
+    };
+
+    return JSON.stringify(data, null, 2);
+};

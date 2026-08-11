@@ -1,0 +1,42 @@
+export const generateRelievingLetterPrompt = (formData: any): string => {
+    const data = {
+        company_name: formData.company_name,
+        company_type: formData.company_type || 'Private Limited',
+        cin: formData.cin || '',
+        registered_office: formData.registered_office,
+        letter_number: formData.letter_number || '',
+        issue_date: formData.issue_date,
+        employee_name: formData.employee_name,
+        employee_id: formData.employee_id || '',
+        designation: formData.designation,
+        department: formData.department,
+        employment_type: formData.employment_type || 'Permanent',
+        joining_date: formData.joining_date,
+        last_working_date: formData.last_working_date,
+        relieving_date: formData.relieving_date,
+        separation_type: formData.separation_type,
+        resignation_acceptance_date: formData.resignation_acceptance_date || '',
+        retirement_date: formData.retirement_date || '',
+        contract_completion: formData.contract_completion || '',
+        handover_completed: !!formData.handover_completed,
+        asset_clearance: formData.asset_clearance,
+        hr_clearance: formData.hr_clearance,
+        finance_clearance: formData.finance_clearance,
+        it_clearance: formData.it_clearance,
+        administrative_clearance: formData.administrative_clearance,
+        final_settlement_status: formData.final_settlement_status || '',
+        gratuity_status: formData.gratuity_status || '',
+        leave_encashment_status: formData.leave_encashment_status || '',
+        post_employment_obligations: formData.post_employment_obligations,
+        appreciation_message: formData.appreciation_message || '',
+        experience_letter_reference: formData.experience_letter_reference || '',
+        hr_representative: formData.hr_representative || '',
+        authorized_signatory: formData.authorized_signatory,
+        company_seal_required: !!formData.company_seal_required,
+        execution_place: formData.execution_place,
+        execution_date: formData.execution_date,
+        additional_conditions: formData.additional_conditions || ''
+    };
+
+    return JSON.stringify(data, null, 2);
+};

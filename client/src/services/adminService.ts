@@ -56,6 +56,11 @@ export const adminService = {
         return response.data;
     },
 
+    async updateTicketStatus(id: string, status: string) {
+        const response = await api.post(`/admin/tickets/${id}/reply`, { adminReply: '', status });
+        return response.data;
+    },
+
     async getAllDocuments() {
         const response = await api.get('/admin/documents');
         return response.data;
@@ -73,6 +78,11 @@ export const adminService = {
 
     async getAllConsultations() {
         const response = await api.get('/admin/consultations');
+        return response.data;
+    },
+
+    async getLoginHistory() {
+        const response = await api.get('/admin/login-history');
         return response.data;
     }
 };
