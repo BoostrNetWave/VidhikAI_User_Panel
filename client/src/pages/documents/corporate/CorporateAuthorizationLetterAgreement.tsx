@@ -4,21 +4,21 @@ import CorporateAuthorizationLetterForm from './CorporateAuthorizationLetterForm
 
 const CorporateAuthorizationLetterAgreement: React.FC = () => {
     const initialData = {
-        companyName: '',
-        companyCin: '',
-        registeredOffice: '',
-        authorizedPersonName: '',
-        authorizedPersonDesignation: '',
-        idDetails: '',
-        authorityRecipient: '',
-        purposeOfAuthorization: '',
-        scopeDetails: '',
-        monetaryLimit: '',
-        validityStartDate: '',
-        validityEndDate: '',
-        boardResolutionDate: '',
-        revocable: true,
-        additionalConditions: ''
+companyName: 'Vidhik AI Solutions Private Limited',
+                companyCin: 'U74999KA2023PTC123456',
+                registeredOffice: 'No. 123, 5th Floor, Prestige Trade Tower, Palace Road, Bangalore, Karnataka 560001',
+                authorizedPersonName: 'Mr. Rajesh Kumar',
+                authorizedPersonDesignation: 'Vice President - Operations',
+                idDetails: 'PAN: ABCPK1234L',
+                authorityRecipient: 'The Branch Manager, HDFC Bank, MG Road Branch, Bangalore',
+                purposeOfAuthorization: 'To represent the company for opening and operating a new current account.',
+                scopeDetails: 'To sign all necessary documents, KYC forms, and account opening mandates on behalf of the company.',
+                monetaryLimit: 'No specific monetary limit for account opening.',
+                validityStartDate: new Date().toISOString().split('T')[0],
+                validityEndDate: '',
+                boardResolutionDate: '2024-02-15',
+                revocable: true,
+                additionalConditions: 'This authorization is specific to the HDFC Bank MG Road branch and shall not be used elsewhere.'
     };
 
     return (

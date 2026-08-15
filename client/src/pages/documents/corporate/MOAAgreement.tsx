@@ -4,25 +4,30 @@ import MOAForm from './MOAForm';
 
 const MOAAgreement: React.FC = () => {
     const initialData = {
-        companyName: 'Vidhik AI Solutions Private Limited',
-        companyType: 'Private Limited',
-        state: 'Maharashtra',
-        mainObjects: 'To carry on the business of providing AI-powered legal technology solutions, drafting automated legal documents, providing legal research tools, and developing software for law firms and legal professionals.',
-        ancillaryObjects: 'To acquire trademarks, patents, and other intellectual property; to enter into partnerships; to borrow or raise money for business purposes; to do all such other things as are incidental or conducive to the attainment of the main objects.',
-        liabilityType: 'Limited by Shares',
-        authorizedCapital: '10,00,000',
-        totalShares: '1,00,000',
-        faceValue: '10',
-        subscribers: '1. Rahul Sharma, S/o Sunil Sharma, R/o Mumbai - 50,000 shares.\n2. Priya Verma, D/o Anil Verma, R/o Pune - 50,000 shares.',
-        witnessDetails: 'Mr. Sunil Gupta, S/o Mr. Ramesh Gupta, residing at Flat 402, Lotus Apartments, Andheri West, Mumbai - 400053.'
+        company_name: 'Vidhik AI Solutions Private Limited',
+        company_type: 'Private Limited',
+        cin: 'U72900KA2023PTC198273',
+        date_of_incorporation: '2023-04-15',
+        registered_office_state: 'Karnataka',
+        main_objects: 'To carry on the business of providing artificial intelligence based legal technology solutions, document automation, and legal research services.',
+        ancillary_objects: 'To acquire, build, and maintain software infrastructure, data centers, and related technologies for the fulfillment of main objects.',
+        liability_type: 'Limited by Shares',
+        authorized_share_capital: '10,00,000',
+        number_of_equity_shares: '1,00,000',
+        face_value_per_share: '10',
+        preference_shares_details: 'None',
+        subscriber_details: 'Rahul Sharma, S/o Sunil Sharma, R/o Mumbai - 5,000 shares.\nPriya Singh, D/o Anand Singh, R/o Delhi - 5,000 shares.',
+        witness_details: 'Mr. X, S/o Mr. Y, residing at 123, Main Street, Bangalore.',
+        foreign_subscribers: false,
+        section8_objectives: ''
     };
 
     const sidebarTips = [
-        { title: "Name Clause", content: "The Name Clause must exactly match the name approved by ROC." },
-        { title: "Objects Clause", content: "The Objects Clause should be drafted broadly to avoid ultra vires acts." },
-        { title: "Main Objects", content: "Main objects should clearly define the core business of the company." },
-        { title: "Authorized Capital", content: "Capital should be sufficient for initial business needs." },
-        { title: "Subscribers", content: "Ensure subscriber details match their PAN/Aadhar records." }
+        { title: "Objects Clause", content: "Ensure the main objects clearly define your core business. MCA is strict about vague object clauses." },
+        { title: "Authorized Capital", content: "This is the maximum capital your company can issue. You can increase it later by passing a resolution." },
+        { title: "Subscribers", content: "These are the initial shareholders who agree to take shares in the company upon incorporation." },
+        { title: "Liability", content: "Most companies are 'Limited by Shares', meaning a shareholder's liability is limited to the unpaid amount on their shares." },
+        { title: "Ancillary Objects", content: "These must be necessary for furthering the main objects, not entirely separate business activities." }
     ];
 
     return (
@@ -32,7 +37,7 @@ const MOAAgreement: React.FC = () => {
             documentType="moa"
             initialFormData={initialData}
             docxFilename="memorandum-of-association.docx"
-            sidebarDescription="The MOA is the charter of the company and defines its constitution and scope of powers."
+            sidebarDescription="The MOA is the primary governing document that defines the company's scope of operations and relationship with the outside world."
             sidebarTips={sidebarTips}
             renderForm={(formData, handleInputChange, handleSelectChange, setFormData) => (
                 <MOAForm

@@ -77,7 +77,7 @@ export const generateShareSubscriptionPrompt = (formData: ShareSubscriptionData)
 **DOCUMENT TYPE:** SHARE SUBSCRIPTION AGREEMENT
 
 INPUT FORMAT (JSON):
-${JSON.stringify(data, null, 2)}
+${JSON.stringify(formData, null, 2)}
 
 Please generate the Share Subscription Agreement now based on this data and the provided system instructions.`;
 };

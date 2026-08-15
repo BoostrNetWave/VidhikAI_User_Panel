@@ -4,16 +4,16 @@ import DirectorResignationForm from './DirectorResignationForm';
 
 const DirectorResignationAgreement: React.FC = () => {
     const initialData = {
-        companyName: '',
-        registeredOffice: '',
-        directorName: '',
-        din: '',
-        designation: '',
-        resignationDate: '',
-        effectiveDate: '',
-        reason: '',
-        transitionSupportRequired: false,
-        additionalStatements: ''
+companyName: 'Vidhik AI Solutions Private Limited',
+                registeredOffice: 'No. 123, 5th Floor, Prestige Trade Tower, Palace Road, Bangalore, Karnataka 560001',
+                directorName: 'Mr. Arvind Kejriwal',
+                din: '01234567',
+                designation: 'Independent Director',
+                resignationDate: new Date().toISOString().split('T')[0],
+                effectiveDate: new Date().toISOString().split('T')[0],
+                reason: 'Due to personal reasons and other professional commitments.',
+                transitionSupportRequired: true,
+                additionalStatements: 'I confirm that there are no outstanding claims or disputes with the company.'
     };
 
     return (

@@ -4,13 +4,23 @@ import ShareholderResolutionForm from './ShareholderResolutionForm';
 
 const ShareholderResolutionAgreement: React.FC = () => {
     const initialData = {
-        companyName: '',
-        meetingType: '',
-        meetingDate: '',
-        meetingVenue: '',
-        chairpersonName: '',
-        resolutionDetails: '',
-        proxies: ''
+companyName: 'Vidhik AI Solutions Private Limited',
+                cin: 'U74999KA2022PTC158273',
+                registeredOffice: 'No. 123, 5th Floor, Prestige Trade Tower, Palace Road, Bangalore, Karnataka 560001',
+                meetingType: 'Extra-Ordinary General Meeting',
+                meetingDate: '2024-05-15',
+                meetingTime: '11:00 AM',
+                meetingVenue: 'Registered Office at Bangalore',
+                chairpersonName: 'Amit Shah',
+                quorumPresent: true,
+                resolutionType: 'Special Resolution',
+                subjectMatter: 'Increase in Authorized Share Capital',
+                resolutionDetails: 'Approval for the issuance of 10,000 Equity Shares of INR 10 each at a premium of INR 90 per share to existing shareholders on a rights basis.',
+                statutoryReference: 'Section 61 of the Companies Act, 2013',
+                authorizedPersonDetails: 'Vikram Singh (Director, DIN: 01234567)',
+                certificationSignatory: 'Amit Shah (Director, DIN: 08765432)',
+                placeOfSigning: 'Bangalore',
+                proxies: 'Mr. Rahul Dravid (Proxy for Mr. Sachin Tendulkar)'
     };
 
     const sidebarTips = [

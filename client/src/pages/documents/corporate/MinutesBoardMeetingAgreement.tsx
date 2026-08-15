@@ -4,20 +4,24 @@ import MinutesBoardMeetingForm from './MinutesBoardMeetingForm';
 
 const MinutesBoardMeetingAgreement: React.FC = () => {
     const initialData = {
-        companyName: '',
-        cin: '',
-        registeredOffice: '',
-        meetingNumber: '',
-        meetingDate: '',
-        meetingTime: '',
-        meetingVenue: '',
-        chairpersonName: '',
-        directorsPresent: '',
-        directorsAbsent: '',
-        invitees: '',
-        resolutionsPassed: '',
-        otherBusiness: '',
-        nextMeetingInfo: ''
+companyName: 'Vidhik AI Solutions Private Limited',
+                cin: 'U72900KA2024PTC123456',
+                registeredOffice: 'No. 12, MG Road, Bangalore - 560001, Karnataka, India',
+                meetingNumber: '02/2024-25',
+                meetingDate: '2024-06-20',
+                meetingTime: '11:00 AM',
+                meetingVenue: 'Registered Office of the Company',
+                chairpersonName: 'Mr. Rajesh Kumar',
+                directorsPresent: 'Mr. Rajesh Kumar, Ms. Priya Sharma, Mr. Amit Singh',
+                directorsAbsent: 'None',
+                directorsOnLeave: 'Mr. Sunil Varma',
+                invitees: 'Mr. Suresh (Statutory Auditor)',
+                resolutionsPassed: '1. Noted the minutes of the previous board meeting held on April 15, 2024.\n2. Approved the quarterly financial results for the period ended March 31, 2024.\n3. Ratified the appointment of Mr. Sunil as the Internal Auditor.\n4. Authorized the opening of a new bank account with HDFC Bank.',
+                interestedDirectors: 'None',
+                conclusionTime: '12:30 PM',
+                authorizedSignatory: 'Mr. Rajesh Kumar',
+                otherBusiness: 'The Board discussed the expansion plans into the Middle East market.',
+                nextMeetingInfo: 'The next meeting is tentatively scheduled for September 2024.'
     };
 
     const sidebarTips = [

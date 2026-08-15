@@ -89,7 +89,7 @@ APPLICABLE LAWS:
 - GST Act, 2017
 
 INPUT DATA (JSON):
-${JSON.stringify(data, null, 2)}
+${JSON.stringify(formData, null, 2)}
 
 Please generate the B2B Service Agreement now based on this data and the provided system instructions.`;
 };

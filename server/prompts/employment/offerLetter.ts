@@ -43,7 +43,7 @@ export const generateOfferLetterPrompt = (formData: OfferLetterData): string => 
 **DOCUMENT TYPE:** JOB OFFER LETTER
 
 INPUT FORMAT (JSON):
-${JSON.stringify(data, null, 2)}
+${JSON.stringify(formData, null, 2)}
 
 Please generate the Job Offer Letter now based on this data and the provided system instructions.`;
 };

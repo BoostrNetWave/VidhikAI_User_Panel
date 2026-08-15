@@ -4,25 +4,30 @@ import PowerOfAttorneyCorporateForm from './PowerOfAttorneyCorporateForm';
 
 const PowerOfAttorneyCorporateAgreement: React.FC = () => {
     const initialData = {
-        company_name: '',
-        company_cin: '',
-        registered_office: '',
-        authorized_signatory_name: '',
-        authorized_signatory_designation: '',
-        board_resolution_date: '',
-        attorney_name: '',
-        attorney_address: '',
-        attorney_id_details: '',
-        purpose_of_poa: '',
-        specific_powers: [],
-        monetary_limit: '',
-        geographic_limit: '',
-        delegation_allowed: false,
-        effective_date: '',
-        expiry_date: '',
-        revocable: true,
-        registration_required: false,
-        additional_clauses: ''
+company_name: 'TechFlow Solutions Private Limited',
+                company_cin: 'U72900KA2022PTC123456',
+                registered_office: '12th Floor, Cyber Hub, Outer Ring Road, Bangalore, Karnataka 560103',
+                authorized_signatory_name: 'Mr. Arvind Swamy',
+                authorized_signatory_designation: 'Managing Director',
+                board_resolution_date: '2024-03-01',
+                attorney_name: 'Mr. Kavita Rao',
+                attorney_address: 'No. 45, Residency Road, Bangalore, Karnataka 560025',
+                attorney_id_details: 'PAN: ABCPR1234M, Aadhar: 1234 5678 9012',
+                purpose_of_poa: 'To represent the Company before the Registrar of Companies and other statutory authorities for the purpose of filing annual returns and corporate governance compliance.',
+                specific_powers: [
+                    'To sign and file Form MGT-7 and AOC-4 with the MCA.',
+                    'To represent the Company before the Regional Director and Registrar of Companies.',
+                    'To execute declarations and affidavits required for ROC filings.',
+                    'To appoint professionals for assisted filings.'
+                ],
+                monetary_limit: 'Limited to payment of statutory filing fees up to INR 50,000.',
+                geographic_limit: 'Within the jurisdiction of RoC Bangalore and RD Southeast Region.',
+                delegation_allowed: false,
+                effective_date: new Date().toISOString().split('T')[0],
+                expiry_date: '2025-03-31',
+                revocable: true,
+                registration_required: false,
+                additional_clauses: 'The attorney shall provide a monthly report of all filings done under this Power of Attorney.'
     };
 
     return (

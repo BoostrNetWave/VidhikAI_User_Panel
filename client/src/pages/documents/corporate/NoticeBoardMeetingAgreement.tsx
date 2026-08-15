@@ -4,12 +4,20 @@ import NoticeBoardMeetingForm from './NoticeBoardMeetingForm';
 
 const NoticeBoardMeetingAgreement: React.FC = () => {
     const initialData = {
-        companyName: '',
-        meetingDate: '',
-        meetingTime: '',
-        meetingVenue: '',
-        agenda: '',
-        virtualOption: false
+companyName: 'Vidhik AI Solutions Private Limited',
+                cin: 'U74999KA2022PTC158273',
+                registeredOffice: 'No. 123, 5th Floor, Prestige Trade Tower, Palace Road, Bangalore, Karnataka 560001',
+                noticeDate: new Date().toISOString().split('T')[0],
+                meetingDate: '2024-06-20',
+                meetingDay: 'Thursday',
+                meetingTime: '11:00 AM',
+                meetingVenue: 'Registered Office at Bangalore',
+                modeOfMeeting: 'physical',
+                agenda: '1. To confirm minutes of previous meeting\n2. To consider and approve financial statements\n3. To approve appointment of new director\n4. Opening of new bank account\n5. Any other business with permission of chair',
+                directorsList: 'Anand Sharma, Rahul Varma, Aditi Nair',
+                issuingAuthorityName: 'Amit Shah',
+                issuingAuthorityDesignation: 'Director',
+                virtualOption: true
     };
 
     const sidebarTips = [
