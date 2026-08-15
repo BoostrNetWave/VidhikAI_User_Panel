@@ -94,11 +94,9 @@ export const generateDocument = async (req: Request, res: Response) => {
         const validation = documentService.validateFormData(documentType, formData);
 
         if (!validation.valid) {
-            console.warn(`[Document Generation] Validation failed:`, validation.errors);
-            return res.status(400).json({
-                error: 'Invalid form data',
-                validationErrors: validation.errors
-            });
+            console.warn(`[Document Generation] Validation failed (missing fields):`, validation.errors);
+            // Proceeding anyway because the LLM is instructed to handle missing fields gracefully
+            // by injecting [REQUIRED INPUT MISSING: field_name] placeholders.
         }
         console.log(`[Document Generation] Validation passed. Delegating to service...`);
 

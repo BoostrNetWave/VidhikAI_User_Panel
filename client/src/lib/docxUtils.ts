@@ -1,4 +1,4 @@
-import { Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
 
 interface InheritedStyles {
     textAlign?: string;
@@ -6,6 +6,7 @@ interface InheritedStyles {
     fontStyle?: string;
     textDecoration?: string;
     fontSize?: string;
+    textTransform?: string;
 }
 
 export function getAlignment(textAlign?: string) {
@@ -25,10 +26,22 @@ export function parseChildren(node: Node, styles: InheritedStyles): TextRun[] {
             const isHeading = parent?.tagName.startsWith('H');
             const hLevel = isHeading ? parseInt(parent!.tagName.substring(1)) : 0;
 
-            let fontSize = 24; // 12pt default
-            if (hLevel === 1) fontSize = 36; // 18pt
-            else if (hLevel === 2) fontSize = 32; // 16pt
-            else if (hLevel === 3) fontSize = 28; // 14pt
+            let fontSize = 24; // 12pt default (24 half-points)
+            if (styles.fontSize) {
+                const pxMatch = styles.fontSize.match(/(\d+)px/);
+                if (pxMatch) {
+                    const px = parseInt(pxMatch[1]);
+                    // 1px = 0.75pt = 1.5 half-points
+                    fontSize = Math.round(px * 1.5);
+                } else {
+                    const ptMatch = styles.fontSize.match(/(\d+)pt/);
+                    if (ptMatch) {
+                        fontSize = parseInt(ptMatch[1]) * 2;
+                    }
+                }
+            } else if (hLevel === 1) fontSize = 42; // 21pt (28px)
+            else if (hLevel === 2) fontSize = 30; // 15pt (20px)
+            else if (hLevel === 3) fontSize = 24; // 12pt (16px)
 
             runs.push(new TextRun({
                 text: node.textContent,
@@ -37,6 +50,7 @@ export function parseChildren(node: Node, styles: InheritedStyles): TextRun[] {
                 bold: styles.fontWeight === 'bold' || isHeading,
                 italics: styles.fontStyle === 'italic',
                 underline: styles.textDecoration === 'underline' ? { type: "single" } : undefined,
+                allCaps: styles.textTransform === 'uppercase',
             }));
         }
         return runs;
@@ -56,6 +70,8 @@ export function parseChildren(node: Node, styles: InheritedStyles): TextRun[] {
         fontWeight: (element.tagName === 'STRONG' || element.tagName === 'B' || element.style?.fontWeight === 'bold') ? 'bold' : styles.fontWeight,
         fontStyle: (element.tagName === 'EM' || element.tagName === 'I' || element.style?.fontStyle === 'italic') ? 'italic' : styles.fontStyle,
         textDecoration: (element.tagName === 'U' || element.style?.textDecoration === 'underline') ? 'underline' : styles.textDecoration,
+        fontSize: element.style.fontSize || styles.fontSize,
+        textTransform: element.style.textTransform || styles.textTransform,
     };
 
     element.childNodes.forEach(child => {
@@ -91,18 +107,35 @@ export function processNode(node: Node, styles: InheritedStyles): Paragraph[] {
     };
 
     if (tagName === 'TABLE') {
-        const flattenedContent: Paragraph[] = [];
+        const rows: TableRow[] = [];
         const processChildren = (parent: Node) => {
             Array.from(parent.childNodes).forEach(child => {
                 const nodeName = child.nodeName;
                 if (nodeName === 'TR') {
+                    const cells: TableCell[] = [];
                     Array.from(child.childNodes).forEach(td => {
                         if (td.nodeName === 'TD' || td.nodeName === 'TH') {
                             const cellStyles = { ...currentStyles, textAlign: (td as HTMLElement).style.textAlign || 'left' };
                             const cellChildren = Array.from(td.childNodes).flatMap(n => processNode(n, cellStyles));
-                            flattenedContent.push(...cellChildren);
+                            
+                            // DOCX TableCell requires at least one paragraph
+                            const validChildren = cellChildren.length > 0 ? cellChildren : [new Paragraph("")];
+                            
+                            cells.push(new TableCell({
+                                children: validChildren as any,
+                                margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                borders: {
+                                    top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    right: { style: BorderStyle.SINGLE, size: 1, color: "000000" }
+                                }
+                            }));
                         }
                     });
+                    if (cells.length > 0) {
+                        rows.push(new TableRow({ children: cells }));
+                    }
                 } else if (['TBODY', 'THEAD', 'TFOOT'].includes(nodeName)) {
                     processChildren(child);
                 }
@@ -110,7 +143,22 @@ export function processNode(node: Node, styles: InheritedStyles): Paragraph[] {
         };
 
         processChildren(element);
-        return flattenedContent;
+        
+        if (rows.length > 0) {
+            return [new Table({
+                rows: rows,
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" }
+                }
+            }) as any];
+        }
+        return [];
     } else if (['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER'].includes(tagName)) {
         return Array.from(element.childNodes).flatMap(n => processNode(n, currentStyles));
     } else if (tagName === 'P') {

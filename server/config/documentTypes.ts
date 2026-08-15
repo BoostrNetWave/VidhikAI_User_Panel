@@ -33,8 +33,8 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
         recommendedModel: 'gpt-4o',
         estimatedTokens: 4000,
         complexity: 'complex',
-        requiredFields: ['companyName', 'companyType', 'state', 'registeredOffice', 'mainObjects', 'liabilityType', 'authorizedCapital', 'totalShares', 'faceValue', 'subscribers', 'executionDate', 'executionPlace', 'witnessName', 'witnessAddress', 'witnessOccupation'],
-        optionalFields: ['ancillaryObjects', 'otherObjects', 'cin', 'incorporationDate', 'preferenceShareDetails', 'section8Company', 'opcCompany', 'producerCompany', 'nidhiCompany', 'foreignSubscribers', 'additionalProvisions']
+        requiredFields: ['company_name', 'company_type', 'registered_office_state', 'main_objects', 'liability_type', 'authorized_share_capital', 'number_of_equity_shares', 'face_value_per_share', 'subscriber_details', 'witness_details'],
+        optionalFields: ['ancillary_objects', 'cin', 'date_of_incorporation', 'preference_shares_details', 'section8_objectives', 'foreign_subscribers']
     },
     'aoa': {
         id: 'aoa',
@@ -49,8 +49,8 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
         recommendedModel: 'gpt-4o',
         estimatedTokens: 4500,
         complexity: 'complex',
-        requiredFields: ['companyName', 'companyType', 'registeredOfficeState', 'effectiveDate', 'authorizedShareCapital', 'paidUpShareCapital', 'shareClasses', 'boardSize', 'quorumRequirements', 'votingRights', 'dividendPolicy'],
-        optionalFields: ['cin', 'transferRestrictions', 'directorCategories', 'commonSealRequired', 'listedCompany', 'privateCompany', 'section8Company', 'opcCompany', 'foreignShareholders', 'arbitrationClause', 'additionalProvisions']
+        requiredFields: ['companyName', 'companyType', 'registeredOfficeState', 'effectiveDate', 'authorizedCapital', 'paidUpShareCapital', 'shareClasses', 'numberOfDirectors', 'quorumRequirements', 'votingRights', 'dividendPolicy'],
+        optionalFields: ['cin', 'directorCategories', 'transferRestrictionsRequired', 'nomineeDirectorAllowed', 'retirementByRotationApplicable', 'commonSealRequired', 'listedCompany', 'section8Company', 'opcCompany', 'foreignShareholders', 'arbitrationClause', 'borrowingLimit', 'additionalGovernanceClauses']
     },
     'board-resolution': {
         id: 'board-resolution',

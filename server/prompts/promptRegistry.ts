@@ -238,6 +238,15 @@ STRICT RULES:
 8. Ensure all clauses comply with Indian statutory requirements.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier commercial contract formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -328,6 +337,15 @@ STRICT RULES:
 8. Never modify pricing, milestones, or deliverables.
 9. Never create an employer-employee relationship.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -459,6 +477,15 @@ STRICT RULES:
 14. Every operative clause shall begin with "RESOLVED THAT" and subsequent authorizations shall begin with "RESOLVED FURTHER THAT".
 15. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE:
 1. TITLE
    - "BOARD RESOLUTION"
@@ -587,6 +614,15 @@ STRICT RULES:
 8. Ensure compliance with Sections 18–21 of the Copyright Act, 1957, where applicable.
 9. Do not create clauses contrary to Indian copyright law.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier commercial contract formats:
@@ -887,6 +923,17 @@ STRICT RULES:
 15. Never create information that was not supplied.
 16. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE:
 1. TITLE
    - "MEMORANDUM OF ASSOCIATION"
@@ -981,6 +1028,17 @@ STRICT RULES:
 14. Ensure shareholder rights, director powers, and governance mechanisms are internally consistent.
 15. Never expand powers beyond those permitted by law.
 16. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE:
 1. TITLE
@@ -1110,6 +1168,15 @@ STRICT RULES:
 14. Never approve actions prohibited under Indian law.
 15. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE:
 1. TITLE
    - "SHAREHOLDER RESOLUTION"
@@ -1198,6 +1265,15 @@ STRICT RULES:
 13. Do not create agenda items that were not supplied.
 14. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -1283,6 +1359,15 @@ STRICT RULES:
 13. Use formal language suitable for statutory records.
 14. Every Board decision resolution text shall begin with "RESOLVED THAT" and additional authorizations with "RESOLVED FURTHER THAT" using bold style.
 15. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -1419,6 +1504,15 @@ STRICT RULES:
 11. Keep language concise but legally clear.
 12. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -1500,6 +1594,15 @@ STRICT RULES:
 13. Include validity period where applicable.
 14. Ensure statutory approvals are referenced only where supplied.
 15. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -1602,6 +1705,15 @@ STRICT RULES:
 12. Do not imply authority over matters outside the defined scope.
 13. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -1690,6 +1802,15 @@ STRICT RULES:
 9. Ensure all financial calculations remain internally consistent.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -1774,6 +1895,15 @@ STRICT RULES:
 9. Ensure internal consistency across all option calculations.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -1852,6 +1982,15 @@ STRICT RULES:
 8. Never invent grant quantities, exercise prices, vesting schedules, or board approvals not in the input.
 9. Ensure all grant terms remain consistent with the supplied ESOP Plan.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -1935,6 +2074,15 @@ STRICT RULES:
 8. Never invent share classes, option pools, conversion rights, or percentages not in the input.
 9. Ensure all totals and percentages reconcile exactly.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -2026,6 +2174,15 @@ STRICT RULES:
 9. Ensure all totals and numerical values reconcile exactly.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -2113,6 +2270,15 @@ STRICT RULES:
    * Policy references
 9. Never alter the Appointment Letter or Employment Agreement.
 10. Preserve every employment condition supplied in the JSON.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -2219,6 +2385,15 @@ STRICT RULES:
 9. Never disclose confidential HR records.
 10. Never include reasons for resignation or termination unless explicitly supplied.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.6 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -2324,6 +2499,15 @@ STRICT RULES:
 9. Never disclose confidential HR records.
 10. Do not include salary or compensation information unless specifically supplied.
 11. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -2440,6 +2624,15 @@ STRICT RULES:
 8. Never state that a post-employment non-compete is unquestionably enforceable under Indian law. Keep the tone balanced, recognizing Section 27 constraints while protecting trade secrets and client goodwill.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -2516,6 +2709,15 @@ STRICT RULES:
 7. If mandatory information is missing insert: [REQUIRED INPUT MISSING: field_name]
 8. Never imply that the contractor is an employee. Ensure the independent contractor covenants are unambiguous and compliant with state and central laws.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -2595,6 +2797,15 @@ STRICT RULES:
 7. If mandatory information is missing insert: [REQUIRED INPUT MISSING: field_name]
 8. Never imply permanent employment. Ensure the educational and training nature of the engagement is clearly emphasized.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier law firm filing formats:
@@ -2682,6 +2893,15 @@ STRICT RULES:
 8. Ensure all policies comply with Indian statutory requirements.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier corporate manual formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -2763,6 +2983,15 @@ STRICT RULES:
 8. Ensure all policies comply with Indian statutory requirements.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier corporate manual formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -2839,6 +3068,15 @@ STRICT RULES:
 7. If mandatory information is missing insert: [REQUIRED INPUT MISSING: field_name]
 8. Ensure all revisions preserve continuity of existing employment terms.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier HR letter formats:
@@ -2928,6 +3166,15 @@ STRICT RULES:
 8. Ensure the language remains objective and neutral throughout.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier HR templates:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -3006,6 +3253,15 @@ STRICT RULES:
 7. If mandatory information is missing insert: [REQUIRED INPUT MISSING: field_name]
 8. Ensure the language remains professional, objective, and non-defamatory.
 9. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier HR templates:
@@ -3086,6 +3342,15 @@ STRICT RULES:
 9. Do not include clauses contrary to applicable Indian law.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
 
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier commercial contract formats:
 1. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
@@ -3164,6 +3429,15 @@ STRICT RULES:
 8. Ensure compliance with applicable Indian IP laws governing each IP category.
 9. Do not create clauses contrary to Indian law.
 10. **CRITICAL:** Use Calibri as the default font in any inline styles.
+
+
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
 
 MANDATORY STRUCTURE & PREMIUM LEGAL STYLING DESIGN RULES:
 To ensure the document looks ready-to-use, extremely professional, and matches top-tier commercial contract formats:

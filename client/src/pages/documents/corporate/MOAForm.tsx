@@ -38,7 +38,7 @@ const MOAForm: React.FC<MOAFormProps> = ({
                 number_of_equity_shares: '1,00,000',
                 face_value_per_share: '10',
                 preference_shares_details: 'None',
-                subscriber_details: 'Rahul Sharma, S/o Sunil Sharma, R/o Mumbai - 5,000 shares.\nPriya Singh, D/o Anand Singh, R/o Delhi - 5,000 shares.',
+                subscriber_details: 'Rahul Sharma, S/o Sunil Sharma, R/o Mumbai, Occupation: Business, Nationality: Indian - 5,000 shares.\nPriya Singh, D/o Anand Singh, R/o Delhi, Occupation: Professional, Nationality: Indian - 5,000 shares.',
                 witness_details: 'Mr. X, S/o Mr. Y, residing at 123, Main Street, Bangalore.',
                 foreign_subscribers: false,
                 section8_objectives: ''
