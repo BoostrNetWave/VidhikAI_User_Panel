@@ -66,7 +66,7 @@ export default function AILawyerList() {
                             Filters
                         </Button>
                         <Button 
-                            className="bg-violet-700 text-white hover:bg-violet-800 rounded-xl font-bold h-11 shadow-sm"
+                            className="bg-primary text-white hover:bg-violet-800 rounded-xl font-bold h-11 shadow-sm"
                             onClick={() => navigate('/cases', { state: { startBookingFlow: true } })}
                         >
                             Book Consultation
@@ -187,7 +187,7 @@ export default function AILawyerList() {
                                                      <p className="text-base font-bold text-foreground">₹{lawyer.hourlyRate || "1000"}/hr</p>
                                                  </div>
                                                  <Button 
-                                                     className="rounded-xl h-10 px-5 bg-violet-700 text-white hover:bg-violet-800 font-bold gap-2 transition-all"
+                                                     className="rounded-xl h-10 px-5 bg-primary text-white hover:bg-violet-800 font-bold gap-2 transition-all"
                                                   onClick={() => navigate(`/lawyers/${lawyer._id}`)}
                                                  >
                                                      View Profile

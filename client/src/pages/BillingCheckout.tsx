@@ -24,7 +24,7 @@ export default function BillingCheckout() {
             {/* Top Navigation Bar */}
             <header className="bg-white border-b border-gray-100 py-4 px-8 flex items-center justify-between sticky top-0 z-50 shadow-sm">
                 <div className="flex items-center gap-2 font-bold text-xl overflow-hidden whitespace-nowrap">
-                    <div className="h-8 w-8 bg-violet-700 rounded-lg flex items-center justify-center text-white shrink-0">
+                    <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white shrink-0">
                         <Gavel className="h-5 w-5" />
                     </div>
                     <span className="leading-none text-gray-900">Vidhik AI</span>

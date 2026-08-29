@@ -40,7 +40,7 @@ export function StatsCards() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-violet-600" /> : stats.totalDocuments}
+                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : stats.totalDocuments}
                     </div>
                     <p className="text-xs text-muted-foreground">
                         Saved in workspace
@@ -56,7 +56,7 @@ export function StatsCards() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-violet-600" /> : stats.pendingReviews}
+                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : stats.pendingReviews}
                     </div>
                     <p className="text-xs text-muted-foreground">
                         {stats.pendingReviews === 1 ? "1 document needs attention" : `${stats.pendingReviews} documents need attention`}
@@ -72,7 +72,7 @@ export function StatsCards() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-violet-600" /> : stats.activeConsultations}
+                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : stats.activeConsultations}
                     </div>
                     <p className="text-xs text-muted-foreground">
                         {stats.activeConsultations === 1 ? "1 active consultation" : `${stats.activeConsultations} active consultations`}
@@ -88,7 +88,7 @@ export function StatsCards() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-violet-600" /> : stats.aiCredits}
+                        {loading ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : stats.aiCredits}
                     </div>
                     <p className="text-xs text-muted-foreground">
                         Plan: {stats.plan}

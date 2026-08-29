@@ -5,7 +5,9 @@ import { Request, Response } from 'express';
 import { documentService } from '../services/documentService';
 import { getAllDocumentTypes } from '../config/documentTypes';
 import Document from '../models/Document';
+import SharedReview from '../models/SharedReview';
 import UsageRecord from '../models/UsageRecord';
+import User from '../models/User';
 import mammoth from 'mammoth';
 import { createRequire } from 'module';
 
@@ -389,6 +391,15 @@ export const reviewDocument = async (req: Request, res: Response) => {
             });
         }
 
+        // Check if the extracted text is suspiciously short (e.g., just "-- 1 of 1 --" from a scanned PDF)
+        const cleanText = extractedText.replace(/\s+/g, '').trim();
+        if (file.mimetype === 'application/pdf' && cleanText.length < 50) {
+            return res.status(400).json({
+                error: 'Image-based PDF detected',
+                message: 'This PDF appears to be a scanned image or generated without a text layer. The AI requires text-based documents (like DOCX) or text-selectable PDFs to perform analysis.'
+            });
+        }
+
         console.log(`[Document Controller] Extracted ${extractedText.length} characters`);
 
         const analysisResults = await documentService.reviewDocument(filename, extractedText, userId, deepScan);
@@ -483,9 +494,55 @@ export const uploadDocument = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.error('[Document Upload] Error:', error);
-        res.status(500).json({
-            error: 'Failed to upload document',
-            message: error?.message || 'Unknown error'
+        res.status(500).json({ error: 'Failed to upload document' });
+    }
+};
+
+/**
+ * Share a reviewed document (generate a public link)
+ */
+export const shareReview = async (req: Request, res: Response) => {
+    try {
+        const { fullText, analysisData, fileName } = req.body;
+
+        if (!fullText || !analysisData || !fileName) {
+            return res.status(400).json({ error: 'Missing required fields for sharing.' });
+        }
+
+        const sharedReview = await SharedReview.create({
+            fullText,
+            analysisData,
+            fileName
         });
+
+        res.json({
+            success: true,
+            id: sharedReview._id
+        });
+    } catch (error: any) {
+        console.error('[Document Review] Error sharing:', error);
+        res.status(500).json({ error: 'Failed to generate share link.' });
+    }
+};
+
+/**
+ * Get a shared review by ID
+ */
+export const getSharedReview = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const sharedReview = await SharedReview.findById(id);
+
+        if (!sharedReview) {
+            return res.status(404).json({ error: 'Shared document not found or link expired.' });
+        }
+
+        res.json({
+            success: true,
+            data: sharedReview
+        });
+    } catch (error: any) {
+        console.error('[Document Review] Error fetching shared review:', error);
+        res.status(500).json({ error: 'Failed to fetch shared document.' });
     }
 };

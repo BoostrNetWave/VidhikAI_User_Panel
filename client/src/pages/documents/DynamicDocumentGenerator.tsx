@@ -276,14 +276,14 @@ export default function DynamicDocumentGenerator() {
             renderForm={(currentFormData, onTextChange, _onSelectChange, setFormDataCallback) => (
                 <div className="space-y-8 pt-6">
                     {/* Pre-fill assistant */}
-                    <div className="flex justify-between items-center bg-violet-50/50 p-4 rounded-xl border border-violet-100">
+                    <div className="flex justify-between items-center bg-secondary/50 p-4 rounded-xl border border-border">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-violet-500 rounded-lg">
+                            <div className="p-2 bg-primary/90 rounded-lg">
                                 <Sparkles className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <h4 className="font-semibold text-violet-900">Form Assistant</h4>
-                                <p className="text-sm text-violet-700">Pre-fill the drafting parameters with standard legal dummy data</p>
+                                <h4 className="font-semibold text-foreground">Form Assistant</h4>
+                                <p className="text-sm text-primary">Pre-fill the drafting parameters with standard legal dummy data</p>
                             </div>
                         </div>
                         <Button
@@ -358,7 +358,7 @@ export default function DynamicDocumentGenerator() {
                                     setFormDataCallback(dummy);
                                 }
                             }}
-                            className="bg-white hover:bg-violet-50 border-violet-200 text-violet-600 gap-2 shadow-sm"
+                            className="bg-white hover:bg-secondary border-primary/20 text-primary gap-2 shadow-sm"
                         >
                             Fill Dummy Data
                         </Button>

@@ -88,7 +88,7 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -96,9 +96,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </div>
 
             {/* Section 1: Client details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Client details
                     </CardTitle>
@@ -165,9 +165,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 2: Contractor details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Contractor details
                     </CardTitle>
@@ -243,9 +243,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 3: Engagement Timelines & SOW */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Award className="h-5 w-5" />
                         Engagement Timelines & SOW
                     </CardTitle>
@@ -417,9 +417,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 4: Fees & Payments */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Professional Fees & Taxes
                     </CardTitle>
@@ -511,9 +511,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 5: Covenants & Responsibilities */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Obligations & Warranties
                     </CardTitle>
@@ -603,9 +603,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 6: IP & Security */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         IP, Confidentiality & DPDP
                     </CardTitle>
@@ -661,9 +661,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 7: Exits & Governance */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Termination & Governance
                     </CardTitle>
@@ -775,9 +775,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 8: Execution & Witnesses */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Credentials
                     </CardTitle>
@@ -850,9 +850,9 @@ const IndependentContractorForm: React.FC<IndependentContractorFormProps> = ({
             </Card>
 
             {/* Section 9: Specific Setup Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Configuration Flags
                     </CardTitle>

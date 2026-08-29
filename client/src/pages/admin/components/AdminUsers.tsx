@@ -7,15 +7,33 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+
 interface AdminUsersProps {
   users: any[];
   onVerifyUser: (id: string) => Promise<void>;
   onUpdateSubscription: (id: string, sub: string) => Promise<void>;
+  onSuspendUser: (id: string, isSuspended: boolean) => Promise<void>;
+  onSendEmail: (id: string, subject: string, body: string) => Promise<void>;
+  onReverifyUser: (id: string) => Promise<void>;
 }
 
-export function AdminUsers({ users = [], onVerifyUser, onUpdateSubscription }: AdminUsersProps) {
+export function AdminUsers({ 
+  users = [], 
+  onVerifyUser, 
+  onUpdateSubscription,
+  onSuspendUser,
+  onSendEmail,
+  onReverifyUser
+}: AdminUsersProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   const columns = [
     {
@@ -155,6 +173,98 @@ export function AdminUsers({ users = [], onVerifyUser, onUpdateSubscription }: A
                       />
                     </div>
                   )}
+
+                  <div className="mt-8 space-y-4 pt-6 border-t border-border">
+                    <h3 className="text-sm font-semibold">Administrative Actions</h3>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      {/* Suspend User */}
+                      <div className="flex items-center justify-between p-4 border border-destructive/30 bg-destructive/5 rounded-md">
+                        <div>
+                          <h4 className="text-sm font-semibold text-destructive">Suspend Account</h4>
+                          <p className="text-xs text-muted-foreground">Instantly block this user from accessing their account and APIs.</p>
+                        </div>
+                        <Switch 
+                          checked={selectedUser.isSuspended || false} 
+                          onCheckedChange={async (val) => {
+                            if (confirm(`Are you sure you want to ${val ? 'suspend' : 'unsuspend'} this user?`)) {
+                              await onSuspendUser(selectedUser._id, val);
+                              setSelectedUser({...selectedUser, isSuspended: val});
+                            }
+                          }} 
+                        />
+                      </div>
+
+                      {/* Request Re-verification */}
+                      <div className="flex items-center justify-between p-4 border border-border bg-surface rounded-md">
+                        <div>
+                          <h4 className="text-sm font-semibold">Request Re-verification</h4>
+                          <p className="text-xs text-muted-foreground">Revoke current verification status and require the user to verify again.</p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={async () => {
+                            if (confirm("Revoke verification and send new OTP?")) {
+                              await onReverifyUser(selectedUser._id);
+                              setSelectedUser({...selectedUser, isVerified: false});
+                            }
+                          }}
+                        >
+                          Revoke Verification
+                        </Button>
+                      </div>
+
+                      {/* Send Direct Email */}
+                      <div className="flex items-center justify-between p-4 border border-border bg-surface rounded-md">
+                        <div>
+                          <h4 className="text-sm font-semibold">Send Direct Email</h4>
+                          <p className="text-xs text-muted-foreground">Send a custom email directly to {selectedUser.email}.</p>
+                        </div>
+                        <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="default" size="sm">Compose Email</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Send Email to {selectedUser.fullName}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="subject">Subject</Label>
+                                <Input 
+                                  id="subject" 
+                                  placeholder="Email Subject" 
+                                  value={emailSubject}
+                                  onChange={(e) => setEmailSubject(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="body">Message Body</Label>
+                                <Textarea 
+                                  id="body" 
+                                  placeholder="Type your message here..." 
+                                  rows={5}
+                                  value={emailBody}
+                                  onChange={(e) => setEmailBody(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>Cancel</Button>
+                              <Button onClick={async () => {
+                                await onSendEmail(selectedUser._id, emailSubject, emailBody);
+                                setEmailSubject("");
+                                setEmailBody("");
+                                setIsEmailDialogOpen(false);
+                              }}>Send Email</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+
+                    </div>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="subscription" className="space-y-6 mt-0">

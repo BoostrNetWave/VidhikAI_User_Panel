@@ -232,8 +232,8 @@ export default function SettingsPage() {
 
                                 <div className="bg-secondary/50 rounded-2xl p-4 border border-border">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-xl bg-violet-700/10 flex items-center justify-center">
-                                            <ShieldCheck className="h-4 w-4 text-violet-700" />
+                                        <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                                            <ShieldCheck className="h-4 w-4 text-primary" />
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold text-foreground">Saved Locally</p>
@@ -242,7 +242,7 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
-                                <Button className="w-full rounded-xl h-11 bg-violet-700 text-white hover:bg-violet-800 active:bg-violet-900" onClick={saveProfile}>
+                                <Button className="w-full rounded-xl h-11 bg-primary text-white hover:bg-violet-800 active:bg-violet-900" onClick={saveProfile}>
                                     Save Profile
                                 </Button>
                             </CardContent>
@@ -251,7 +251,7 @@ export default function SettingsPage() {
                         <Card className="rounded-2xl border border-border bg-card shadow-sm lg:col-span-2">
                             <CardHeader>
                                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                                    <User className="h-5 w-5 text-violet-700" />
+                                    <User className="h-5 w-5 text-primary" />
                                     Profile Details
                                 </CardTitle>
                             </CardHeader>
@@ -298,7 +298,7 @@ export default function SettingsPage() {
                                     })}>
                                         Reset
                                     </Button>
-                                    <Button className="rounded-xl bg-violet-700 text-white hover:bg-violet-800 active:bg-violet-900" onClick={saveProfile}>
+                                    <Button className="rounded-xl bg-primary text-white hover:bg-violet-800 active:bg-violet-900" onClick={saveProfile}>
                                         Save
                                     </Button>
                                 </div>
@@ -311,7 +311,7 @@ export default function SettingsPage() {
                     <Card className="rounded-2xl border border-border bg-card shadow-sm animate-in fade-in duration-300">
                         <CardHeader>
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
-                                <Lock className="h-5 w-5 text-violet-700" />
+                                <Lock className="h-5 w-5 text-primary" />
                                 Security
                             </CardTitle>
                         </CardHeader>
@@ -334,7 +334,7 @@ export default function SettingsPage() {
                                 <Button variant="outline" className="rounded-xl" onClick={() => setSecurity({ newPassword: "", confirmPassword: "" })}>
                                     Clear
                                 </Button>
-                                <Button className="rounded-xl bg-violet-700 text-white hover:bg-violet-800 active:bg-violet-900" onClick={changePassword}>
+                                <Button className="rounded-xl bg-primary text-white hover:bg-violet-800 active:bg-violet-900" onClick={changePassword}>
                                     Update Password
                                 </Button>
                             </div>
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                     <Card className="rounded-2xl border border-border bg-card shadow-sm animate-in fade-in duration-300">
                         <CardHeader>
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
-                                <Bell className="h-5 w-5 text-violet-700" />
+                                <Bell className="h-5 w-5 text-primary" />
                                 Preferences
                             </CardTitle>
                         </CardHeader>
@@ -394,7 +394,7 @@ export default function SettingsPage() {
                                 <Button variant="outline" className="rounded-xl" onClick={() => setPrefs({ emailNotifications: true, smsNotifications: false, productUpdates: true })}>
                                     Reset
                                 </Button>
-                                <Button className="rounded-xl bg-violet-700 text-white hover:bg-violet-800 active:bg-violet-900" onClick={savePreferences}>
+                                <Button className="rounded-xl bg-primary text-white hover:bg-violet-800 active:bg-violet-900" onClick={savePreferences}>
                                     Save Preferences
                                 </Button>
                             </div>

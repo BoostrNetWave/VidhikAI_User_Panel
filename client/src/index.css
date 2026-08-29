@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,65 +6,76 @@
 
 @layer base {
     :root {
-        --background: 263 50% 100%;
-        --foreground: 263 50% 10%;
+        /* Base Colors */
+        --background: 210 40% 98%;      /* #F8FAFC */
+        --foreground: 222 47% 11%;      /* #0F172A */
+        
+        --card: 0 0% 100%;              /* #FFFFFF */
+        --card-foreground: 222 47% 11%;
+        
+        --popover: 0 0% 100%;           /* #FFFFFF */
+        --popover-foreground: 222 47% 11%;
 
-        --card: 0 0% 100%;
-        --card-foreground: 263 50% 10%;
-
-        --popover: 0 0% 100%;
-        --popover-foreground: 263 50% 10%;
-
-        --primary: 263 90% 68%;
+        /* Surface Muted */
+        --muted: 210 40% 96%;           /* #F1F5F9 */
+        --muted-foreground: 215 16% 47%;/* #64748B */
+        
+        /* Brand Primary */
+        --primary: 240 5.9% 10%;         /* #18181B (Zinc 900) */
         --primary-foreground: 0 0% 100%;
+        
+        --secondary: 240 4.8% 95.9%;      /* #F4F4F5 (Zinc 100) */
+        --secondary-foreground: 240 5.9% 10%;
+        
+        /* Borders */
+        --border: 214 32% 91%;          /* #E2E8F0 */
+        --border-strong: 214 32% 84%;   /* #CBD5E1 */
+        --input: 214 32% 91%;
+        --ring: 240 5.9% 10%;
 
-        --secondary: 263 30% 96%;
-        --secondary-foreground: 263 90% 40%;
+        /* Semantic Colors */
+        --success: 142 71% 29%;         /* #15803D */
+        --success-foreground: 0 0% 100%;
+        --success-soft: 138 76% 97%;    /* #F0FDF4 */
+        
+        --warning: 34 91% 37%;          /* #B45309 */
+        --warning-foreground: 0 0% 100%;
+        --warning-soft: 48 100% 96%;    /* #FFFBEB */
+        
+        --destructive: 0 74% 42%;       /* #B91C1C */
+        --destructive-foreground: 0 0% 100%;
+        --destructive-soft: 0 86% 97%;  /* #FEF2F2 */
+        
+        --info: 199 89% 32%;            /* #0369A1 */
+        --info-foreground: 0 0% 100%;
+        --info-soft: 204 100% 97%;      /* #F0F9FF */
+        
+        --sidebar: 0 0% 100%;
+        --sidebar-foreground: 222 47% 11%;
+        --sidebar-border: 214 32% 91%;
 
-        --muted: 263 20% 96%;
-        --muted-foreground: 263 10% 40%;
-
-        --accent: 263 90% 96%;
-        --accent-foreground: 263 90% 40%;
-
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-
-        --border: 263 20% 90%;
-        --input: 263 20% 90%;
-        --ring: 263 90% 68%;
-
-        --radius: 0.75rem;
+        --radius: 0.5rem; /* 8px default radius */
     }
 
     .dark {
-        --background: 263 50% 3%;
-        --foreground: 263 10% 98%;
-
-        --card: 263 50% 5%;
-        --card-foreground: 263 10% 98%;
-
-        --popover: 263 50% 5%;
-        --popover-foreground: 263 10% 98%;
-
-        --primary: 263 90% 68%;
-        --primary-foreground: 0 0% 100%;
-
-        --secondary: 263 30% 12%;
-        --secondary-foreground: 263 10% 98%;
-
-        --muted: 263 30% 12%;
-        --muted-foreground: 263 10% 65%;
-
-        --accent: 263 30% 15%;
-        --accent-foreground: 263 90% 85%;
-
+        /* Not actively designing for dark mode yet, but keeping placeholders to prevent breaking */
+        --background: 222 47% 11%;
+        --foreground: 210 40% 98%;
+        --card: 222 47% 11%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222 47% 11%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 240 5.9% 10%;
+        --secondary: 240 3.7% 15.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 217 32% 17%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --border: 217 32% 17%;
+        --input: 217 32% 17%;
+        --ring: 0 0% 98%;
         --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 263 10% 98%;
-
-        --border: 263 30% 15%;
-        --input: 263 30% 15%;
-        --ring: 263 90% 68%;
+        --destructive-foreground: 210 40% 98%;
     }
 }
 
@@ -72,52 +83,9 @@
     * {
         @apply border-border;
     }
-
+    
     body {
         @apply bg-background text-foreground font-sans antialiased;
         font-family: 'Inter', sans-serif;
-    }
-    
-    .admin-theme {
-        --background: 240 14.3% 98%;      /* #FAFAFB */
-        --foreground: 220 17.6% 10%;      /* #15181E */
-        
-        --card: 0 0% 100%;                /* #FFFFFF (Surface) */
-        --card-foreground: 220 17.6% 10%; /* #15181E */
-        
-        --popover: 0 0% 100%;             /* #FFFFFF */
-        --popover-foreground: 220 17.6% 10%;
-        
-        --primary: 214 52% 24.5%;         /* #1E3A5F */
-        --primary-foreground: 216 33.3% 97.1%; /* #F5F7FA */
-        
-        --secondary: 228 17.6% 95.3%;     /* Muted for secondary */
-        --secondary-foreground: 220 17.6% 10%;
-        
-        --muted: 228 17.6% 95.3%;         /* #F1F2F6 */
-        --muted-foreground: 220 8.9% 46.1%; /* #6B7280 */
-        
-        --accent: 36 34% 51.6%;           /* #B08D57 */
-        --accent-foreground: 0 0% 100%;   /* White on accent */
-        
-        --destructive: 6 78.3% 46.1%;     /* #C0392B */
-        --destructive-foreground: 0 0% 100%;
-        
-        --border: 220 18% 91%;            /* #E3E6EC */
-        --input: 220 18% 91%;
-        --ring: 214 52% 24.5%;            /* #1E3A5F */
-        
-        --sidebar: 218 52% 12.4%;         /* #0F1B30 */
-        --sidebar-foreground: 219 28% 84%;/* #C9D2E3 */
-        
-        --success: 150 59.4% 30%;         /* #1F7A4D */
-        --success-foreground: 0 0% 100%;
-        
-        --warning: 43 89% 38.2%;          /* #B8860B */
-        --warning-foreground: 0 0% 100%;
-        
-        --radius: 0.625rem;               /* 10px */
-        
-        font-family: 'Geist Sans', 'Inter', sans-serif;
     }
 }

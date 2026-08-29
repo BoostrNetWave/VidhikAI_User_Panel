@@ -35,8 +35,8 @@ const initialNotifications = [
         time: "45 minutes ago",
         type: "info",
         icon: MessageSquare,
-        color: "text-violet-500",
-        bgColor: "bg-violet-100",
+        color: "text-primary",
+        bgColor: "bg-secondary/80",
         read: false,
         fullDetails: "Adv. Mehta sent: \"Please check the updated clause 4.2 regarding the termination period. I believe we should extend it to 60 days to better protect our interests. Let me know your thoughts.\""
     },
@@ -71,8 +71,8 @@ const initialNotifications = [
         time: "3 days ago",
         type: "info",
         icon: MessageSquare,
-        color: "text-violet-500",
-        bgColor: "bg-violet-100",
+        color: "text-primary",
+        bgColor: "bg-secondary/80",
         read: true,
         fullDetails: "Adv. Sharma has shared 'Case_Brief_v1.docx' with you. Please review the document and provide your comments by the end of the week."
     }
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
                         notifications.map((notification) => (
                             <Card
                                 key={notification.id}
-                                className={`transition-all hover:shadow-md cursor-pointer ${!notification.read ? 'border-l-4 border-l-violet-500 bg-violet-50/10' : ''}`}
+                                className={`transition-all hover:shadow-md cursor-pointer ${!notification.read ? 'border-l-4 border-l-violet-500 bg-secondary/10' : ''}`}
                                 onClick={() => handleNotificationClick(notification)}
                             >
                                 <CardContent className="p-4 flex items-start gap-4">
@@ -171,7 +171,7 @@ export default function NotificationsPage() {
                                         <div className="flex items-center justify-between">
                                             <p className={`text-base font-semibold ${!notification.read ? 'text-gray-900' : 'text-gray-600'}`}>
                                                 {notification.title}
-                                                {!notification.read && <Badge variant="secondary" className="ml-2 bg-violet-100 text-violet-700 hover:bg-violet-100">New</Badge>}
+                                                {!notification.read && <Badge variant="secondary" className="ml-2 bg-secondary/80 text-primary hover:bg-secondary/80">New</Badge>}
                                             </p>
                                             <span className="text-xs text-gray-500">{notification.time}</span>
                                         </div>

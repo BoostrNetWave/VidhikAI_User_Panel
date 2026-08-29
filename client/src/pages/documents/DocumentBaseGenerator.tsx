@@ -8,6 +8,7 @@ import { saveAs } from 'file-saver';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { toast } from "sonner";
+import html2pdf from 'html2pdf.js';
 import DashboardLayout from '@/layout/DashboardLayout';
 import { UserNav } from "@/components/dashboard/UserNav";
 import { DocumentGeneratorLoader } from '@/components/documents/DocumentGeneratorLoader';
@@ -15,7 +16,14 @@ import { DocumentPreview } from '@/components/documents/DocumentPreview';
 import { DocumentInfoBar } from '@/components/documents/DocumentInfoBar';
 import { DocumentSidebar } from '@/components/documents/DocumentSidebar';
 import { parseHtmlToDocx } from '@/lib/docxUtils';
-
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 interface DocumentBaseGeneratorProps {
     title: string;
     description: string;
@@ -178,6 +186,55 @@ export default function DocumentBaseGenerator({
         }
     };
 
+    const handleDownloadPDF = async () => {
+        if (!generatedDocument) {
+            toast.error('No document content to download. Please generate the document first.');
+            return;
+        }
+
+        try {
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>${docxFilename.replace('.docx', '')}</title>
+                            <style>
+                                body { 
+                                    font-family: 'Calibri', 'Inter', sans-serif; 
+                                    padding: 40px; 
+                                    line-height: 1.6; 
+                                    text-align: justify;
+                                    color: #000;
+                                }
+                                h1, h2, h3 { text-align: center; }
+                                @media print {
+                                    body { padding: 0; }
+                                    @page { margin: 2cm; }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            ${generatedDocument}
+                            <script>
+                                window.onload = function() { 
+                                    window.print();
+                                    setTimeout(function() { window.close(); }, 500);
+                                }
+                            </script>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            } else {
+                toast.error('Pop-up blocker prevented PDF generation. Please allow pop-ups for this site.');
+            }
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            toast.error('Failed to generate PDF.');
+        }
+    };
+
     const handleSaveToWorkspace = async () => {
         if (!generatedDocument) return;
 
@@ -218,9 +275,9 @@ export default function DocumentBaseGenerator({
         <DashboardLayout userNav={<UserNav />}>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-8 space-y-6">
-                    <Card className="border-l-4 border-l-violet-600">
+                    <Card className="border-l-4 border-l-zinc-900">
                         <CardHeader className="flex flex-row gap-4 space-y-0">
-                            <div className="h-12 w-12 bg-violet-50 text-violet-600 rounded-lg flex items-center justify-center shrink-0">
+                            <div className="h-12 w-12 bg-secondary text-primary rounded-lg flex items-center justify-center shrink-0">
                                 <FileText className="h-6 w-6" />
                             </div>
                             <div className="flex-1">
@@ -281,10 +338,22 @@ export default function DocumentBaseGenerator({
                                         {isEditMode ? <Eye className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                                         {isEditMode ? 'Preview' : 'Edit'}
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={handleDownloadDOCX} className="gap-2">
-                                        <Download className="h-4 w-4" />
-                                        Download DOCX
-                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="sm" className="gap-2">
+                                                <Download className="h-4 w-4" />
+                                                Download
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={handleDownloadPDF} className="cursor-pointer">
+                                                Download PDF
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleDownloadDOCX} className="cursor-pointer">
+                                                Download DOCX
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                     <Button
                                         variant={saveStatus === 'saved' ? "ghost" : "default"}
                                         size="sm"

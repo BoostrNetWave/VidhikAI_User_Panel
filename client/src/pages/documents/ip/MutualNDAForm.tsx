@@ -81,7 +81,7 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -89,9 +89,9 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
             </div>
 
             {/* Section 1: Agreement Profile & Parties */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Agreement Profile & Parties
                     </CardTitle>
@@ -180,9 +180,9 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
             </Card>
 
             {/* Section 2: Recitals & Confidentiality Definition */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Lock className="h-5 w-5" />
                         Business Purpose & Reciprocal Scope
                     </CardTitle>
@@ -261,9 +261,9 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
             </Card>
 
             {/* Section 3: Reciprocal Obligations & Intellectual Property */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Reciprocal Obligations & IP Covenants
                     </CardTitle>
@@ -336,9 +336,9 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
             </Card>
 
             {/* Section 4: Term, Remedies & Termination */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Timelines, Remedies & Termination
                     </CardTitle>
@@ -461,9 +461,9 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
             </Card>
 
             {/* Section 5: Governing Law & Dispute Resolution */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Jurisdiction & Dispute Arbitration
                     </CardTitle>
@@ -536,9 +536,9 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
             </Card>
 
             {/* Section 6: Exits & Execution Coordinates */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Coordinates
                     </CardTitle>
@@ -638,9 +638,9 @@ const MutualNDAForm: React.FC<MutualNDAFormProps> = ({
             </Card>
 
             {/* Section 7: Configuration Setup Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Configuration Flags
                     </CardTitle>

@@ -76,6 +76,21 @@ export const adminService = {
         return response.data;
     },
 
+    async suspendUser(id: string, isSuspended: boolean) {
+        const response = await api.post(`/admin/users/${id}/suspend`, { isSuspended });
+        return response.data;
+    },
+
+    async sendEmail(id: string, subject: string, body: string) {
+        const response = await api.post(`/admin/users/${id}/send-email`, { subject, body });
+        return response.data;
+    },
+
+    async reverifyUser(id: string) {
+        const response = await api.post(`/admin/users/${id}/reverify`);
+        return response.data;
+    },
+
     async getAllConsultations() {
         const response = await api.get('/admin/consultations');
         return response.data;

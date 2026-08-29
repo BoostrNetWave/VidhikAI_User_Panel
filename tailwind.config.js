@@ -21,6 +21,7 @@ export default {
             },
             colors: {
                 border: "hsl(var(--border))",
+                "border-strong": "hsl(var(--border-strong))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
                 background: "hsl(var(--background))",
@@ -36,6 +37,7 @@ export default {
                 destructive: {
                     DEFAULT: "hsl(var(--destructive))",
                     foreground: "hsl(var(--destructive-foreground))",
+                    soft: "hsl(var(--destructive-soft))",
                 },
                 muted: {
                     DEFAULT: "hsl(var(--muted))",
@@ -56,14 +58,22 @@ export default {
                 sidebar: {
                     DEFAULT: "hsl(var(--sidebar))",
                     foreground: "hsl(var(--sidebar-foreground))",
+                    border: "hsl(var(--sidebar-border))",
                 },
                 success: {
                     DEFAULT: "hsl(var(--success))",
                     foreground: "hsl(var(--success-foreground))",
+                    soft: "hsl(var(--success-soft))",
                 },
                 warning: {
                     DEFAULT: "hsl(var(--warning))",
                     foreground: "hsl(var(--warning-foreground))",
+                    soft: "hsl(var(--warning-soft))",
+                },
+                info: {
+                    DEFAULT: "hsl(var(--info))",
+                    foreground: "hsl(var(--info-foreground))",
+                    soft: "hsl(var(--info-soft))",
                 },
             },
             borderRadius: {

@@ -79,7 +79,7 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -87,9 +87,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </div>
 
             {/* Section 1: First Party (Employer/Client) */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         First Party details
                     </CardTitle>
@@ -156,9 +156,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </Card>
 
             {/* Section 2: Second Party (Restricted Person) */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Second Party details
                     </CardTitle>
@@ -224,9 +224,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </Card>
 
             {/* Section 3: Relationship & Purpose */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Users className="h-5 w-5" />
                         Engagement Relationship & Legitimate Interests
                     </CardTitle>
@@ -311,9 +311,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </Card>
 
             {/* Section 4: Covenants & Restrictions */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Restrictive Covenants
                     </CardTitle>
@@ -402,9 +402,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </Card>
 
             {/* Section 5: Intellectual Property & Information Security */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Confidentiality & IP
                     </CardTitle>
@@ -460,9 +460,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </Card>
 
             {/* Section 6: Terms & Governance */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Terms & Governance
                     </CardTitle>
@@ -557,9 +557,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </Card>
 
             {/* Section 7: Signatures & Witnesses */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Credentials
                     </CardTitle>
@@ -632,9 +632,9 @@ const NonCompeteForm: React.FC<NonCompeteFormProps> = ({
             </Card>
 
             {/* Section 8: specific layout flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Configuration Flags
                     </CardTitle>

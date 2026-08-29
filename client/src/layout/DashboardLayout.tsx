@@ -31,7 +31,7 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
     };
 
     return (
-        <div className="flex min-h-screen bg-secondary/30 overflow-x-hidden">
+        <div className="flex min-h-screen bg-background overflow-x-hidden">
             {/* Mobile Backdrop */}
             {isMobileOpen && (
                 <div 
@@ -45,7 +45,7 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
                 className={`fixed inset-y-0 left-0 z-50 bg-white border-r flex flex-col transition-all duration-300 ease-in-out 
                     ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
                     lg:translate-x-0 
-                    ${isCollapsed ? 'lg:w-20' : 'lg:w-64'} w-64`}
+                    ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-[248px]'} w-[248px]`}
             >
                 <div className={`h-24 flex items-center border-b border-slate-200 relative ${isCollapsed ? 'lg:justify-center px-0' : 'px-4'} justify-between px-4`}>
                     <Logo isCollapsed={isCollapsed} className="h-20 w-full lg:block hidden" />
@@ -206,7 +206,7 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
 
             {/* Main Content */}
             <div
-                className={`flex flex-col w-full transition-all duration-300 ease-in-out pl-0 ${isCollapsed ? 'lg:pl-20' : 'lg:pl-64'
+                className={`flex flex-col w-full transition-all duration-300 ease-in-out pl-0 ${isCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[248px]'
                     }`}
             >
                 {/* Topbar */}
@@ -222,6 +222,17 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
+
+                        {/* Back Button */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(-1)}
+                            className="mr-2 text-slate-600 hover:bg-slate-100 shrink-0"
+                            aria-label="Go Back"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </Button>
 
                         <div className="relative w-full">
                             <DashboardSearch />
@@ -248,7 +259,7 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
                     </div>
                 </header>
 
-                <main className="flex-1 p-4 sm:p-8 bg-secondary/30">
+                <main className="flex-1 p-4 sm:p-8 bg-background">
                     <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
                         {children}
                     </div>

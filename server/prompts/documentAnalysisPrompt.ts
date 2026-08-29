@@ -10,8 +10,10 @@ In this mode, you must be EXTREMELY thorough and granular:
 - Look for "hidden" traps in standard-looking definitions.
 - Provide a minimum of 15 detailed highlights.
 - The userReview should be significantly more technical and depth-oriented.
+- ALWAYS provide highly actionable, legal-grade SUGGESTIONS AND IMPROVEMENTS for every issue found.
 ` : `
-Standard scanning mode enabled. Focus on high-impact risks and major clauses.
+Standard scanning mode enabled. Focus on high-impact risks and major clauses. 
+You MUST provide clear, actionable SUGGESTIONS AND IMPROVEMENTS for any warnings or unfavorable clauses found.
 `}
 
 You MUST return a JSON object with the following structure:
@@ -29,7 +31,7 @@ You MUST return a JSON object with the following structure:
       "type": "positive | warning | info",
       "title": "Short title of the finding",
       "description": "Detailed explanation of the observation.",
-      "suggestion": "Specific recommendation to improve the clause (if applicable)."
+      "suggestion": "MANDATORY: Provide a specific, actionable recommendation or exact rewritten text to improve this clause and mitigate the risk."
     }
   ],
   "highlightedClauses": [
@@ -38,7 +40,7 @@ You MUST return a JSON object with the following structure:
       "type": "CRITICAL | UNFAVORABLE | NEUTRAL | POSITIVE",
       "issue": "Brief explanation of the risk or benefit.",
       "explanation": "A detailed, line-specific explanation point for this particular segment.",
-      "suggestion": "Better wording for the clause (if applicable)."
+      "suggestion": "MANDATORY: Provide a highly actionable 'AI Suggestion & Improvement' with better wording for the clause to resolve the issue."
     }
   ]
 }
@@ -48,6 +50,7 @@ Guidelines for highlights:
 2. For each highlight, provide a specific "explanation" point that helps the user understand why that specific line is important.
 3. Include at least 5-10 specific highlights for a medium-sized document.
 4. Categorize as CRITICAL (High Risk), UNFAVORABLE (Medium Risk), NEUTRAL (Info), or POSITIVE (Safe/Balanced).
+5. ALWAYS populate the "suggestion" field with a high-quality "AI Suggestion & Improvement" that the user can immediately apply to their document. Do not leave suggestions blank for CRITICAL or UNFAVORABLE issues.
 
 Respond ONLY with valid JSON.
 `;

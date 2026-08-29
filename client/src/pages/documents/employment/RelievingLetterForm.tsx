@@ -81,7 +81,7 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -89,9 +89,9 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
             </div>
 
             {/* Section 1: Company Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Details
                     </CardTitle>
@@ -169,9 +169,9 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
             </Card>
 
             {/* Section 2: Employee Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Employee Details
                     </CardTitle>
@@ -265,9 +265,9 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
             </Card>
 
             {/* Section 3: Separation Context & Period */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Calendar className="h-5 w-5" />
                         Separation Details
                     </CardTitle>
@@ -412,9 +412,9 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
             </Card>
 
             {/* Section 4: Clearances */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <ClipboardCheck className="h-5 w-5" />
                         Clearance Status
                     </CardTitle>
@@ -529,9 +529,9 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
             </Card>
 
             {/* Section 5: Settlement & Dues */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Briefcase className="h-5 w-5" />
                         Settlement Details
                     </CardTitle>
@@ -594,9 +594,9 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
             </Card>
 
             {/* Section 6: Obligations & Appreciation */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <ShieldCheck className="h-5 w-5" />
                         Covenants & Contributions
                     </CardTitle>
@@ -634,9 +634,9 @@ const RelievingLetterForm: React.FC<RelievingLetterFormProps> = ({
             </Card>
 
             {/* Section 7: Signatories & Execution */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <FileText className="h-5 w-5" />
                         Execution Details
                     </CardTitle>

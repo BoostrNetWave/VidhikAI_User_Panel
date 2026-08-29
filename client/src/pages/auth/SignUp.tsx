@@ -94,9 +94,9 @@ export default function SignUp() {
             {/* Left - Branding Panel */}
             <div className="hidden lg:flex lg:w-5/12 bg-gradient-to-br from-[#120F2E] via-[#1E113E] to-[#0A0718] relative overflow-hidden items-center justify-center p-12 select-none">
                 {/* Decorative glows */}
-                <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-violet-500/10 to-transparent blur-3xl pointer-events-none" />
+                <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-primary/10 to-transparent blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
-                <div className="absolute -top-40 -right-40 w-[400px] h-[400px] rounded-full bg-violet-500/10 blur-[100px] pointer-events-none" />
+                <div className="absolute -top-40 -right-40 w-[400px] h-[400px] rounded-full bg-primary/90/10 blur-[100px] pointer-events-none" />
                 
                 {/* Dots grid pattern */}
                 <div 
@@ -109,8 +109,8 @@ export default function SignUp() {
 
                 <div className="relative z-10 text-white max-w-md">
                     <Link to="/" className="inline-flex items-center gap-2 mb-10 transition-transform duration-300 hover:scale-105">
-                        <Scale className="h-8 w-8 text-violet-400" />
-                        <span className="font-display text-2xl font-bold tracking-tight">Vidhik <span className="text-violet-400">AI</span></span>
+                        <Scale className="h-8 w-8 text-primary/80" />
+                        <span className="font-display text-2xl font-bold tracking-tight">Vidhik <span className="text-primary/80">AI</span></span>
                     </Link>
                     
                     <h2 className="font-display text-4xl font-extrabold mb-6 leading-tight">
@@ -131,7 +131,7 @@ export default function SignUp() {
                             "Setting up our team account was seamless. Vidhik AI is hands down the most premium and reliable legal intelligence platform we have used."
                         </p>
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-violet-500 to-indigo-500 flex items-center justify-center text-xs font-bold shadow-md">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-indigo-500 flex items-center justify-center text-xs font-bold shadow-md">
                                 AM
                             </div>
                             <div>
@@ -174,9 +174,9 @@ export default function SignUp() {
                     {/* Small Logo for mobile view */}
                     <div className="text-center mb-8 lg:hidden">
                         <Link to="/" className="inline-flex items-center gap-2">
-                            <Scale className="h-7 w-7 text-violet-600" />
+                            <Scale className="h-7 w-7 text-primary" />
                             <span className="font-display text-xl font-bold tracking-tight text-slate-900">
-                                Vidhik <span className="text-violet-600">AI</span>
+                                Vidhik <span className="text-primary">AI</span>
                             </span>
                         </Link>
                     </div>
@@ -205,7 +205,7 @@ export default function SignUp() {
                                                     <Input 
                                                         placeholder="John Doe" 
                                                         autoComplete="off" 
-                                                        className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:border-violet-500 focus:ring-violet-500/20 focus-visible:ring-violet-500/20 focus-visible:border-violet-500 transition-all rounded-lg"
+                                                        className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-primary/20 focus-visible:ring-primary/20 focus-visible:border-primary transition-all rounded-lg"
                                                         {...field} 
                                                     />
                                                 </div>
@@ -227,7 +227,7 @@ export default function SignUp() {
                                                     <Input 
                                                         placeholder="name@company.com" 
                                                         autoComplete="off" 
-                                                        className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:border-violet-500 focus:ring-violet-500/20 focus-visible:ring-violet-500/20 focus-visible:border-violet-500 transition-all rounded-lg"
+                                                        className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-primary/20 focus-visible:ring-primary/20 focus-visible:border-primary transition-all rounded-lg"
                                                         {...field} 
                                                     />
                                                 </div>
@@ -250,7 +250,7 @@ export default function SignUp() {
                                                         type={showPassword ? "text" : "password"}
                                                         placeholder="••••••••"
                                                         autoComplete="off"
-                                                        className="pl-10 pr-10 h-11 bg-slate-50/50 border-slate-200 focus:border-violet-500 focus:ring-violet-500/20 focus-visible:ring-violet-500/20 focus-visible:border-violet-500 transition-all rounded-lg"
+                                                        className="pl-10 pr-10 h-11 bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-primary/20 focus-visible:ring-primary/20 focus-visible:border-primary transition-all rounded-lg"
                                                         {...field}
                                                     />
                                                 </FormControl>
@@ -285,7 +285,7 @@ export default function SignUp() {
                                                             passwordStrength > 75 
                                                                 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' 
                                                                 : passwordStrength > 50 
-                                                                ? 'bg-gradient-to-r from-indigo-400 to-violet-500' 
+                                                                ? 'bg-gradient-to-r from-indigo-400 to-primary' 
                                                                 : 'bg-gradient-to-r from-rose-400 to-orange-500'
                                                         }`}
                                                         style={{ width: `${passwordStrength}%` }}
@@ -306,12 +306,12 @@ export default function SignUp() {
                                                 <Checkbox
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
-                                                    className="border-slate-300 text-violet-600 focus:ring-violet-500 mt-1"
+                                                    className="border-slate-300 text-primary focus:ring-primary mt-1"
                                                 />
                                             </FormControl>
                                             <div className="space-y-1 leading-none">
                                                 <FormLabel className="text-xs text-slate-500 leading-normal font-medium">
-                                                    I agree to the <Link to="/terms" className="text-violet-600 font-semibold hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-violet-600 font-semibold hover:underline">Privacy Policy</Link>.
+                                                    I agree to the <Link to="/terms" className="text-primary font-semibold hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-primary font-semibold hover:underline">Privacy Policy</Link>.
                                                 </FormLabel>
                                                 <FormMessage />
                                             </div>
@@ -322,7 +322,7 @@ export default function SignUp() {
                                 <Button 
                                     type="submit" 
                                     disabled={isLoading} 
-                                    className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold h-11 rounded-lg flex items-center justify-center transition-all duration-300 shadow-[0_10px_20px_-5px_rgba(124,58,237,0.3)] hover:shadow-[0_15px_25px_-5px_rgba(124,58,237,0.4)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
+                                    className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary hover:to-indigo-700 text-white font-semibold h-11 rounded-lg flex items-center justify-center transition-all duration-300 shadow-[0_10px_20px_-5px_rgba(124,58,237,0.3)] hover:shadow-[0_15px_25px_-5px_rgba(124,58,237,0.4)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
                                 >
                                     {isLoading ? (
                                         <>
@@ -341,7 +341,7 @@ export default function SignUp() {
 
                         <div className="mt-8 text-center text-sm text-slate-500 border-t border-slate-100 pt-6">
                             Already have an account?{" "}
-                            <Link to="/login" className="font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+                            <Link to="/login" className="font-semibold text-primary hover:text-primary transition-colors">
                                 Sign in
                             </Link>
                         </div>

@@ -89,7 +89,7 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -97,9 +97,9 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
             </div>
 
             {/* Section 1: Agreement Profile & Parties */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Agreement Profile & Parties
                     </CardTitle>
@@ -188,9 +188,9 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
             </Card>
 
             {/* Section 2: Commercial Purpose & IP Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <FileText className="h-5 w-5" />
                         Assigned IP Assets & Categories
                     </CardTitle>
@@ -290,9 +290,9 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
             </Card>
 
             {/* Section 3: Assignment Covenants & Consideration */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Assignment Scope & Consideration
                     </CardTitle>
@@ -459,9 +459,9 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
             </Card>
 
             {/* Section 4: Warranties, Indemnities & Exits */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Warranties, Indemnities & Exits
                     </CardTitle>
@@ -561,9 +561,9 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
             </Card>
 
             {/* Section 5: Governing Law & Dispute Resolution */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Jurisdiction & Dispute Arbitration
                     </CardTitle>
@@ -636,9 +636,9 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
             </Card>
 
             {/* Section 6: Exits & Execution Coordinates */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Coordinates
                     </CardTitle>
@@ -738,9 +738,9 @@ const IPAssignmentForm: React.FC<IPAssignmentFormProps> = ({
             </Card>
 
             {/* Section 7: Configuration Setup Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Configuration Flags
                     </CardTitle>

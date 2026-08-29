@@ -16,6 +16,9 @@ import {
     getAllDocuments,
     getUserDetails,
     updateUserSubscription,
+    suspendUser,
+    sendDirectEmail,
+    reverifyUser,
     getAllConsultations,
     getLoginHistory
 } from '../controllers/adminController';
@@ -44,6 +47,9 @@ router.post('/tickets/:id/reply', protect, adminOnly, replyToTicket);
 router.get('/documents', protect, adminOnly, getAllDocuments);
 router.get('/users/:id/details', protect, adminOnly, getUserDetails);
 router.post('/users/:id/subscription', protect, adminOnly, updateUserSubscription);
+router.post('/users/:id/suspend', protect, adminOnly, suspendUser);
+router.post('/users/:id/send-email', protect, adminOnly, sendDirectEmail);
+router.post('/users/:id/reverify', protect, adminOnly, reverifyUser);
 router.get('/consultations', protect, adminOnly, getAllConsultations);
 router.get('/login-history', protect, adminOnly, getLoginHistory);
 

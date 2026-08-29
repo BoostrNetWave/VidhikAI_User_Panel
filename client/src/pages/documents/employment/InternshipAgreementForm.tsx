@@ -88,7 +88,7 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -96,9 +96,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </div>
 
             {/* Section 1: Organization Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Organization Details
                     </CardTitle>
@@ -166,9 +166,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </Card>
 
             {/* Section 2: Intern Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Intern Details
                     </CardTitle>
@@ -233,9 +233,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </Card>
 
             {/* Section 3: Internship details & SOW */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Award className="h-5 w-5" />
                         Internship Structure & SOW
                     </CardTitle>
@@ -480,9 +480,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </Card>
 
             {/* Section 4: Stipend & Reimbursements */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Stipend & Travel Allocations
                     </CardTitle>
@@ -545,9 +545,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </Card>
 
             {/* Section 5: Legal & General Clauses */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Legal Compliance & IP
                     </CardTitle>
@@ -670,9 +670,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </Card>
 
             {/* Section 6: Exits & Governance */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Termination & Governance
                     </CardTitle>
@@ -751,9 +751,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </Card>
 
             {/* Section 7: Execution Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Details
                     </CardTitle>
@@ -836,9 +836,9 @@ const InternshipAgreementForm: React.FC<InternshipAgreementFormProps> = ({
             </Card>
 
             {/* Section 8: Specific Layout Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Configuration Flags
                     </CardTitle>

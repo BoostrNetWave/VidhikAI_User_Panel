@@ -75,7 +75,7 @@ const SalaryIncrementLetterForm: React.FC<SalaryIncrementLetterFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -83,9 +83,9 @@ const SalaryIncrementLetterForm: React.FC<SalaryIncrementLetterFormProps> = ({
             </div>
 
             {/* Section 1: Corporate Profile & Letter Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company & Letter Details
                     </CardTitle>
@@ -188,9 +188,9 @@ const SalaryIncrementLetterForm: React.FC<SalaryIncrementLetterFormProps> = ({
             </Card>
 
             {/* Section 2: Employee Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Employee Credentials
                     </CardTitle>
@@ -261,9 +261,9 @@ const SalaryIncrementLetterForm: React.FC<SalaryIncrementLetterFormProps> = ({
             </Card>
 
             {/* Section 3: Compensation Revision Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <TrendingUp className="h-5 w-5" />
                         Compensation Revision Covenants
                     </CardTitle>
@@ -417,9 +417,9 @@ const SalaryIncrementLetterForm: React.FC<SalaryIncrementLetterFormProps> = ({
             </Card>
 
             {/* Section 4: General HR Covenants */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Employment Continuity & Taxes
                     </CardTitle>
@@ -497,9 +497,9 @@ const SalaryIncrementLetterForm: React.FC<SalaryIncrementLetterFormProps> = ({
             </Card>
 
             {/* Section 5: Signature Coordinates */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Coordinates
                     </CardTitle>

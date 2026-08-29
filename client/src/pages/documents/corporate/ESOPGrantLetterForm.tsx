@@ -87,7 +87,7 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -95,9 +95,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </div>
 
             {/* Section 1: Company Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Details
                     </CardTitle>
@@ -179,9 +179,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </Card>
 
             {/* Section 2: Employee Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Employee Details
                     </CardTitle>
@@ -295,9 +295,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </Card>
 
             {/* Section 3: Grant Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Award className="h-5 w-5" />
                         Grant & Option Details
                     </CardTitle>
@@ -468,9 +468,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </Card>
 
             {/* Section 4: Vesting Schedule */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Vesting Schedule
                     </CardTitle>
@@ -570,9 +570,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </Card>
 
             {/* Section 5: Exercise & Lapse */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Exercise & Lapse Terms
                     </CardTitle>
@@ -651,9 +651,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </Card>
 
             {/* Section 6: Restrictions & Taxation */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Restrictions & Taxation
                     </CardTitle>
@@ -698,9 +698,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </Card>
 
             {/* Section 7: Execution & Signatures */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Details
                     </CardTitle>
@@ -773,9 +773,9 @@ const ESOPGrantLetterForm: React.FC<ESOPGrantLetterFormProps> = ({
             </Card>
 
             {/* Section 8: Specific Scheme Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Scheme Flags
                     </CardTitle>

@@ -80,7 +80,7 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -88,9 +88,9 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
             </div>
 
             {/* Section 1: Company Profile & Controls */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company & Control Details
                     </CardTitle>
@@ -231,9 +231,9 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
             </Card>
 
             {/* Section 2: Values & Scope */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Users className="h-5 w-5" />
                         Company Values & Applicability
                     </CardTitle>
@@ -289,9 +289,9 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
             </Card>
 
             {/* Section 3: Professional & Workplace Behavior */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Award className="h-5 w-5" />
                         Professional & Workplace Behavior
                     </CardTitle>
@@ -387,9 +387,9 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
             </Card>
 
             {/* Section 4: Conflict of Interest & Anti-Bribery */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Conflicts, Gifts & Anti-Corruption
                     </CardTitle>
@@ -451,9 +451,9 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
             </Card>
 
             {/* Section 5: Data Security & Intellectual Property */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Assets, Confidentiality & DPDP
                     </CardTitle>
@@ -560,9 +560,9 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
             </Card>
 
             {/* Section 6: Exits & Governance */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Grievances & Enforcement
                     </CardTitle>
@@ -685,9 +685,9 @@ const CodeOfConductForm: React.FC<CodeOfConductFormProps> = ({
             </Card>
 
             {/* Section 7: Configuration Setup Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Configuration Flags
                     </CardTitle>

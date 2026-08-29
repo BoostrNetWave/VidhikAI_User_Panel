@@ -26,7 +26,8 @@ export const handleLegalResearch = async (req: any, res: Response) => {
             model: model || 'gpt-4o',
             systemPrompt: getResearchSystemPrompt(),
             userPrompt: getResearchUserPrompt(query, isFollowUp),
-            history: formattedHistory
+            history: formattedHistory,
+            feature: 'chatbot'
         });
 
         // Log usage in UsageRecord

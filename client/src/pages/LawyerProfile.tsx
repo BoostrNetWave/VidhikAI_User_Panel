@@ -51,7 +51,7 @@ export default function LawyerProfile() {
         return (
             <DashboardLayout userNav={<UserNav />}>
                 <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-                    <div className="h-10 w-10 border-4 border-violet-700 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                     <p className="text-muted-foreground font-semibold">Loading lawyer profile...</p>
                 </div>
             </DashboardLayout>
@@ -304,7 +304,7 @@ export default function LawyerProfile() {
                                 </div>
 
                                 <Button 
-                                    className="w-full bg-violet-700 text-white hover:bg-violet-800 rounded-2xl h-14 font-bold text-base shadow-sm transition-all active:scale-[0.98]"
+                                    className="w-full bg-primary text-white hover:bg-violet-800 rounded-2xl h-14 font-bold text-base shadow-sm transition-all active:scale-[0.98]"
                                     onClick={() => navigate('/cases', { state: { startBookingWithLawyer: lawyer } })}
                                 >
                                     Proceed to Booking
@@ -312,7 +312,7 @@ export default function LawyerProfile() {
 
                                 <Button 
                                     variant="outline"
-                                    className="w-full border-violet-700 text-violet-700 hover:bg-violet-50 rounded-2xl h-14 font-bold text-base shadow-sm transition-all active:scale-[0.98]"
+                                    className="w-full border-primary text-primary hover:bg-secondary rounded-2xl h-14 font-bold text-base shadow-sm transition-all active:scale-[0.98]"
                                     onClick={() => navigate('/consultations', { state: { startConsultationWithLawyer: lawyer } })}
                                 >
                                     Request Live Consultation

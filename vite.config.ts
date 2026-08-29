@@ -21,13 +21,13 @@ export default defineConfig({
         port: 5175,
         proxy: {
             '/user/api': {
-                target: 'http://localhost:5003',
+                target: 'http://127.0.0.1:5003',
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path.replace(/^\/user\/api/, '/api'),
             },
             '/api': {
-                target: 'http://localhost:5003',
+                target: 'http://127.0.0.1:5003',
                 changeOrigin: true,
                 secure: false,
             },

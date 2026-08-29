@@ -119,7 +119,7 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -127,9 +127,9 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
             </div>
 
             {/* Section 1: Company Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Details
                     </CardTitle>
@@ -211,9 +211,9 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
             </Card>
 
             {/* Section 2: Capital Structure Detail */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Award className="h-5 w-5" />
                         Capital Structure Summary
                     </CardTitle>
@@ -338,10 +338,10 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
             </Card>
 
             {/* Section 3: Shareholder Registry List */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4 flex flex-row items-center justify-between">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4 flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+                        <CardTitle className="text-lg flex items-center gap-2 text-primary">
                             <Users className="h-5 w-5" />
                             Shareholder Registry
                         </CardTitle>
@@ -351,7 +351,7 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
                         type="button"
                         size="sm"
                         onClick={addShareholder}
-                        className="gap-1 bg-violet-600 hover:bg-violet-700 text-white"
+                        className="gap-1 bg-primary hover:bg-primary text-white"
                     >
                         <Plus className="h-4 w-4" /> Add Row
                     </Button>
@@ -473,9 +473,9 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
             </Card>
 
             {/* Section 4: Timelines & Fully Diluted Summary */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Timelines & Dilution Summaries
                     </CardTitle>
@@ -569,9 +569,9 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
             </Card>
 
             {/* Section 5: Restrictions, Notes & Execution */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Restrictions, Notes & Execution
                     </CardTitle>
@@ -665,9 +665,9 @@ const CapTableCertificateForm: React.FC<CapTableCertificateFormProps> = ({
             </Card>
 
             {/* Section 6: Specific Scheme Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Setup Flags
                     </CardTitle>

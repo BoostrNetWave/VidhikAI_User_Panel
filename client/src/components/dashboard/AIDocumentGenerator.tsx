@@ -8,8 +8,6 @@ const generators = [
         name: "Employment Agreement",
         description: "Professional contracts for permanent hires.",
         icon: FileText,
-        color: "text-violet-600",
-        bgColor: "bg-violet-50",
         path: "/documents/employment-contract-generator"
     },
     {
@@ -17,8 +15,6 @@ const generators = [
         name: "Consultant Agreement",
         description: "Standard terms for independent contractors.",
         icon: Briefcase,
-        color: "text-purple-600",
-        bgColor: "bg-purple-50",
         path: "/documents/consultant-agreement"
     },
     {
@@ -26,8 +22,6 @@ const generators = [
         name: "Non-Disclosure Agreement",
         description: "High-accuracy confidentiality & protection agreements.",
         icon: Lock,
-        color: "text-emerald-600",
-        bgColor: "bg-emerald-50",
         path: "/documents/nda"
     },
     {
@@ -35,8 +29,6 @@ const generators = [
         name: "Offer Letter",
         description: "Create professional job offer letters in seconds.",
         icon: Mail,
-        color: "text-orange-600",
-        bgColor: "bg-orange-50",
         path: "/documents/offer-letter"
     },
     {
@@ -44,8 +36,6 @@ const generators = [
         name: "Share Subscription",
         description: "Equity issuance agreements for funding rounds.",
         icon: TrendingUp,
-        color: "text-violet-600",
-        bgColor: "bg-violet-50",
         path: "/documents/share-subscription"
     },
     {
@@ -53,8 +43,6 @@ const generators = [
         name: "Board Resolution",
         description: "Official documentation for corporate decisions.",
         icon: Users,
-        color: "text-indigo-600",
-        bgColor: "bg-indigo-50",
         path: "/documents/board-resolution"
     }
 ]
@@ -67,23 +55,23 @@ export function AIDocumentGenerator() {
             {generators.map((gen) => (
                 <Card
                     key={gen.id}
-                    className="group hover:shadow-md transition-shadow cursor-pointer rounded-xl border-slate-200"
+                    className="group hover:shadow-md hover:border-border-strong transition-all cursor-pointer rounded-xl border-border bg-card"
                     onClick={() => navigate(gen.path)}
                 >
                     <CardHeader className="pb-2">
-                        <div className={`h-10 w-10 ${gen.bgColor} rounded-lg flex items-center justify-center mb-2`}>
-                            <gen.icon className={`h-6 w-6 ${gen.color}`} />
+                        <div className="h-10 w-10 bg-secondary rounded-lg flex items-center justify-center mb-2">
+                            <gen.icon className="h-5 w-5 text-primary" />
                         </div>
-                        <CardTitle className="text-lg font-bold text-slate-800">
+                        <CardTitle className="text-[15px] font-semibold text-foreground leading-tight">
                             {gen.name}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                             {gen.description}
                         </p>
-                        <div className="flex items-center text-xs font-bold text-violet-600">
-                            Get Started <ArrowRight className="ml-1 h-3 w-3" />
+                        <div className="flex items-center text-xs font-semibold text-primary group-hover:text-primary/80 transition-colors">
+                            Get Started <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" />
                         </div>
                     </CardContent>
                 </Card>

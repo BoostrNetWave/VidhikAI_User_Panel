@@ -6,6 +6,8 @@ import SupportTicket from '../models/SupportTicket';
 import DocumentModel from '../models/Document';
 import LiveConsultation from '../models/LiveConsultation';
 import LoginHistory from '../models/LoginHistory';
+import { emitToUser } from '../socket';
+import { sendEmail } from '../utils/emailService';
 /**
  * Admin Controller
  * Handles all requests from the Super Admin Panel
@@ -298,9 +300,91 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
             return;
         }
 
+        // Emit real-time event to the specific user
+        emitToUser(id, 'SUBSCRIPTION_UPDATED', { subscription });
+
         res.json({ message: 'User subscription updated successfully', user });
     } catch (error) {
         res.status(500).json({ message: 'Error updating user subscription' });
+    }
+};
+
+// @desc    Suspend or unsuspend a user
+// @route   POST /api/admin/users/:id/suspend
+export const suspendUser = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { isSuspended } = req.body;
+
+        const user = await User.findByIdAndUpdate(
+            id,
+            { isSuspended },
+            { new: true }
+        ).select('-password');
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        if (isSuspended) {
+            emitToUser(id, 'USER_SUSPENDED', { message: 'Your account has been suspended.' });
+        } else {
+            emitToUser(id, 'USER_UNSUSPENDED', { message: 'Your account has been reactivated.' });
+        }
+
+        res.json({ message: `User ${isSuspended ? 'suspended' : 'unsuspended'} successfully`, user });
+    } catch (error) {
+        res.status(500).json({ message: 'Error suspending/unsuspending user' });
+    }
+};
+
+// @desc    Send custom email to user
+// @route   POST /api/admin/users/:id/send-email
+export const sendDirectEmail = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { subject, body } = req.body;
+
+        const user = await User.findById(id);
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        // Send email via utils
+        await sendEmail(user.email, subject, body);
+
+        res.json({ message: 'Email sent successfully' });
+    } catch (error) {
+        console.error('Email error:', error);
+        res.status(500).json({ message: 'Error sending email' });
+    }
+};
+
+// @desc    Request re-verification (Revoke current verification)
+// @route   POST /api/admin/users/:id/reverify
+export const reverifyUser = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        
+        const user = await User.findByIdAndUpdate(
+            id,
+            { isVerified: false },
+            { new: true }
+        ).select('-password');
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        emitToUser(id, 'USER_VERIFICATION_REVOKED', { message: 'Admin requested re-verification of your account.' });
+
+        // Here we could also generate OTP and send it via email.
+        res.json({ message: 'Re-verification requested successfully', user });
+    } catch (error) {
+        res.status(500).json({ message: 'Error requesting reverification' });
     }
 };
 

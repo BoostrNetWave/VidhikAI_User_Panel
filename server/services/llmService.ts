@@ -3,6 +3,7 @@
 
 import axios, { AxiosError } from 'axios';
 import OpenAI from 'openai';
+import SystemConfig from '../models/SystemConfig';
 
 export interface LLMRequest {
     model: string;
@@ -11,6 +12,7 @@ export interface LLMRequest {
     history?: { role: 'user' | 'assistant' | 'system'; content: string }[];
     temperature?: number;
     maxTokens?: number;
+    feature?: 'default' | 'chatbot' | 'doc_gen' | 'doc_review';
 }
 
 export interface LLMResponse {
@@ -46,8 +48,9 @@ class LLMService {
     /**
      * Generate content using OpenRouter
      */
-    async generateWithOpenRouter(request: LLMRequest): Promise<LLMResponse> {
-        if (!process.env.OPENROUTER_API_KEY) {
+    async generateWithOpenRouter(request: LLMRequest, dynamicApiKey?: string): Promise<LLMResponse> {
+        const apiKey = dynamicApiKey || process.env.OPENROUTER_API_KEY;
+        if (!apiKey) {
             throw new Error('OpenRouter API key not configured');
         }
 
@@ -66,7 +69,7 @@ class LLMService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json',
                         'HTTP-Referer': process.env.APP_URL || 'http://localhost:5007',
                         'X-Title': 'Vidhik AI - Legal Document Generator'
@@ -91,13 +94,18 @@ class LLMService {
     /**
      * Generate content using OpenAI
      */
-    async generateWithOpenAI(request: LLMRequest): Promise<LLMResponse> {
-        if (!this.openaiClient) {
+    async generateWithOpenAI(request: LLMRequest, dynamicApiKey?: string): Promise<LLMResponse> {
+        let client = this.openaiClient;
+        if (dynamicApiKey) {
+            client = new OpenAI({ apiKey: dynamicApiKey });
+        }
+
+        if (!client) {
             throw new Error('OpenAI client not configured');
         }
 
         try {
-            const completion = await this.openaiClient.chat.completions.create({
+            const completion = await client.chat.completions.create({
                 model: request.model,
                 messages: [
                     { role: 'system', content: request.systemPrompt },
@@ -182,32 +190,58 @@ class LLMService {
      * Tries Sarvam first, then OpenAI, then OpenRouter
      */
     async generate(request: LLMRequest): Promise<LLMResponse> {
-        console.log(`[LLM Service] Generating with model: ${request.model}`);
+        let activeModel = request.model;
+        let activeProvider = 'openai'; // default assumption based on code
+        let activeApiKey = '';
 
-        /*
-        // Try Sarvam first if we have API key
-        if (this.sarvamApiKey) {
-            console.log(`[LLM Service] Attempting Sarvam...`);
+        try {
+            // Determine feature key
+            let configKey = 'LLM_CONFIG_DEFAULT';
+            if (request.feature === 'chatbot') configKey = 'LLM_CONFIG_CHATBOT';
+            else if (request.feature === 'doc_gen') configKey = 'LLM_CONFIG_DOC_GEN';
+            else if (request.feature === 'doc_review') configKey = 'LLM_CONFIG_DOC_REVIEW';
+
+            let config = await SystemConfig.findOne({ key: configKey });
+            if (!config || !config.value || !config.value.apiKey) {
+                // fallback to default if feature config is missing or empty
+                if (configKey !== 'LLM_CONFIG_DEFAULT') {
+                    config = await SystemConfig.findOne({ key: 'LLM_CONFIG_DEFAULT' });
+                }
+            }
+
+            if (config && config.value && config.value.apiKey) {
+                activeProvider = config.value.provider || 'openai';
+                activeModel = config.value.model || request.model;
+                activeApiKey = config.value.apiKey;
+                console.log(`[LLM Service] Using DB Config - Provider: ${activeProvider}, Model: ${activeModel}, Feature: ${request.feature || 'default'}`);
+            } else {
+                 console.log(`[LLM Service] Using environment fallback for model: ${activeModel}`);
+            }
+        } catch (err) {
+            console.error('[LLM Service] Error fetching DB config, falling back to env:', err);
+        }
+
+        const requestWithModel = { ...request, model: activeModel };
+
+        // If DB config specified openrouter
+        if (activeProvider === 'openrouter' && activeApiKey) {
             try {
-                const result = await this.generateWithSarvam(request);
-                console.log(`[LLM Service] Success with Sarvam`);
+                const result = await this.generateWithOpenRouter(requestWithModel, activeApiKey);
                 return result;
             } catch (error: any) {
-                console.warn(`[LLM Service] Sarvam failed: ${error.message}`);
+                console.warn(`[LLM Service] OpenRouter (DB Config) failed: ${error.message}`);
             }
         }
-        */
 
-        // Try OpenAI if GPT model or if it's the primary fallback and we have API key
-        if (this.openaiClient) {
+        // Try OpenAI (DB config or fallback to env)
+        if (activeProvider === 'openai' || this.openaiClient) {
             try {
                 // If model was still sarvam (e.g. from cache or old request), defaults to gpt-4o
-                const modelToUse = request.model.includes('gpt') ? request.model : 'gpt-4o';
-
+                const modelToUse = requestWithModel.model.includes('gpt') ? requestWithModel.model : 'gpt-4o';
                 const result = await this.generateWithOpenAI({
-                    ...request,
+                    ...requestWithModel,
                     model: modelToUse
-                });
+                }, activeApiKey);
                 console.log(`[LLM Service] Success with OpenAI`);
                 return result;
             } catch (error: any) {
@@ -215,17 +249,21 @@ class LLMService {
             }
         }
 
-        // Fallback to OpenRouter
-        try {
-            console.log(`[LLM Service] Attempting OpenRouter fallback...`);
-            const result = await this.generateWithOpenRouter(request);
-            console.log(`[LLM Service] Success with OpenRouter`);
-            return result;
-        } catch (error: any) {
-            console.error(`[LLM Service] OpenRouter failed: ${error.message}`);
-            // If all failed
-            console.error(`[LLM Service] CRITICAL: All LLM providers failed for model ${request.model}`);
-            throw new Error(`All LLM providers failed. Last error: ${error.message}`);
+        // Fallback to OpenRouter (if not already tried)
+        if (activeProvider !== 'openrouter') {
+            try {
+                console.log(`[LLM Service] Attempting OpenRouter fallback...`);
+                const result = await this.generateWithOpenRouter(requestWithModel, activeApiKey);
+                console.log(`[LLM Service] Success with OpenRouter`);
+                return result;
+            } catch (error: any) {
+                console.error(`[LLM Service] OpenRouter fallback failed: ${error.message}`);
+                // If all failed
+                console.error(`[LLM Service] CRITICAL: All LLM providers failed for model ${activeModel}`);
+                throw new Error(`All LLM providers failed. Last error: ${error.message}`);
+            }
+        } else {
+             throw new Error(`All LLM providers failed.`);
         }
     }
 

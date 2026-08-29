@@ -519,7 +519,7 @@ export default function LegalResearchPage() {
                     <div className="flex flex-col gap-6 mb-8">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                                <span className="hover:text-violet-600 transition-colors cursor-pointer" onClick={() => { setShowResults(false); setIsSearching(false); setActiveTab('research'); setMessages([]); setQuery(""); }}>Vidhik Research</span>
+                                <span className="hover:text-primary transition-colors cursor-pointer" onClick={() => { setShowResults(false); setIsSearching(false); setActiveTab('research'); setMessages([]); setQuery(""); }}>Vidhik Research</span>
                                 <ArrowRight className="h-4 w-4 text-gray-300" />
                                 <span className="text-gray-900 font-bold">{showResults ? "Analysis Result" : activeTab === 'history' ? "History" : "New Search"}</span>
                             </div>
@@ -586,7 +586,7 @@ export default function LegalResearchPage() {
                                     {filteredHistory.map((record: any, i: number) => (
                                         <Card
                                             key={i}
-                                            className="rounded-[2.5rem] border border-gray-100 hover:border-violet-200 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer overflow-hidden"
+                                            className="rounded-xl border border-border shadow-sm hover:border-border-strong hover:shadow-md transition-all duration-300 group cursor-pointer overflow-hidden bg-card"
                                             onClick={() => {
                                                 setQuery(record.description);
                                                 setMessages([
@@ -599,7 +599,7 @@ export default function LegalResearchPage() {
                                         >
                                             <div className="p-8 flex flex-col h-full relative">
                                                 <div className="flex items-center justify-between mb-6">
-                                                    <Badge className="bg-violet-50 text-violet-600 border-none font-black text-[9px] px-2 py-0.5 tracking-widest uppercase">
+                                                    <Badge variant="secondary" className="border-none font-semibold text-xs px-2 py-0.5 tracking-widest uppercase">
                                                         {record.category || "General Research"}
                                                     </Badge>
                                                     <div className="flex items-center gap-2">
@@ -616,7 +616,7 @@ export default function LegalResearchPage() {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-violet-600 transition-colors">
+                                                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">
                                                     {record.title || (record.description.length > 50 ? record.description.substring(0, 50) + '...' : record.description)}
                                                 </h3>
                                                 <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-8">{record.description}</p>
@@ -625,7 +625,7 @@ export default function LegalResearchPage() {
                                                         <Sparkles className="h-3 w-3" />
                                                         AI Verified
                                                     </div>
-                                                    <Button variant="ghost" size="sm" className="rounded-xl font-bold p-0 group-hover:text-violet-600">
+                                                    <Button variant="ghost" size="sm" className="rounded-xl font-bold p-0 group-hover:text-primary">
                                                         Relaunch
                                                         <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                                     </Button>
@@ -645,13 +645,12 @@ export default function LegalResearchPage() {
 
                             {/* Search Container */}
                             <div className="w-full max-w-5xl relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                                <div className="relative bg-white border-2 border-gray-100 rounded-[2.5rem] p-4 shadow-2xl flex flex-col transition-all duration-300">
+                                <div className="relative bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col transition-all duration-300">
                                     {/* Attachment Preview */}
                                     {(attachedFile || audioBlob || isRecording) && (
                                         <div className="px-6 pt-4 flex flex-wrap gap-2">
                                             {attachedFile && (
-                                                <Badge className="bg-violet-50 text-violet-700 border-violet-100 flex items-center gap-2 px-3 py-1.5 rounded-xl animate-in zoom-in-75 duration-300">
+                                                <Badge className="bg-secondary text-primary border-border flex items-center gap-2 px-3 py-1.5 rounded-xl animate-in zoom-in-75 duration-300">
                                                     <File className="h-3 w-3" />
                                                     {attachedFile.name}
                                                     <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => setAttachedFile(null)} />
@@ -691,7 +690,7 @@ export default function LegalResearchPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className={`rounded-full ${attachedFile ? 'text-violet-600 bg-violet-50' : 'text-gray-400'} hover:text-violet-600 hover:bg-violet-50 transition-colors`}
+                                                className={`rounded-full ${attachedFile ? 'text-primary bg-secondary' : 'text-gray-400'} hover:text-primary hover:bg-secondary transition-colors`}
                                                 onClick={() => fileInputRef.current?.click()}
                                             >
                                                 <Paperclip className="h-6 w-6" />
@@ -699,41 +698,19 @@ export default function LegalResearchPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className={`rounded-full ${isRecording ? 'text-red-600 bg-red-50 animate-pulse' : 'text-gray-400'} hover:text-violet-600 hover:bg-violet-50 transition-colors`}
+                                                className={`rounded-full ${isRecording ? 'text-red-600 bg-red-50 animate-pulse' : 'text-gray-400'} hover:text-primary hover:bg-secondary transition-colors`}
                                                 onClick={toggleRecording}
                                             >
                                                 <Mic className="h-6 w-6" />
                                             </Button>
                                             <Button
-                                                className="bg-violet-600 hover:bg-violet-700 rounded-2xl h-14 w-14 flex items-center justify-center p-0 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-violet-200"
+                                                className="bg-primary hover:bg-primary rounded-2xl h-14 w-14 flex items-center justify-center p-0 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-sm"
                                                 onClick={() => handleSearch()}
                                                 disabled={isSearching}
                                             >
                                                 {isSearching ? <Loader2 className="h-7 w-7 animate-spin" /> : <Search className="h-7 w-7" />}
                                             </Button>
                                         </div>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2 px-4 pb-2 pt-3 border-t border-gray-100 mt-3">
-                                        <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest mr-2">AI Model:</span>
-                                        {[
-                                            { name: "GPT-4o (Premium)", val: "gpt-4o" },
-                                            { name: "GPT-4o-mini (Fast)", val: "gpt-4o-mini" },
-                                            { name: "Claude 3.5 Sonnet", val: "anthropic/claude-3.5-sonnet" },
-                                            { name: "Llama 3 70B", val: "meta-llama/llama-3-70b-instruct" }
-                                        ].map((m) => (
-                                            <button
-                                                key={m.val}
-                                                type="button"
-                                                onClick={() => setSelectedModel(m.val)}
-                                                className={`px-3 py-1 text-xs font-bold rounded-full transition-all ${
-                                                    selectedModel === m.val
-                                                        ? "bg-violet-50 text-violet-700 border border-violet-200"
-                                                        : "text-gray-500 hover:bg-gray-50 border border-transparent"
-                                                }`}
-                                            >
-                                                {m.name}
-                                            </button>
-                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -745,7 +722,7 @@ export default function LegalResearchPage() {
                                     className="rounded-2xl h-12 px-6 gap-2 border-gray-200 hover:bg-gray-50 text-gray-600 font-bold"
                                     onClick={() => handleSuggestionClick('draft')}
                                 >
-                                    <FileText className="h-4 w-4 text-violet-600" />
+                                    <FileText className="h-4 w-4 text-primary" />
                                     Draft Agreement
                                 </Button>
                                 <Button
@@ -753,7 +730,7 @@ export default function LegalResearchPage() {
                                     className="rounded-2xl h-12 px-6 gap-2 border-gray-200 hover:bg-gray-50 text-gray-600 font-bold"
                                     onClick={() => handleSuggestionClick('precedent')}
                                 >
-                                    <Gavel className="h-4 w-4 text-purple-600" />
+                                    <Gavel className="h-4 w-4 text-primary" />
                                     Case Precedents
                                 </Button>
                                 <Button
@@ -761,7 +738,7 @@ export default function LegalResearchPage() {
                                     className="rounded-2xl h-12 px-6 gap-2 border-gray-200 hover:bg-gray-50 text-gray-600 font-bold"
                                     onClick={() => handleSuggestionClick('statute')}
                                 >
-                                    <BookOpen className="h-4 w-4 text-orange-600" />
+                                    <BookOpen className="h-4 w-4 text-primary" />
                                     Statute Explanation
                                 </Button>
                             </div>
@@ -769,14 +746,14 @@ export default function LegalResearchPage() {
                     ) : (
                         <div className="space-y-8 animate-in slide-in-from-bottom-5 duration-500">
                             {/* Chat View */}
-                            <div className="flex items-center justify-between bg-white/80 backdrop-blur-xl p-6 rounded-[2.5rem] shadow-xl border border-white/40 sticky top-4 z-10 mx-1">
+                            <div className="flex items-center justify-between bg-card/80 backdrop-blur-xl p-6 rounded-xl shadow-sm border border-border sticky top-4 z-10 mx-1">
                                 <div className="flex items-center gap-6">
                                     <Button 
                                         variant="ghost" 
                                         className="h-12 w-12 rounded-2xl hover:bg-gray-50 bg-white shadow-sm border border-gray-100 flex items-center justify-center transition-all hover:scale-105 active:scale-95" 
                                         onClick={() => { setShowResults(false); setMessages([]); setQuery(""); }}
                                     >
-                                        <Plus className="h-6 w-6 text-violet-600" />
+                                        <Plus className="h-6 w-6 text-primary" />
                                     </Button>
                                     <div className="h-10 w-[1px] bg-gray-100"></div>
                                     <div className="space-y-0.5">
@@ -794,7 +771,7 @@ export default function LegalResearchPage() {
                                         className="rounded-xl font-bold bg-white border-gray-100 hover:bg-gray-50 text-gray-600 h-10 px-4 gap-2"
                                         onClick={() => setActiveTab('history')}
                                     >
-                                        <Globe className="h-4 w-4 text-violet-500" />
+                                        <Globe className="h-4 w-4 text-primary" />
                                         Access History
                                     </Button>
                                     <Button
@@ -813,8 +790,8 @@ export default function LegalResearchPage() {
 
                             <div className="space-y-10">
                                 {messages.map((m, i) => (
-                                    <div key={i} className={`flex gap-6 ${m.role === 'assistant' ? 'bg-violet-50/30 -mx-8 p-12 rounded-[3rem]' : 'px-4'}`}>
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${m.role === 'user' ? 'bg-gray-900 text-white' : 'bg-violet-600 text-white animate-pulse'}`}>
+                                    <div key={i} className={`flex gap-6 ${m.role === 'assistant' ? 'bg-secondary/30 -mx-8 p-12 rounded-[3rem]' : 'px-4'}`}>
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${m.role === 'user' ? 'bg-gray-900 text-white' : 'bg-primary text-white animate-pulse'}`}>
                                             {m.role === 'user' ? 'US' : <Gavel className="h-6 w-6" />}
                                         </div>
                                         <div className="space-y-4 flex-1">
@@ -829,8 +806,8 @@ export default function LegalResearchPage() {
                                                 </div>
                                                 {m.role === 'assistant' && (
                                                     <div className="mt-8 space-y-6">
-                                                        <div className="p-6 bg-white rounded-3xl border border-violet-100 space-y-4">
-                                                            <div className="flex items-center gap-2 text-violet-600">
+                                                        <div className="p-6 bg-white rounded-3xl border border-border space-y-4">
+                                                            <div className="flex items-center gap-2 text-primary">
                                                                 <Sparkles className="h-5 w-5" />
                                                                 <h4 className="font-bold">Key Legal Citations</h4>
                                                             </div>
@@ -857,7 +834,7 @@ export default function LegalResearchPage() {
                                                             </ul>
                                                         </div>
                                                         <Button 
-                                                            className="rounded-2xl h-14 bg-violet-600 hover:bg-violet-700 px-8 font-black gap-2"
+                                                            className="rounded-2xl h-14 bg-primary hover:bg-primary px-8 font-black gap-2"
                                                             onClick={() => {
                                                                 const userQuery = messages[i - 1]?.content || query;
                                                                 generatePDFReport(userQuery, m.content);
@@ -873,16 +850,16 @@ export default function LegalResearchPage() {
                                     </div>
                                 ))}
                                 {isSearching && (
-                                    <div className="flex gap-6 bg-violet-50/30 -mx-8 p-12 rounded-[3rem] animate-pulse">
-                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-violet-600 text-white animate-pulse">
+                                    <div className="flex gap-6 bg-secondary/30 -mx-8 p-12 rounded-[3rem] animate-pulse">
+                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-primary text-white animate-pulse">
                                             <Loader2 className="h-6 w-6 animate-spin" />
                                         </div>
                                         <div className="space-y-4 flex-1">
                                             <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Vidhik Legal Analysis</p>
                                             <div className="flex items-center gap-2 mt-4">
-                                                <div className="h-3 w-3 bg-violet-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                                <div className="h-3 w-3 bg-violet-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                                <div className="h-3 w-3 bg-violet-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                                <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                                <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                                <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                                                 <span className="ml-2 text-sm text-gray-500 font-bold">Vidhik AI is researching...</span>
                                             </div>
                                         </div>
@@ -897,7 +874,7 @@ export default function LegalResearchPage() {
                                 {(attachedFile || audioBlob || isRecording) && (
                                     <div className="px-6 pt-2 pb-2 flex flex-wrap gap-2">
                                         {attachedFile && (
-                                            <Badge className="bg-violet-50 text-violet-700 border-violet-100 flex items-center gap-2 px-3 py-1 rounded-xl">
+                                            <Badge className="bg-secondary text-primary border-border flex items-center gap-2 px-3 py-1 rounded-xl">
                                                 <File className="h-3 w-3" />
                                                 {attachedFile.name}
                                                 <X className="h-3 w-3 cursor-pointer" onClick={() => setAttachedFile(null)} />
@@ -925,13 +902,13 @@ export default function LegalResearchPage() {
                                         }}
                                     />
                                     <div className="flex items-center gap-2 pr-2">
-                                        <Button variant="ghost" size="icon" className="rounded-full text-gray-400 hover:text-violet-600" onClick={() => fileInputRef.current?.click()}>
+                                        <Button variant="ghost" size="icon" className="rounded-full text-gray-400 hover:text-primary" onClick={() => fileInputRef.current?.click()}>
                                             <Paperclip className="h-5 w-5" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className={`rounded-full ${isRecording ? 'text-red-600 animate-pulse' : 'text-gray-400'}`} onClick={toggleRecording}>
                                             <Mic className="h-5 w-5" />
                                         </Button>
-                                        <Button className="bg-violet-600 hover:bg-violet-700 rounded-2xl h-14 w-14 shadow-lg shadow-violet-100" onClick={() => handleSearch()}>
+                                        <Button className="bg-primary hover:bg-primary rounded-2xl h-14 w-14 shadow-lg shadow-sm" onClick={() => handleSearch()}>
                                             <Send className="h-6 w-6" />
                                         </Button>
                                     </div>
@@ -943,16 +920,16 @@ export default function LegalResearchPage() {
                     {/* Pro Plan Banner - Horizontal Version */}
                     {!isSearching && (
                         <div className="mt-10">
-                            <Card className="rounded-[3rem] border-none shadow-2xl bg-gradient-to-r from-indigo-600 via-violet-700 to-purple-800 p-10 text-white relative overflow-hidden group">
-                                <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
+                            <Card className="rounded-xl border border-border shadow-sm bg-primary p-10 text-primary-foreground relative overflow-hidden group">
+                                <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary-foreground/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                                 <div className="relative flex flex-col lg:flex-row items-center justify-between gap-10">
                                     <div className="space-y-4 text-center lg:text-left">
-                                        <Badge className="bg-white/20 text-white border-none font-bold text-[10px] px-3 tracking-widest uppercase py-1">Premium Access</Badge>
-                                        <h4 className="text-3xl md:text-4xl font-black leading-tight">Upgrade to Pro for Advanced <br className="hidden md:block"/>Case Law Analysis</h4>
-                                        <p className="text-indigo-100 font-medium text-lg max-w-2xl">Get unlimited access to our full suite of premium legal tools, deep case analysis, and priority research clusters.</p>
+                                        <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground border-none font-semibold text-xs px-3 tracking-widest uppercase py-1">Premium Access</Badge>
+                                        <h4 className="text-3xl md:text-4xl font-bold leading-tight">Upgrade to Pro for Advanced <br className="hidden md:block"/>Case Law Analysis</h4>
+                                        <p className="text-primary-foreground/80 font-medium text-lg max-w-2xl">Get unlimited access to our full suite of premium legal tools, deep case analysis, and priority research clusters.</p>
                                     </div>
                                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                                        <Button className="w-full sm:w-auto shrink-0 bg-white text-violet-700 hover:bg-violet-50 rounded-2xl h-16 px-12 font-black text-xl shadow-xl shadow-indigo-900/20 transition-all hover:scale-105 active:scale-95" onClick={() => navigate('/billing')}>
+                                        <Button className="w-full sm:w-auto shrink-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-lg h-12 px-8 font-semibold text-base shadow-sm transition-all" onClick={() => navigate('/billing')}>
                                             Upgrade Now
                                         </Button>
                                     </div>
@@ -1000,8 +977,8 @@ export default function LegalResearchPage() {
                 <DialogContent className="sm:max-w-[500px] rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
                     <div className="p-10 space-y-8">
                         <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-violet-50 flex items-center justify-center">
-                                <Settings className="h-6 w-6 text-violet-600" />
+                            <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center">
+                                <Settings className="h-6 w-6 text-primary" />
                             </div>
                             <div className="space-y-0.5">
                                 <DialogTitle className="text-2xl font-black text-gray-900 leading-tight">History Settings</DialogTitle>
@@ -1010,11 +987,11 @@ export default function LegalResearchPage() {
                         </div>
 
                         <div className="space-y-4">
-                            <div className="p-6 rounded-3xl border border-gray-100 bg-gray-50/30 space-y-4 group hover:border-violet-100 transition-colors">
+                            <div className="p-6 rounded-3xl border border-gray-100 bg-gray-50/30 space-y-4 group hover:border-border transition-colors">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="h-8 w-8 rounded-xl bg-white shadow-sm flex items-center justify-center">
-                                            <Download className="h-4 w-4 text-gray-400 group-hover:text-violet-600 transition-colors" />
+                                            <Download className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
                                         </div>
                                         <div className="space-y-0.5">
                                             <p className="font-bold text-gray-900">Export All Research</p>
@@ -1024,7 +1001,7 @@ export default function LegalResearchPage() {
                                     <Button 
                                         variant="outline" 
                                         size="sm" 
-                                        className="rounded-xl font-bold bg-white text-violet-600 hover:bg-violet-50 border-violet-50"
+                                        className="rounded-xl font-bold bg-white text-primary hover:bg-secondary border-violet-50"
                                         onClick={handleExportHistory}
                                         disabled={history.length === 0}
                                     >

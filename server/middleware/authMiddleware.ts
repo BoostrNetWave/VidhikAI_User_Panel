@@ -10,10 +10,13 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
             token = req.headers.authorization.split(' ')[1];
             const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
             req.user = await User.findById(decoded.id).select('-password');
+            if (req.user && req.user.isSuspended) {
+                return res.status(403).json({ message: 'Account is suspended' });
+            }
             next();
         } catch (error) {
             console.error('[AUTH ERROR] Token verification failed');
-            res.status(401).json({ message: 'Not authorized, token failed' });
+            return res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
 

@@ -12,14 +12,14 @@ interface DocumentSidebarProps {
 export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ description, tips }) => {
     return (
         <Card className="sticky top-24 overflow-hidden">
-            <div className="p-4 border-b bg-violet-50/50 flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-violet-600" />
+            <div className="p-4 border-b bg-secondary/50 flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
                 <h3 className="font-bold text-gray-900">Vidhik AI Assistant</h3>
             </div>
 
             <CardContent className="p-5 space-y-6">
                 <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-violet-600 uppercase tracking-wider">HELP & TIPS</h4>
+                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider">HELP & TIPS</h4>
                     <p className="text-sm text-gray-600 leading-relaxed">
                         {description}
                     </p>
@@ -30,7 +30,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ description, t
                 <div className="space-y-4">
                     {tips.map((tip, idx) => (
                         <div key={idx} className="flex gap-3 items-start">
-                            <Lightbulb className="h-5 w-5 text-violet-500 shrink-0 mt-0.5" />
+                            <Lightbulb className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                             <div>
                                 <h5 className="text-sm font-semibold text-gray-900">{tip.title}</h5>
                                 <p className="text-xs text-muted-foreground mt-1">{tip.content}</p>

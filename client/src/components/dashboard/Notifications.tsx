@@ -35,8 +35,8 @@ const initialNotifications = [
         description: "\"Please check the updated clause 4.2...\"",
         time: "45 minutes ago",
         icon: MessageSquare,
-        color: "text-violet-500",
-        bgColor: "bg-violet-100",
+        color: "text-primary",
+        bgColor: "bg-secondary/80",
         fullDetails: "Adv. Mehta sent: \"Please check the updated clause 4.2 regarding the termination period. I believe we should extend it to 60 days to better protect our interests. Let me know your thoughts.\"",
         read: false
     },
@@ -93,7 +93,7 @@ export function Notifications() {
                         <span className="font-semibold text-sm">Recent Alerts</span>
                         {unreadCount > 0 && (
                             <span
-                                className="text-xs text-violet-600 font-medium cursor-pointer hover:underline"
+                                className="text-xs text-primary font-medium cursor-pointer hover:underline"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     markAllAsRead();
@@ -107,7 +107,7 @@ export function Notifications() {
                         {notifications.map((notification) => (
                             <DropdownMenuItem
                                 key={notification.id}
-                                className={`items-start gap-3 p-3 cursor-pointer ${!notification.read ? 'bg-violet-50/30' : ''}`}
+                                className={`items-start gap-3 p-3 cursor-pointer ${!notification.read ? 'bg-secondary/30' : ''}`}
                                 onSelect={() => handleNotificationClick(notification)}
                             >
                                 <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${notification.bgColor}`}>
@@ -118,7 +118,7 @@ export function Notifications() {
                                         <p className={`text-sm leading-none ${!notification.read ? 'font-semibold text-black' : 'font-medium text-gray-700'}`}>
                                             {notification.title}
                                         </p>
-                                        {!notification.read && <span className="h-1.5 w-1.5 bg-violet-500 rounded-full mt-1"></span>}
+                                        {!notification.read && <span className="h-1.5 w-1.5 bg-primary/90 rounded-full mt-1"></span>}
                                     </div>
                                     <p className="text-xs text-muted-foreground line-clamp-2">{notification.description}</p>
                                     <p className="text-[10px] text-gray-400">{notification.time}</p>

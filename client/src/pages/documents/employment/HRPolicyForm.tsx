@@ -84,7 +84,7 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -92,9 +92,9 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
             </div>
 
             {/* Section 1: Company Profile & Document Control */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Profile & Control
                     </CardTitle>
@@ -251,9 +251,9 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
             </Card>
 
             {/* Section 2: Employment Policies */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Users className="h-5 w-5" />
                         Employment & Lifecycle Policies
                     </CardTitle>
@@ -371,9 +371,9 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
             </Card>
 
             {/* Section 3: Compensation & Benefits */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Compensation & Performance Review
                     </CardTitle>
@@ -452,9 +452,9 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
             </Card>
 
             {/* Section 4: Conduct & POSH */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Conduct & POSH Policy
                     </CardTitle>
@@ -527,9 +527,9 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
             </Card>
 
             {/* Section 5: Cybersecurity & Intellectual Property */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Cybersecurity & Intellectual Property
                     </CardTitle>
@@ -608,9 +608,9 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
             </Card>
 
             {/* Section 6: Exits & Signatures */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Exits, Controls & Signatures
                     </CardTitle>
@@ -739,9 +739,9 @@ const HRPolicyForm: React.FC<HRPolicyFormProps> = ({
             </Card>
 
             {/* Section 7: Configuration Setup Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Configuration Flags
                     </CardTitle>

@@ -48,7 +48,7 @@ export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
                     </div>
 
                     <div className="flex bg-gray-50 p-1 rounded-xl mb-8 w-fit mx-auto">
-                        <button className="px-6 py-2 text-sm font-semibold text-violet-700 bg-white rounded-lg shadow-sm">AI Document Credits</button>
+                        <button className="px-6 py-2 text-sm font-semibold text-primary bg-white rounded-lg shadow-sm">AI Document Credits</button>
                         <button className="px-6 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700">Notary Sessions</button>
                     </div>
 
@@ -59,12 +59,12 @@ export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
                                 onClick={() => setSelectedPackage(key as any)}
                                 className={`relative cursor-pointer transition-all duration-300 rounded-2xl p-6 border-2 flex flex-col items-center text-center ${
                                     selectedPackage === key 
-                                    ? 'border-violet-500 bg-violet-50/30' 
+                                    ? 'border-primary bg-secondary/30' 
                                     : 'border-gray-100 bg-white hover:border-gray-200'
                                 }`}
                             >
                                 {pkg.bestValue && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg whitespace-nowrap">
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg whitespace-nowrap">
                                         BEST VALUE
                                     </div>
                                 )}
@@ -72,7 +72,7 @@ export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
                                 <div className="text-2xl font-black text-gray-900 mb-1">{pkg.credits.toLocaleString()}</div>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase mb-4">Credits</span>
                                 <div className="h-px w-full bg-gray-100 mb-4" />
-                                <div className="text-xl font-bold text-violet-600">${pkg.price}</div>
+                                <div className="text-xl font-bold text-primary">${pkg.price}</div>
                             </div>
                         ))}
                     </div>
@@ -86,7 +86,7 @@ export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
                         
                         <div 
                             className={`flex items-center gap-4 bg-gray-50 p-4 rounded-xl border-2 transition-all ${
-                                selectedPackage === 'custom' ? 'border-violet-500 ring-2 ring-violet-50' : 'border-transparent'
+                                selectedPackage === 'custom' ? 'border-primary ring-2 ring-violet-50' : 'border-transparent'
                             }`}
                         >
                             <Input 
@@ -100,7 +100,7 @@ export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
                                 }}
                                 onFocus={() => setSelectedPackage('custom')}
                             />
-                            <div className="text-xs font-bold text-violet-600 whitespace-nowrap font-mono tracking-tight bg-violet-50 px-3 py-1.5 rounded-lg">
+                            <div className="text-xs font-bold text-primary whitespace-nowrap font-mono tracking-tight bg-secondary px-3 py-1.5 rounded-lg">
                                 ${getPricePerCredit()} / credit
                             </div>
                         </div>
@@ -108,7 +108,7 @@ export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
 
                     <div className="bg-gray-50/80 rounded-2xl p-6 flex items-center justify-between mb-8 border border-gray-100">
                         <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center text-violet-600">
+                            <div className="h-12 w-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center text-primary">
                                 <CreditCard className="h-6 w-6" />
                             </div>
                             <div>
@@ -121,18 +121,18 @@ export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Total Charge</p>
-                            <div className="text-2xl font-black text-violet-700">${totalPrice}</div>
+                            <div className="text-2xl font-black text-primary">${totalPrice}</div>
                         </div>
                     </div>
 
-                    <div className="flex items-start gap-4 mb-8 bg-violet-50/30 p-4 rounded-xl border border-violet-100/50">
-                        <HelpCircle className="h-5 w-5 text-violet-500 shrink-0 mt-0.5" />
-                        <p className="text-xs text-violet-700 leading-relaxed font-medium">
+                    <div className="flex items-start gap-4 mb-8 bg-secondary/30 p-4 rounded-xl border border-border/50">
+                        <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <p className="text-xs text-primary leading-relaxed font-medium">
                             Charges will be applied to your default card ending in 4242. You can manage your payment methods in the billing dashboard.
                         </p>
                     </div>
 
-                    <Button className="w-full h-14 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-bold text-lg shadow-xl shadow-violet-200 transition-all hover:scale-[1.02] flex items-center justify-center gap-3">
+                    <Button className="w-full h-14 bg-primary hover:bg-primary text-white rounded-2xl font-bold text-lg shadow-xl shadow-sm transition-all hover:scale-[1.02] flex items-center justify-center gap-3">
                         <CreditCard className="h-5 w-5" />
                         Confirm Purchase
                     </Button>

@@ -15,7 +15,8 @@ import {
     MessageSquare,
     FileText,
     Video,
-    Search
+    Search,
+    Cpu
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -77,6 +78,7 @@ export default function AdminLayout({ children, userNav }: AdminLayoutProps) {
         { path: '/admin/documents', label: 'Client Documents', icon: FileText },
         { path: '/admin/payments', label: 'Financials', icon: CreditCard },
         { path: '/admin/login-history', label: 'Login History', icon: ShieldAlert },
+        { path: '/admin/llm-config', label: 'LLM Config', icon: Cpu },
         { path: '/admin/system', label: 'System Health', icon: Activity },
     ];
 
@@ -124,17 +126,17 @@ export default function AdminLayout({ children, userNav }: AdminLayoutProps) {
                         return (
                         <button
                             key={link.path}
-                            className={`w-full flex items-center gap-3 h-10 px-3 rounded-md transition-all group relative hover:bg-sidebar-foreground/10 hover:text-white
-                                ${isActive ? 'text-white font-medium' : 'text-sidebar-foreground'}
+                            className={`w-full flex items-center gap-3 h-10 px-3 rounded-md transition-all group relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+                                ${isActive ? 'text-sidebar-accent-foreground font-medium bg-sidebar-accent/50' : 'text-sidebar-foreground'}
                                 ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}
                             `}
                             title={isCollapsed ? link.label : ""}
                             onClick={() => navigate(link.path)}
                         >
                             {isActive && (
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-accent rounded-r-sm" />
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-sidebar-primary rounded-r-sm" />
                             )}
-                            <link.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-accent" : "text-sidebar-foreground group-hover:text-white")} />
+                            <link.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-sidebar-primary" : "text-sidebar-foreground group-hover:text-sidebar-accent-foreground")} />
                             <span className={`text-sm ${isCollapsed ? 'lg:hidden' : 'block'}`}>{link.label}</span>
                         </button>
                     )})}

@@ -63,9 +63,9 @@ export function RecentActivity() {
         <div className="space-y-6 animate-fade-in-up [animation-delay:1.5s]">
             <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-                    <span className="text-violet-600">✦</span> Recent Activity
+                    <span className="text-primary">✦</span> Recent Activity
                 </h3>
-                <Button variant="ghost" className="text-violet-600 hover:text-violet-700 hover:bg-violet-50 font-bold transition-all" onClick={() => navigate('/documents/workspace')}>
+                <Button variant="ghost" className="text-primary hover:text-primary hover:bg-secondary font-bold transition-all" onClick={() => navigate('/documents/workspace')}>
                     View All Documents <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
             </div>
@@ -85,7 +85,7 @@ export function RecentActivity() {
                             <TableRow>
                                 <TableCell colSpan={4} className="text-center py-20">
                                     <div className="flex flex-col items-center gap-3">
-                                        <div className="h-8 w-8 border-4 border-violet-600/30 border-t-violet-600 rounded-full animate-spin" />
+                                        <div className="h-8 w-8 border-4 border-primary/30 border-t-violet-600 rounded-full animate-spin" />
                                         <p className="text-slate-400 font-medium animiate-pulse">Loading documents...</p>
                                     </div>
                                 </TableCell>
@@ -104,13 +104,13 @@ export function RecentActivity() {
                             </TableRow>
                         ) : (
                             documents.map((doc) => (
-                                <TableRow key={doc._id} className="border-slate-100/60 hover:bg-violet-50/30 transition-colors group">
+                                <TableRow key={doc._id} className="border-slate-100/60 hover:bg-secondary/30 transition-colors group">
                                     <TableCell className="font-semibold text-slate-900 px-8 py-4">
                                         <div className="flex items-center gap-4">
-                                            <div className="h-10 w-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 border border-violet-100/50 premium-gradient-subtle shadow-sm">
+                                            <div className="h-10 w-10 rounded-xl bg-secondary text-primary flex items-center justify-center group-hover:scale-110 transition-transform duration-500 border border-border/50 premium-gradient-subtle shadow-sm">
                                                 <FileText className="h-5 w-5" />
                                             </div>
-                                            <span className="group-hover:text-violet-700 transition-colors">{doc.title}</span>
+                                            <span className="group-hover:text-primary transition-colors">{doc.title}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>

@@ -15,6 +15,7 @@ import { AdminConsultations } from "./components/AdminConsultations";
 import { AdminTickets } from "./components/AdminTickets";
 import { AdminDocuments } from "./components/AdminDocuments";
 import { AdminLoginHistory } from "./components/AdminLoginHistory";
+import { AdminLLMConfig } from "./components/AdminLLMConfig";
 
 export default function AdminSettings() {
     const { tab } = useParams();
@@ -151,6 +152,37 @@ export default function AdminSettings() {
         }
     };
 
+    const handleSuspendUser = async (id: string, isSuspended: boolean) => {
+        try {
+            await adminService.suspendUser(id, isSuspended);
+            toast.success(`User ${isSuspended ? 'suspended' : 'unsuspended'} successfully`);
+            const newUsers = await adminService.getAllUsers();
+            setUsers(newUsers);
+        } catch (e) {
+            toast.error("Failed to suspend/unsuspend user");
+        }
+    };
+
+    const handleSendEmail = async (id: string, subject: string, body: string) => {
+        try {
+            await adminService.sendEmail(id, subject, body);
+            toast.success("Email sent successfully");
+        } catch (e) {
+            toast.error("Failed to send email");
+        }
+    };
+
+    const handleReverifyUser = async (id: string) => {
+        try {
+            await adminService.reverifyUser(id);
+            toast.success("Re-verification requested");
+            const newUsers = await adminService.getAllUsers();
+            setUsers(newUsers);
+        } catch (e) {
+            toast.error("Failed to request re-verification");
+        }
+    };
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -165,8 +197,19 @@ export default function AdminSettings() {
                 return <AdminOverview users={users} pendingLawyers={pendingLawyers} consultations={consultations} tickets={tickets} cases={cases} documents={documents} />;
             case 'content':
                 return <AdminConfigManager configs={configs} editingJsonConfig={editingJsonConfig} setEditingJsonConfig={setEditingJsonConfig} onUpdate={handleUpdateConfig} />;
+            case 'llm-config':
+                return <AdminLLMConfig configs={configs} onUpdate={handleUpdateConfig} />;
             case 'users':
-                return <AdminUsers users={users} onVerifyUser={handleVerifyUser} onUpdateSubscription={handleUpdateSubscription} />;
+                return (
+                    <AdminUsers 
+                        users={users} 
+                        onVerifyUser={handleVerifyUser} 
+                        onUpdateSubscription={handleUpdateSubscription} 
+                        onSuspendUser={handleSuspendUser}
+                        onSendEmail={handleSendEmail}
+                        onReverifyUser={handleReverifyUser}
+                    />
+                );
             case 'lawyers':
                 return <AdminLawyers pendingLawyers={pendingLawyers} onApprove={handleApproveLawyer} />;
             case 'cases':

@@ -61,7 +61,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -69,9 +69,9 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
             </div>
 
             {/* Section 1: Company Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Identification
                     </CardTitle>
@@ -140,9 +140,9 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
             </Card>
 
             {/* Section 2: Capital & Borrowing */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Landmark className="h-5 w-5" />
                         Capital, Shares & Borrowing
                     </CardTitle>
@@ -194,9 +194,9 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
             </Card>
 
             {/* Section 3: Board Structure & Governance */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Users className="h-5 w-5" />
                         Board of Directors & Meetings
                     </CardTitle>
@@ -254,7 +254,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                                 onChange={handleInputChange}
                             />
                         </div>
-                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors">
                             <Checkbox
                                 id="nomineeDirectorAllowed"
                                 checked={formData.nomineeDirectorAllowed || false}
@@ -262,7 +262,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                             />
                             <Label htmlFor="nomineeDirectorAllowed" className="text-sm font-normal cursor-pointer">Allow Nominee Directors</Label>
                         </div>
-                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors">
                             <Checkbox
                                 id="retirementByRotationApplicable"
                                 checked={formData.retirementByRotationApplicable || false}
@@ -275,16 +275,16 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
             </Card>
 
             {/* Section 4: Special Clauses & Options */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Special Clauses & Restrictions
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors">
                             <Checkbox
                                 id="transferRestrictionsRequired"
                                 checked={formData.transferRestrictionsRequired !== false}
@@ -292,7 +292,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                             />
                             <Label htmlFor="transferRestrictionsRequired" className="text-sm font-normal cursor-pointer">Include Share Transfer Restrictions</Label>
                         </div>
-                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors">
                             <Checkbox
                                 id="commonSealRequired"
                                 checked={formData.commonSealRequired || false}
@@ -300,7 +300,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                             />
                             <Label htmlFor="commonSealRequired" className="text-sm font-normal cursor-pointer">Common Seal Required</Label>
                         </div>
-                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors">
                             <Checkbox
                                 id="listedCompany"
                                 checked={formData.listedCompany || false}
@@ -308,7 +308,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                             />
                             <Label htmlFor="listedCompany" className="text-sm font-normal cursor-pointer">Listed Company (SEBI Compliance)</Label>
                         </div>
-                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors">
                             <Checkbox
                                 id="foreignShareholders"
                                 checked={formData.foreignShareholders || false}
@@ -316,7 +316,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                             />
                             <Label htmlFor="foreignShareholders" className="text-sm font-normal cursor-pointer">Foreign Shareholders (FEMA)</Label>
                         </div>
-                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors">
                             <Checkbox
                                 id="arbitrationClause"
                                 checked={formData.arbitrationClause || false}
@@ -327,7 +327,7 @@ const ArticlesOfAssociationForm: React.FC<ArticlesOfAssociationFormProps> = ({
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="additionalGovernanceClauses" className="flex items-center gap-2">
-                            <Scale className="h-4 w-4 text-violet-600" />
+                            <Scale className="h-4 w-4 text-primary" />
                             Additional Governance Clauses (Optional)
                         </Label>
                         <Textarea

@@ -85,13 +85,13 @@ export default function SignIn() {
     }
 
     return (
-        <div className="flex min-h-screen w-full font-sans bg-slate-50">
+        <div className="flex min-h-screen w-full font-sans bg-zinc-50">
             {/* Left - Branding Panel */}
-            <div className="hidden lg:flex lg:w-5/12 bg-gradient-to-br from-[#120F2E] via-[#1E113E] to-[#0A0718] relative overflow-hidden items-center justify-center p-12 select-none">
+            <div className="hidden lg:flex lg:w-5/12 bg-zinc-950 relative overflow-hidden items-center justify-center p-12 select-none">
                 {/* Decorative glows */}
-                <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-violet-500/10 to-transparent blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
-                <div className="absolute -top-40 -right-40 w-[400px] h-[400px] rounded-full bg-violet-500/10 blur-[100px] pointer-events-none" />
+                <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-zinc-800/20 to-transparent blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-zinc-800/30 blur-[100px] pointer-events-none" />
+                <div className="absolute -top-40 -right-40 w-[400px] h-[400px] rounded-full bg-zinc-800/30 blur-[100px] pointer-events-none" />
                 
                 {/* Dots grid pattern */}
                 <div 
@@ -104,8 +104,8 @@ export default function SignIn() {
 
                 <div className="relative z-10 text-white max-w-md">
                     <Link to="/" className="inline-flex items-center gap-2 mb-10 transition-transform duration-300 hover:scale-105">
-                        <Scale className="h-8 w-8 text-violet-400" />
-                        <span className="font-display text-2xl font-bold tracking-tight">Vidhik <span className="text-violet-400">AI</span></span>
+                        <Scale className="h-8 w-8 text-zinc-300" />
+                        <span className="font-display text-2xl font-bold tracking-tight">Vidhik <span className="text-zinc-400">AI</span></span>
                     </Link>
                     
                     <h2 className="font-display text-4xl font-extrabold mb-6 leading-tight">
@@ -116,7 +116,7 @@ export default function SignIn() {
                     </p>
                     
                     {/* Premium Card Testimonial */}
-                    <div className="bg-white/[0.03] backdrop-blur-md rounded-2xl p-6 border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+                    <div className="bg-zinc-900/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
                         <div className="flex gap-1 mb-4">
                             {[...Array(5)].map((_, i) => (
                                 <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
@@ -126,7 +126,7 @@ export default function SignIn() {
                             "Vidhik AI has completely transformed our approach to legal research. The document automation is incredibly accurate and fast."
                         </p>
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-violet-500 to-indigo-500 flex items-center justify-center text-xs font-bold shadow-md">
+                            <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold shadow-md">
                                 RK
                             </div>
                             <div>
@@ -151,34 +151,30 @@ export default function SignIn() {
             </div>
 
             {/* Right - Form Container */}
-            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 md:p-16 bg-[#FAFAFC] relative overflow-hidden">
-                {/* Decorative glows on the right panel */}
-                <div className="absolute top-0 right-0 -z-10 w-[300px] h-[300px] rounded-full bg-violet-200/30 blur-3xl pointer-events-none" />
-                <div className="absolute bottom-0 left-0 -z-10 w-[300px] h-[300px] rounded-full bg-indigo-100/30 blur-3xl pointer-events-none" />
-                
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 md:p-16 bg-zinc-50 relative overflow-hidden">
                 {/* Dots grid pattern for Right Panel */}
                 <div 
-                    className="absolute inset-0 opacity-[0.015] pointer-events-none"
+                    className="absolute inset-0 opacity-[0.03] pointer-events-none"
                     style={{
-                        backgroundImage: `radial-gradient(circle at 1px 1px, #7C3AED 1px, transparent 0)`,
+                        backgroundImage: `radial-gradient(circle at 1px 1px, #18181b 1px, transparent 0)`,
                         backgroundSize: '20px 20px'
                     }}
                 />
 
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-md relative z-10">
                     {/* Small Logo for mobile view */}
                     <div className="text-center mb-8 lg:hidden">
                         <Link to="/" className="inline-flex items-center gap-2">
-                            <Scale className="h-7 w-7 text-violet-600" />
+                            <Scale className="h-7 w-7 text-primary" />
                             <span className="font-display text-xl font-bold tracking-tight text-slate-900">
-                                Vidhik <span className="text-violet-600">AI</span>
+                                Vidhik <span className="text-primary">AI</span>
                             </span>
                         </Link>
                     </div>
 
-                    <div className="bg-white/80 backdrop-blur-md border border-slate-100 shadow-[0_20px_50px_-12px_rgba(124,58,237,0.08)] rounded-2xl p-8 sm:p-10 w-full relative">
+                    <div className="bg-white/60 backdrop-blur-3xl border border-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] rounded-3xl p-8 sm:p-10 w-full relative">
                         <div className="text-center mb-8">
-                            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 font-display">
+                            <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 font-display">
                                 Welcome Back
                             </h2>
                             <p className="mt-2.5 text-sm text-slate-500">
@@ -200,7 +196,7 @@ export default function SignIn() {
                                                     <Input 
                                                         placeholder="name@company.com" 
                                                         autoComplete="off" 
-                                                        className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:border-violet-500 focus:ring-violet-500/20 focus-visible:ring-violet-500/20 focus-visible:border-violet-500 transition-all rounded-lg"
+                                                        className="pl-10 h-11 bg-zinc-50 border-zinc-200 focus:border-zinc-900 focus:ring-zinc-900/10 focus-visible:ring-zinc-900/10 focus-visible:border-zinc-900 transition-all rounded-lg"
                                                         {...field} 
                                                     />
                                                 </div>
@@ -223,7 +219,7 @@ export default function SignIn() {
                                                         type={showPassword ? "text" : "password"}
                                                         placeholder="••••••••"
                                                         autoComplete="off"
-                                                        className="pl-10 pr-10 h-11 bg-slate-50/50 border-slate-200 focus:border-violet-500 focus:ring-violet-500/20 focus-visible:ring-violet-500/20 focus-visible:border-violet-500 transition-all rounded-lg"
+                                                        className="pl-10 pr-10 h-11 bg-zinc-50 border-zinc-200 focus:border-zinc-900 focus:ring-zinc-900/10 focus-visible:ring-zinc-900/10 focus-visible:border-zinc-900 transition-all rounded-lg"
                                                         {...field}
                                                     />
                                                 </FormControl>
@@ -259,7 +255,7 @@ export default function SignIn() {
                                                     <Checkbox
                                                         checked={field.value}
                                                         onCheckedChange={field.onChange}
-                                                        className="border-slate-300 text-violet-600 focus:ring-violet-500"
+                                                        className="border-slate-300 text-primary focus:ring-primary"
                                                     />
                                                 </FormControl>
                                                 <FormLabel className="text-xs font-semibold text-slate-500 cursor-pointer select-none">
@@ -268,9 +264,9 @@ export default function SignIn() {
                                             </FormItem>
                                         )}
                                     />
-                                    <Link
+                                        <Link
                                         to="/forgot-password"
-                                        className="text-xs font-semibold text-violet-600 hover:text-violet-700 transition-colors"
+                                        className="text-xs font-semibold text-zinc-900 hover:text-zinc-600 transition-colors"
                                     >
                                         Forgot password?
                                     </Link>
@@ -279,7 +275,7 @@ export default function SignIn() {
                                 <Button 
                                     type="submit" 
                                     disabled={isLoading} 
-                                    className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold h-11 rounded-lg flex items-center justify-center transition-all duration-300 shadow-[0_10px_20px_-5px_rgba(124,58,237,0.3)] hover:shadow-[0_15px_25px_-5px_rgba(124,58,237,0.4)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
+                                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold h-11 rounded-lg flex items-center justify-center transition-all duration-300 shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
                                 >
                                     {isLoading ? (
                                         <>
@@ -287,18 +283,15 @@ export default function SignIn() {
                                             Signing in...
                                         </>
                                     ) : (
-                                        <span className="flex items-center justify-center gap-1.5">
-                                            <Sparkles className="h-4 w-4" />
-                                            Sign in
-                                        </span>
+                                        <span>Sign in</span>
                                     )}
                                 </Button>
                             </form>
                         </Form>
 
-                        <div className="mt-8 text-center text-sm text-slate-500 border-t border-slate-100 pt-6">
+                        <div className="mt-8 text-center text-sm text-zinc-500 border-t border-zinc-100 pt-6">
                             Don't have an account?{" "}
-                            <Link to="/signup" className="font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+                            <Link to="/signup" className="font-semibold text-zinc-900 hover:text-zinc-600 transition-colors">
                                 Sign up
                             </Link>
                         </div>

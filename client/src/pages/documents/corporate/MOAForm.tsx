@@ -53,7 +53,7 @@ const MOAForm: React.FC<MOAFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -61,9 +61,9 @@ const MOAForm: React.FC<MOAFormProps> = ({
             </div>
 
             {/* Section 1: Company Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Identification
                     </CardTitle>
@@ -138,9 +138,9 @@ const MOAForm: React.FC<MOAFormProps> = ({
             </Card>
 
             {/* Section 2: Objects Clause */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <FileText className="h-5 w-5" />
                         Objects Clause
                     </CardTitle>
@@ -186,9 +186,9 @@ const MOAForm: React.FC<MOAFormProps> = ({
             </Card>
 
             {/* Section 3: Liability & Capital */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Landmark className="h-5 w-5" />
                         Liability & Capital Structure
                     </CardTitle>
@@ -256,9 +256,9 @@ const MOAForm: React.FC<MOAFormProps> = ({
             </Card>
 
             {/* Section 4: Subscription */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Users className="h-5 w-5" />
                         Subscriber Details
                     </CardTitle>
@@ -289,14 +289,14 @@ const MOAForm: React.FC<MOAFormProps> = ({
                         />
                     </div>
                     
-                    <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-violet-100 transition-colors mt-4">
+                    <div className="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:border-border transition-colors mt-4">
                         <Checkbox
                             id="foreign_subscribers"
                             checked={formData.foreign_subscribers || false}
                             onCheckedChange={(checked) => handleSelectChange('foreign_subscribers', checked as string)}
                         />
                         <Label htmlFor="foreign_subscribers" className="text-sm font-normal cursor-pointer flex items-center gap-2">
-                            <Globe className="h-4 w-4 text-violet-600" />
+                            <Globe className="h-4 w-4 text-primary" />
                             Foreign Subscribers Present (Triggers FEMA/RBI Compliance)
                         </Label>
                     </div>

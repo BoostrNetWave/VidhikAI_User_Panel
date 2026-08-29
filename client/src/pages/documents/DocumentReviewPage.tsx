@@ -22,6 +22,7 @@ import {
     ArrowLeft,
     ShieldCheck
 } from 'lucide-react';
+import { PREVIEW_DESIGN } from '@/components/documents/DocumentPreview';
 import DashboardLayout from "@/layout/DashboardLayout";
 import { UserNav } from "@/components/dashboard/UserNav";
 import { Button } from "@/components/ui/button";
@@ -31,12 +32,15 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useParams, useNavigate } from 'react-router-dom';
 
 type ReviewState = 'UPLOAD' | 'PROCESSING' | 'COMPLETED';
 
 export default function DocumentReviewPage() {
-    const [state, setState] = useState<ReviewState>('UPLOAD');
-    const [viewMode, setViewMode] = useState<'SUMMARY' | 'DETAILED'>('SUMMARY');
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const [state, setState] = useState<ReviewState>(id ? 'PROCESSING' : 'UPLOAD');
+    const [viewMode, setViewMode] = useState<'SUMMARY' | 'DETAILED'>('DETAILED');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [analysisData, setAnalysisData] = useState<any>(null);
     const [progress, setProgress] = useState(0);
@@ -45,9 +49,37 @@ export default function DocumentReviewPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const [logs, setLogs] = useState<{ msg: string, status: 'pending' | 'loading' | 'done' }[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (id) {
+            const fetchSharedReview = async () => {
+                try {
+                    const response = await api.get(`/documents/shared-review/${id}`);
+                    if (response.data.success) {
+                        const sharedData = response.data.data;
+                        // Construct the expected analysisData format
+                        setAnalysisData({
+                            ...sharedData.analysisData,
+                            fullText: sharedData.fullText
+                        });
+                        setSelectedFile(new File([], sharedData.fileName));
+                        setProgress(100);
+                        setState('COMPLETED');
+                        setViewMode('DETAILED');
+                    }
+                } catch (error) {
+                    console.error("Failed to load shared document:", error);
+                    toast.error("Shared document not found or expired.");
+                    navigate('/documents/review');
+                }
+            };
+            fetchSharedReview();
+        }
+    }, [id, navigate]);
 
     // Simulated Log Steps
     const getAnalysisSteps = (deepScan: boolean) => [
@@ -62,6 +94,26 @@ export default function DocumentReviewPage() {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            startAnalysis(file);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files?.[0];
         if (file) {
             setSelectedFile(file);
             startAnalysis(file);
@@ -111,7 +163,10 @@ export default function DocumentReviewPage() {
                 });
                 setState('UPLOAD');
             } else {
-                toast.error("AI Analysis failed. Showing simulated results.");
+                const errorMessage = error.response?.data?.message || "AI Analysis failed. Showing simulated results.";
+                toast.error(error.response?.data?.error || "Analysis Failed", {
+                    description: errorMessage
+                });
                 // Fallback to dummy data if API fails
                 setAnalysisData(null);
 
@@ -163,19 +218,41 @@ export default function DocumentReviewPage() {
     }, [logs]);
 
     const handleShare = async () => {
-        const shareData = {
-            title: 'Vidhik AI Legal Research Report',
-            text: `I've analyzed a legal document using Vidhik AI. Compliance Score: ${analysisData?.complianceScore || 85}%.`,
-            url: window.location.href
-        };
+        if (!analysisData || !analysisData.fullText) {
+            toast.error('No analysis data to share.');
+            return;
+        }
 
         try {
-            if (navigator.share) {
-                await navigator.share(shareData);
-                toast.success("Report shared successfully!");
+            const toastId = toast.loading('Generating shareable link...');
+            const response = await api.post('/documents/share-review', {
+                fullText: analysisData.fullText,
+                analysisData: analysisData,
+                fileName: selectedFile?.name || 'Vidhik_AI_Document'
+            });
+
+            toast.dismiss(toastId);
+
+            if (response.data.success) {
+                const shareId = response.data.id;
+                // Generate a URL that works on localhost or deployed depending on where this is running
+                const shareUrl = `${window.location.origin}/user/documents/shared/${shareId}`;
+
+                const shareData = {
+                    title: 'Vidhik AI Legal Research Report',
+                    text: `I've analyzed a legal document using Vidhik AI. Compliance Score: ${analysisData?.complianceScore || 85}%.`,
+                    url: shareUrl
+                };
+
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                    toast.success("Report shared successfully!");
+                } else {
+                    await navigator.clipboard.writeText(`${shareData.text} Check it out here: ${shareData.url}`);
+                    toast.success("Share link copied to clipboard!");
+                }
             } else {
-                await navigator.clipboard.writeText(`${shareData.text} Check it out here: ${shareData.url}`);
-                toast.success("Share link copied to clipboard!");
+                toast.error('Failed to generate share link.');
             }
         } catch (error) {
             console.error("Error sharing:", error);
@@ -212,19 +289,22 @@ export default function DocumentReviewPage() {
                             accept=".pdf,.docx"
                         />
                         <div
-                            className="border-2 border-dashed border-gray-200 rounded-3xl bg-white p-20 flex flex-col items-center justify-center space-y-6 hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer group"
+                            className={`border-2 border-dashed rounded-xl p-20 flex flex-col items-center justify-center space-y-6 transition-all cursor-pointer group ${isDragging ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-border-strong hover:bg-secondary/50'}`}
                             onClick={() => fileInputRef.current?.click()}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
                         >
-                            <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center text-violet-600 group-hover:scale-110 transition-transform">
+                            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                 <Upload className="h-8 w-8" />
                             </div>
                             <div className="text-center space-y-2">
-                                <h3 className="text-xl font-semibold text-gray-900">Drag and drop your files here</h3>
-                                <p className="text-gray-500 max-w-sm">Upload legal agreements, NDAs, or service contracts for deep analysis.</p>
+                                <h3 className="text-xl font-semibold text-foreground">Drag and drop your files here</h3>
+                                <p className="text-muted-foreground max-w-sm">Upload legal agreements, NDAs, or service contracts for deep analysis.</p>
                             </div>
                             <Button
                                 size="lg"
-                                className="bg-violet-600 hover:bg-violet-700 h-12 px-8 rounded-xl gap-2 font-semibold"
+                                className="h-12 px-8 rounded-lg gap-2 font-semibold"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     fileInputRef.current?.click();
@@ -239,45 +319,45 @@ export default function DocumentReviewPage() {
 
                     {/* How it Works Sidebar */}
                     <div className="space-y-6">
-                        <Card className="rounded-3xl border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white overflow-hidden h-full">
-                            <CardHeader className="bg-gray-50/50 pb-4">
-                                <div className="flex items-center gap-2 text-violet-600">
+                        <Card className="rounded-xl border border-border shadow-sm bg-card overflow-hidden h-full">
+                            <CardHeader className="bg-secondary/30 border-b border-border pb-4">
+                                <div className="flex items-center gap-2 text-foreground">
                                     <Info className="h-5 w-5" />
-                                    <CardTitle className="text-base font-bold">How it works</CardTitle>
+                                    <CardTitle className="text-base font-semibold">How it works</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-8">
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 shrink-0 bg-violet-50 rounded-xl flex items-center justify-center text-violet-600">
+                                    <div className="w-10 h-10 shrink-0 bg-secondary rounded-lg flex items-center justify-center text-primary">
                                         <Search className="h-5 w-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="font-bold text-gray-900">Risk Scanning</h4>
-                                        <p className="text-sm text-gray-500 leading-relaxed">AI identifies hidden liabilities, unfavorable termination clauses, and unusual payment terms.</p>
+                                        <h4 className="font-semibold text-foreground">Risk Scanning</h4>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">AI identifies hidden liabilities, unfavorable termination clauses, and unusual payment terms.</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 shrink-0 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
+                                    <div className="w-10 h-10 shrink-0 bg-secondary rounded-lg flex items-center justify-center text-primary">
                                         <Shield className="h-5 w-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="font-bold text-gray-900">Compliance Check</h4>
-                                        <p className="text-sm text-gray-500 leading-relaxed">Matches your document against regional legal standards and internal company policies.</p>
+                                        <h4 className="font-semibold text-foreground">Compliance Check</h4>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">Matches your document against regional legal standards and internal company policies.</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 shrink-0 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
+                                    <div className="w-10 h-10 shrink-0 bg-secondary rounded-lg flex items-center justify-center text-primary">
                                         <Sparkles className="h-5 w-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="font-bold text-gray-900">Clause Optimization</h4>
-                                        <p className="text-sm text-gray-500 leading-relaxed">Suggests industry-standard language to make contracts more balanced and clear.</p>
+                                        <h4 className="font-semibold text-foreground">Clause Optimization</h4>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">Suggests industry-standard language to make contracts more balanced and clear.</p>
                                     </div>
                                 </div>
 
                                 <Separator className="my-6 opacity-50" />
 
-                                <p className="text-[11px] text-gray-400 italic leading-snug">
+                                <p className="text-xs text-muted-foreground italic leading-snug">
                                     Step 1 of 3: Document Ingestion. Your data is encrypted and processed according to SOC2 standards.
                                 </p>
                             </CardContent>
@@ -293,13 +373,13 @@ export default function DocumentReviewPage() {
             <div className="max-w-6xl mx-auto space-y-10 animate-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-violet-700 rounded-lg flex items-center justify-center text-white font-bold">V</div>
-                        <Badge className="bg-violet-50 text-violet-700 hover:bg-violet-50 border-none px-3 py-1 font-bold text-[10px] tracking-wider uppercase">
-                            <Zap className="h-3 w-3 mr-1 fill-violet-700" />
+                        <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">V</div>
+                        <Badge variant="secondary" className="px-3 py-1 font-semibold text-xs tracking-wide">
+                            <Zap className="h-3 w-3 mr-1" />
                             Analysis in Progress
                         </Badge>
                     </div>
-                    <Button variant="ghost" className="text-gray-500 hover:text-red-500 gap-2" onClick={() => setState('UPLOAD')}>
+                    <Button variant="ghost" className="text-muted-foreground hover:text-destructive gap-2" onClick={() => setState('UPLOAD')}>
                         Cancel Process
                         <X className="h-4 w-4" />
                     </Button>
@@ -309,62 +389,62 @@ export default function DocumentReviewPage() {
                     {/* Progress Circle Section */}
                     <div className="lg:col-span-2 flex flex-col items-center justify-center space-y-8">
                         <div className="flex flex-col items-center gap-2">
-                            <h2 className="text-3xl font-extrabold text-gray-900">Processing Document</h2>
-                            <p className="text-gray-500 font-medium">
+                            <h2 className="text-2xl font-bold text-foreground">Processing Document</h2>
+                            <p className="text-muted-foreground font-medium text-sm">
                                 {selectedFile ? selectedFile.name : "Service_Agreement_v2.pdf"} •
                                 {selectedFile ? (selectedFile.size / (1024 * 1024)).toFixed(1) + " MB" : "1.2 MB"}
                             </p>
-                            <div className="mt-2 px-3 py-1 bg-violet-50 text-violet-700 rounded-full text-xs font-bold uppercase tracking-widest border border-violet-100">
+                            <Badge variant="outline" className="mt-2 text-xs uppercase tracking-widest text-primary border-primary/20 bg-primary/5">
                                 Deep Structural Analysis
-                            </div>
+                            </Badge>
                         </div>
 
                         {/* Progress Circular Component */}
-                        <div className="relative w-72 h-72">
+                        <div className="relative w-64 h-64">
                             <svg className="w-full h-full transform -rotate-90">
                                 <circle
-                                    cx="144"
-                                    cy="144"
-                                    r="130"
+                                    cx="128"
+                                    cy="128"
+                                    r="112"
                                     stroke="currentColor"
-                                    strokeWidth="16"
+                                    strokeWidth="12"
                                     fill="transparent"
-                                    className="text-gray-100"
+                                    className="text-secondary"
                                 />
                                 <circle
-                                    cx="144"
-                                    cy="144"
-                                    r="130"
+                                    cx="128"
+                                    cy="128"
+                                    r="112"
                                     stroke="currentColor"
-                                    strokeWidth="16"
+                                    strokeWidth="12"
                                     fill="transparent"
-                                    strokeDasharray={816}
-                                    strokeDashoffset={816 - (816 * progress) / 100}
+                                    strokeDasharray={704}
+                                    strokeDashoffset={704 - (704 * progress) / 100}
                                     strokeLinecap="round"
-                                    className="text-violet-600 transition-all duration-300 ease-out"
+                                    className="text-primary transition-all duration-300 ease-out"
                                 />
                             </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-violet-600">
-                                <span className="text-6xl font-black">{progress}%</span>
-                                <span className="text-xs font-bold tracking-widest uppercase opacity-60">Completion</span>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-primary">
+                                <span className="text-5xl font-bold">{progress}%</span>
+                                <span className="text-xs font-semibold tracking-widest uppercase opacity-80 mt-1">Completion</span>
                             </div>
                         </div>
 
                         {/* Animated Scanning Beam Effect (Simulation) */}
-                        <div className="w-full max-w-sm h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
+                        <div className="w-full max-w-sm h-1 bg-secondary rounded-full overflow-hidden relative">
                             <div
-                                className="absolute top-0 left-0 h-full bg-violet-500 shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-300"
+                                className="absolute top-0 left-0 h-full bg-primary transition-all duration-300"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
                     </div>
 
                     {/* Live Logs Section */}
-                    <Card className="rounded-3xl border-none shadow-xl bg-white overflow-hidden flex flex-col h-[550px]">
-                        <CardHeader className="bg-gray-50 border-b pb-4 px-6">
-                            <div className="flex items-center gap-2 text-violet-900">
+                    <Card className="rounded-xl border border-border shadow-sm bg-card overflow-hidden flex flex-col h-[500px]">
+                        <CardHeader className="bg-secondary/30 border-b border-border pb-4 px-6">
+                            <div className="flex items-center gap-2 text-foreground">
                                 <Activity className="h-5 w-5" />
-                                <CardTitle className="text-sm font-extrabold uppercase tracking-tight">Active Analysis Engine</CardTitle>
+                                <CardTitle className="text-sm font-semibold uppercase tracking-tight">Active Analysis Engine</CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
@@ -373,33 +453,33 @@ export default function DocumentReviewPage() {
                                     {logs.map((log, i) => (
                                         <div key={i} className="flex gap-4 items-start">
                                             {log.status === 'done' ? (
-                                                <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white shrink-0">
+                                                <div className="mt-1 w-5 h-5 rounded-full bg-success flex items-center justify-center text-success-foreground shrink-0">
                                                     <Check className="h-3 w-3" />
                                                 </div>
                                             ) : log.status === 'loading' ? (
-                                                <Loader2 className="mt-1 h-5 w-5 text-violet-500 animate-spin shrink-0" />
+                                                <Loader2 className="mt-1 h-5 w-5 text-primary animate-spin shrink-0" />
                                             ) : (
-                                                <div className="mt-1 w-5 h-5 rounded-full border-2 border-gray-100 shrink-0" />
+                                                <div className="mt-1 w-5 h-5 rounded-full border-2 border-border shrink-0" />
                                             )}
                                             <div className="space-y-1">
-                                                <p className={`text-sm font-bold ${log.status === 'done' ? 'text-gray-900' : log.status === 'loading' ? 'text-violet-600' : 'text-gray-300'}`}>
+                                                <p className={`text-sm font-medium ${log.status === 'done' ? 'text-foreground' : log.status === 'loading' ? 'text-primary' : 'text-muted-foreground'}`}>
                                                     {log.msg}
                                                 </p>
-                                                {log.status === 'done' && i === 1 && <p className="text-[10px] text-gray-500 font-mono">14 standard clauses identified.</p>}
-                                                {log.status === 'loading' && i === 3 && <p className="text-[10px] text-gray-400 font-mono animate-pulse">Evaluating liability caps...</p>}
+                                                {log.status === 'done' && i === 1 && <p className="text-[10px] text-muted-foreground font-mono">14 standard clauses identified.</p>}
+                                                {log.status === 'loading' && i === 3 && <p className="text-[10px] text-muted-foreground font-mono animate-pulse">Evaluating liability caps...</p>}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="p-6 bg-gray-50 border-t space-y-4">
+                            <div className="p-6 bg-secondary/30 border-t border-border space-y-4">
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-400">
+                                    <div className="flex justify-between text-xs font-semibold text-muted-foreground">
                                         <span>PROCESSING POWER</span>
-                                        <span className="text-violet-600">Cloud AI Infrastructure</span>
+                                        <span className="text-primary">Cloud AI Infrastructure</span>
                                     </div>
-                                    <Progress value={75} className="h-1 bg-gray-200" />
+                                    <Progress value={75} className="h-1" />
                                 </div>
                             </div>
                         </CardContent>
@@ -441,7 +521,7 @@ export default function DocumentReviewPage() {
             return (
                 <div className="flex flex-col items-center justify-center max-w-5xl mx-auto py-12 space-y-12 animate-in fade-in zoom-in-95 duration-700">
                     <div className="text-center space-y-4">
-                        <div className="w-20 h-20 bg-violet-600 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-violet-200 animate-bounce">
+                        <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto shadow-xl shadow-sm animate-bounce">
                             <Check className="h-10 w-10 text-white stroke-[4]" />
                         </div>
                         <h1 className="text-4xl font-black text-gray-900 mt-6">Analysis Complete</h1>
@@ -456,25 +536,24 @@ export default function DocumentReviewPage() {
                         </div>
                     </div>
 
-                    {/* Personalized User Review Card */}
-                    <Card className="w-full rounded-[2.5rem] border-none shadow-2xl bg-gradient-to-br from-violet-600 via-violet-700 to-indigo-800 text-white overflow-hidden relative group">
-                        <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
+                    <Card className="w-full rounded-xl border border-border shadow-sm bg-primary text-primary-foreground overflow-hidden relative group">
+                        <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary-foreground/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
                         <div className="p-10 relative z-10 space-y-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                                    <Sparkles className="h-6 w-6 text-violet-100" />
+                                <div className="w-12 h-12 bg-primary-foreground/20 rounded-lg flex items-center justify-center backdrop-blur-md">
+                                    <Sparkles className="h-6 w-6 text-primary-foreground" />
                                 </div>
-                                <h3 className="text-xl font-black tracking-tight">Review of Your Document</h3>
+                                <h3 className="text-xl font-bold tracking-tight">Review of Your Document</h3>
                             </div>
-                            <p className="text-xl leading-relaxed font-medium text-violet-50">
+                            <p className="text-xl leading-relaxed font-medium text-primary-foreground/90">
                                 "{data.userReview || data.summary}"
                             </p>
                             <div className="flex items-center gap-4 pt-4">
-                                <Badge className="bg-white/20 hover:bg-white/30 text-white border-none px-4 py-2 rounded-full font-bold text-xs backdrop-blur-md">
+                                <Badge variant="secondary" className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-none px-4 py-2 rounded-md font-semibold text-xs backdrop-blur-md">
                                     <Activity className="h-3 w-3 mr-2" />
                                     {data.findings.length} Analysis Points
                                 </Badge>
-                                <Badge className="bg-white/20 hover:bg-white/30 text-white border-none px-4 py-2 rounded-full font-bold text-xs backdrop-blur-md">
+                                <Badge variant="secondary" className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-none px-4 py-2 rounded-md font-semibold text-xs backdrop-blur-md">
                                     <ShieldCheck className="h-3 w-3 mr-2" />
                                     Vidhik Verified
                                 </Badge>
@@ -484,60 +563,71 @@ export default function DocumentReviewPage() {
 
                     {/* Final Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8 flex flex-col items-center text-center space-y-4 hover:-translate-y-2 transition-transform duration-300">
-                            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
-                                <ShieldAlert className="h-6 w-6" />
+                        <Card className="rounded-xl border border-border shadow-sm bg-card p-6 flex flex-col items-center text-center space-y-4 hover:-translate-y-1 transition-transform duration-300">
+                            <div className="w-10 h-10 bg-destructive/10 rounded-lg flex items-center justify-center text-destructive">
+                                <ShieldAlert className="h-5 w-5" />
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Risk Level</p>
-                                <p className={`text-2xl font-black ${data.riskLevel === 'High' ? 'text-red-500' : data.riskLevel === 'Medium' ? 'text-orange-500' : 'text-green-500'}`}>{data.riskLevel}</p>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Risk Level</p>
+                                <p className={`text-2xl font-bold ${data.riskLevel === 'High' ? 'text-destructive' : data.riskLevel === 'Medium' ? 'text-warning' : 'text-success'}`}>{data.riskLevel}</p>
                             </div>
                         </Card>
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8 flex flex-col items-center text-center space-y-4 hover:-translate-y-2 transition-transform duration-300">
-                            <div className="w-12 h-12 bg-violet-50 rounded-2xl flex items-center justify-center text-violet-500">
-                                <Activity className="h-6 w-6" />
+                        <Card className="rounded-xl border border-border shadow-sm bg-card p-6 flex flex-col items-center text-center space-y-4 hover:-translate-y-1 transition-transform duration-300">
+                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                                <Activity className="h-5 w-5" />
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Compliance</p>
-                                <p className="text-2xl font-black text-violet-600">{data.complianceScore}%</p>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Compliance</p>
+                                <p className="text-2xl font-bold text-primary">{data.complianceScore}%</p>
                             </div>
                         </Card>
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8 flex flex-col items-center text-center space-y-4 hover:-translate-y-2 transition-transform duration-300">
-                            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
-                                <FileEdit className="h-6 w-6" />
+                        <Card className="rounded-xl border border-border shadow-sm bg-card p-6 flex flex-col items-center text-center space-y-4 hover:-translate-y-1 transition-transform duration-300">
+                            <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center text-warning">
+                                <FileEdit className="h-5 w-5" />
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Conflicts</p>
-                                <p className="text-2xl font-black text-orange-500">{data.suggestedAmendmentsCount}</p>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Conflicts</p>
+                                <p className="text-2xl font-bold text-warning">{data.suggestedAmendmentsCount}</p>
                             </div>
                         </Card>
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8 flex flex-col items-center text-center space-y-4 hover:-translate-y-2 transition-transform duration-300">
-                            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-500">
-                                <FileCheck className="h-6 w-6" />
+                        <Card className="rounded-xl border border-border shadow-sm bg-card p-6 flex flex-col items-center text-center space-y-4 hover:-translate-y-1 transition-transform duration-300">
+                            <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center text-success">
+                                <FileCheck className="h-5 w-5" />
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Valid Clauses</p>
-                                <p className="text-2xl font-black text-green-600">{data.standardClausesCount || '10+'}</p>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Valid Clauses</p>
+                                <p className="text-2xl font-bold text-success">{data.standardClausesCount || '10+'}</p>
                             </div>
                         </Card>
                     </div>
 
-                    <Card className="w-full rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden">
-                        <div className="bg-gray-50 p-6 border-b flex items-center justify-between">
-                            <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm flex items-center gap-2">
-                                <Zap className="h-4 w-4 text-violet-600" />
+                    <Card className="w-full rounded-xl border border-border shadow-sm bg-card overflow-hidden">
+                        <div className="bg-secondary/30 p-6 border-b border-border flex items-center justify-between">
+                            <h3 className="font-semibold text-foreground tracking-wide text-sm flex items-center gap-2">
+                                <Zap className="h-4 w-4 text-primary" />
                                 Key Findings
                             </h3>
                         </div>
                         <div className="p-8 space-y-4">
                             {data.findings.map((finding: any, i: number) => (
-                                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors">
-                                    <div className={`mt-1 h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${finding.type === 'warning' ? 'bg-red-100 text-red-600' : finding.type === 'positive' ? 'bg-green-100 text-green-600' : 'bg-violet-100 text-violet-600'}`}>
-                                        {finding.type === 'warning' ? <AlertTriangle className="h-3 w-3" /> : finding.type === 'positive' ? <Check className="h-3 w-3" /> : <Info className="h-3 w-3" />}
+                                <div key={i} className="flex items-start gap-4 p-5 rounded-2xl bg-secondary/10 hover:bg-secondary/30 transition-colors border border-gray-100 hover:border-gray-200">
+                                    <div className={`mt-1 h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${finding.type === 'warning' ? 'bg-destructive/10 text-destructive' : finding.type === 'positive' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
+                                        {finding.type === 'warning' ? <AlertTriangle className="h-4 w-4" /> : finding.type === 'positive' ? <Check className="h-4 w-4" /> : <Info className="h-4 w-4" />}
                                     </div>
-                                    <div className="space-y-1">
-                                        <p className="font-bold text-gray-900">{finding.title}</p>
-                                        <p className="text-sm text-gray-500 leading-relaxed">{finding.description}</p>
+                                    <div className="space-y-3 w-full">
+                                        <div>
+                                            <p className="font-bold text-gray-900 text-lg">{finding.title}</p>
+                                            <p className="text-sm text-gray-600 leading-relaxed mt-1">{finding.description}</p>
+                                        </div>
+                                        {finding.suggestion && (
+                                            <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Sparkles className="h-3 w-3 text-primary" />
+                                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">AI Suggestion & Improvement</p>
+                                                </div>
+                                                <p className="text-sm text-primary font-bold italic">"{finding.suggestion}"</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -548,7 +638,7 @@ export default function DocumentReviewPage() {
                         <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-gray-200 text-gray-600 hover:bg-gray-50" onClick={() => setState('UPLOAD')}>
                             Upload Another Document
                         </Button>
-                        <Button className="flex-[2] h-14 rounded-2xl font-black bg-violet-600 hover:bg-violet-700 text-lg gap-2 shadow-lg shadow-violet-100" onClick={() => setViewMode('DETAILED')}>
+                        <Button className="flex-[2] h-14 rounded-2xl font-black bg-primary hover:bg-primary text-lg gap-2 shadow-lg shadow-sm" onClick={() => setViewMode('DETAILED')}>
                             View Detailed Analysis
                             <ArrowRight className="h-5 w-5" />
                         </Button>
@@ -562,30 +652,27 @@ export default function DocumentReviewPage() {
                 {/* Results Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-gray-500">
-                            <FileText className="h-4 w-4" />
-                            <span>Projects</span>
-                            <ChevronRight className="h-3 w-3" />
-                            <span className="text-gray-900 underline underline-offset-4">Analysis - {selectedFile?.name || "Service Agreement 2024"}</span>
-                        </div>
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100" onClick={() => setViewMode('SUMMARY')}>
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100" onClick={() => {
+                                if (id) navigate('/documents/review');
+                                else setViewMode('SUMMARY');
+                            }}>
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
-                            <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-                                Analysis Results
-                                <Badge className={`${data.riskLevel === 'High' ? 'bg-red-100 text-red-600' : data.riskLevel === 'Medium' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'} border-none font-bold px-3 py-1`}>
-                                    {data.riskLevel === 'High' || data.riskLevel === 'Medium' ? <AlertTriangle className="h-3 w-3 mr-1" /> : <Check className="h-3 w-3 mr-1" />}
-                                    {data.riskLevel.toUpperCase()} RISK DETECTED
-                                </Badge>
-                            </h1>
+                            <h2 className="text-3xl font-black tracking-tight text-gray-900">{id ? "Shared Document Review" : "Document Review"}</h2>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button variant="outline" className="rounded-xl h-11 border-gray-200 gap-2 font-bold px-6 shadow-sm hover:bg-gray-50" onClick={handleShare}>
-                            <Share2 className="h-4 w-4" />
-                            Share Report
+                        {!id && (
+                            <Button variant="outline" className="rounded-xl h-11 border-gray-200 gap-2 font-bold px-6 shadow-sm hover:bg-gray-50" onClick={handleShare}>
+                                <Share2 className="h-4 w-4" />
+                                Share Report
+                            </Button>
+                        )}
+                        <Button className="rounded-xl h-11 bg-gray-900 text-white font-bold gap-2 px-6 shadow-sm hover:bg-black transition-colors" onClick={() => setIsFullscreen(!isFullscreen)}>
+                            <Maximize2 className="h-4 w-4" />
+                            {isFullscreen ? 'Exit Focus Mode' : 'Focus Mode'}
                         </Button>
                     </div>
                 </div>
@@ -595,7 +682,7 @@ export default function DocumentReviewPage() {
                     <Card className={`w-full rounded-[2.5rem] border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] bg-white overflow-hidden flex flex-col transition-all duration-500 ${isFullscreen ? 'fixed inset-4 z-[100]' : 'min-h-[900px]'}`}>
                         <CardHeader className="bg-gray-50/50 border-b p-6 flex flex-row items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600">
+                                <div className="w-10 h-10 bg-secondary/80 rounded-xl flex items-center justify-center text-primary">
                                     <FileText className="h-6 w-6" />
                                 </div>
                                 <CardTitle className="text-base font-bold">{selectedFile?.name || "Service_Agreement_v2.pdf"}</CardTitle>
@@ -607,7 +694,7 @@ export default function DocumentReviewPage() {
                                         <input
                                             type="text"
                                             placeholder="Search in document..."
-                                            className="h-8 w-48 pl-8 pr-8 rounded-lg border border-gray-200 text-xs focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all"
+                                            className="h-8 w-48 pl-8 pr-8 rounded-lg border border-gray-200 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             autoFocus
@@ -625,7 +712,7 @@ export default function DocumentReviewPage() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className={`rounded-lg transition-colors ${isSearchVisible ? 'text-violet-600 bg-violet-50' : 'text-gray-400 hover:text-violet-600'}`}
+                                    className={`rounded-lg transition-colors ${isSearchVisible ? 'text-primary bg-secondary' : 'text-gray-400 hover:text-primary'}`}
                                     onClick={() => {
                                         setIsSearchVisible(!isSearchVisible);
                                         if (isSearchVisible) setSearchQuery("");
@@ -636,7 +723,7 @@ export default function DocumentReviewPage() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className={`rounded-lg transition-colors ${isFullscreen ? 'text-violet-600 bg-violet-50' : 'text-gray-400 hover:text-violet-600'}`}
+                                    className={`rounded-lg transition-colors ${isFullscreen ? 'text-primary bg-secondary' : 'text-gray-400 hover:text-primary'}`}
                                     onClick={() => setIsFullscreen(!isFullscreen)}
                                 >
                                     {isFullscreen ? <X className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -659,7 +746,7 @@ export default function DocumentReviewPage() {
                                 </div>
                             )}
 
-                            <div className={`max-w-4xl mx-auto space-y-8 font-serif text-gray-800 leading-relaxed whitespace-pre-wrap ${isFullscreen ? 'text-lg' : 'text-base'}`}>
+                            <div className={`max-w-[210mm] mx-auto space-y-8 font-serif text-gray-800 leading-relaxed ${isFullscreen ? 'text-lg' : 'text-base'}`}>
                                 {data.fullText ? (
                                     <div>
                                         {/* Dynamic Interactive Text Rendering */}
@@ -667,87 +754,215 @@ export default function DocumentReviewPage() {
                                             let text = data.fullText;
                                             const parts: React.ReactNode[] = [];
                                             let lastIndex = 0;
+                                            const unmappedClauses: any[] = [];
+
+                                            // Helper to escape regex special characters
+                                            const escapeRegExp = (string: string) => {
+                                                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                            };
+
+                                            // Helper to create a whitespace-flexible regex from a string
+                                            const createFlexibleRegex = (string: string) => {
+                                                const words = string.trim().split(/\s+/);
+                                                const escapedWords = words.map(escapeRegExp);
+                                                return new RegExp(escapedWords.join('\\s+'), 'i');
+                                            };
 
                                             // Sort highlights by their position in the text to avoid overlap issues
                                             const sortedHighlights = [...(data.highlightedClauses || [])].sort((a, b) => {
-                                                return text.indexOf(a.text) - text.indexOf(b.text);
+                                                const regexA = createFlexibleRegex(a.text);
+                                                const regexB = createFlexibleRegex(b.text);
+                                                const matchA = text.match(regexA);
+                                                const matchB = text.match(regexB);
+                                                const indexA = matchA?.index ?? -1;
+                                                const indexB = matchB?.index ?? -1;
+                                                if (indexA === -1 && indexB === -1) return 0;
+                                                if (indexA === -1) return 1;
+                                                if (indexB === -1) return -1;
+                                                return indexA - indexB;
                                             });
 
-                                            // Helper to render text with search highlights
+                                            // Helper to format text professionally (detect headings, bold text, etc.)
+                                            const formatTextChunk = (content: string, keyPrefix: string) => {
+                                                // Split by newlines to process line by line for professional structuring
+                                                const lines = content.split('\n');
+                                                return lines.map((line, i) => {
+                                                    const trimmed = line.trim();
+                                                    
+                                                    // Detect if line is likely a heading (ALL CAPS, short, not just numbers)
+                                                    const isHeading = trimmed.length > 2 && trimmed.length < 80 && trimmed === trimmed.toUpperCase() && !/^\d+$/.test(trimmed);
+                                                    
+                                                    // Detect if line is a key-value pair (e.g., "Company Name: Vidhik AI")
+                                                    const isKeyValuePair = trimmed.includes(':') && trimmed.split(':')[0].length < 30;
+
+                                                    let renderedLine: React.ReactNode = line;
+                                                    let lineClass = "";
+
+                                                    if (isHeading) {
+                                                        lineClass = "block font-black text-gray-900 mt-8 mb-3 text-sm tracking-widest border-b border-gray-200 pb-1";
+                                                    } else if (isKeyValuePair) {
+                                                        const [key, ...rest] = line.split(':');
+                                                        renderedLine = <><span className="font-bold text-gray-800">{key}:</span>{rest.join(':')}</>;
+                                                        lineClass = "block mb-2";
+                                                    } else if (trimmed.length > 0) {
+                                                        lineClass = "block mb-3";
+                                                    }
+
+                                                    return (
+                                                        <React.Fragment key={`${keyPrefix}-line-${i}`}>
+                                                            {trimmed.length > 0 ? (
+                                                                <span className={lineClass}>{renderedLine}</span>
+                                                            ) : (
+                                                                <span className="block h-2"></span> // Reduced height for blank lines
+                                                            )}
+                                                        </React.Fragment>
+                                                    );
+                                                });
+                                            };
+
+                                            // Helper to render text with search highlights AND professional formatting
                                             const renderWithSearch = (content: string, keyPrefix: string) => {
-                                                if (!searchQuery || searchQuery.length < 2) return content;
+                                                if (!searchQuery || searchQuery.length < 2) {
+                                                    return formatTextChunk(content, keyPrefix);
+                                                }
 
-                                                const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                                const regex = new RegExp(`(${escapedQuery})`, 'gi');
-                                                const subParts = content.split(regex);
+                                                const regex = createFlexibleRegex(searchQuery);
+                                                const subParts = content.split(new RegExp(`(${regex.source})`, 'gi'));
 
-                                                return subParts.map((part, i) =>
+                                                const searchHighlighted = subParts.map((part, i) =>
                                                     regex.test(part) ? (
-                                                        <mark key={`${keyPrefix}-${i}`} className="bg-primary/20 text-foreground rounded-sm px-0.5 font-bold shadow-sm">
+                                                        <mark key={`${keyPrefix}-search-${i}`} className="bg-primary/20 text-foreground rounded-sm px-0.5 font-bold shadow-sm">
                                                             {part}
                                                         </mark>
                                                     ) : part
                                                 );
+                                                
+                                                // We return a simple span here because mixing professional line formatting 
+                                                // with deep search highlighting is complex. Search view is more raw.
+                                                return <span>{searchHighlighted}</span>;
                                             };
 
                                             sortedHighlights.forEach((clause, idx) => {
-                                                const startIndex = text.indexOf(clause.text, lastIndex);
-                                                if (startIndex !== -1) {
-                                                    // Push text before the highlight with search
-                                                    parts.push(renderWithSearch(text.substring(lastIndex, startIndex), `pre-${idx}`));
-
-                                                    // Push the interactive highlight
-                                                    const colorClass =
-                                                        clause.type === 'CRITICAL' ? 'bg-red-100/80 border-b-2 border-red-500 text-red-900' :
-                                                            clause.type === 'UNFAVORABLE' ? 'bg-orange-100/80 border-b-2 border-orange-500 text-orange-900' :
-                                                                clause.type === 'POSITIVE' ? 'bg-green-100/80 border-b-2 border-green-500 text-green-900' :
-                                                                    'bg-violet-50 border-b-2 border-violet-400 text-violet-900';
-
-                                                    parts.push(
-                                                        <span
-                                                            key={idx}
-                                                            className={`${colorClass} px-1.5 py-0.5 rounded-sm font-bold cursor-help transition-all duration-200 relative group/h`}
-                                                            onMouseEnter={() => setActiveHighlightIndex(idx)}
-                                                            onMouseLeave={() => setActiveHighlightIndex(null)}
-                                                        >
-                                                            {/* AI highlight text also needs search checking */}
-                                                            {renderWithSearch(clause.text, `highlight-${idx}`)}
-
-                                                            {/* Floating Explanation Point */}
-                                                            {activeHighlightIndex === idx && (
-                                                                <div className="absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full w-64 p-4 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 text-xs normal-case animate-in fade-in zoom-in-95 duration-200 pointer-events-none">
-                                                                    <div className="flex items-center gap-2 mb-2 font-black uppercase tracking-widest text-[10px]">
-                                                                        {clause.type === 'CRITICAL' ? <AlertTriangle className="h-3 w-3 text-red-500" /> : <Sparkles className="h-3 w-3 text-violet-500" />}
-                                                                        <span className={clause.type === 'CRITICAL' ? 'text-red-600' : 'text-violet-600'}>Explanation Point</span>
-                                                                    </div>
-                                                                    <p className="font-bold text-gray-900 mb-2 leading-relaxed">
-                                                                        {clause.issue}
-                                                                    </p>
-                                                                    <p className="text-gray-500 font-medium leading-relaxed">
-                                                                        {clause.explanation || "This clause has been flagged for review based on standard legal practices."}
-                                                                    </p>
-                                                                    {clause.suggestion && (
-                                                                        <div className="mt-3 pt-3 border-t border-gray-50 bg-violet-50/50 -mx-4 -mb-4 p-4 rounded-b-2xl">
-                                                                            <p className="text-[9px] font-black text-violet-600 uppercase tracking-widest mb-1">Vidhik Suggestion</p>
-                                                                            <p className="text-violet-800 font-bold italic">"{clause.suggestion}"</p>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-
-                                                            {/* Visual Indicator Pulse */}
-                                                            <span className={`absolute -right-1 -top-1 w-2 h-2 rounded-full animate-ping ${clause.type === 'CRITICAL' ? 'bg-red-400' : 'bg-violet-400'}`}></span>
-                                                            <span className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${clause.type === 'CRITICAL' ? 'bg-red-500' : 'bg-violet-500'}`}></span>
-                                                        </span>
-                                                    );
-
-                                                    lastIndex = startIndex + clause.text.length;
+                                                // Try exact match first
+                                                let startIndex = text.indexOf(clause.text, lastIndex);
+                                                let matchLength = clause.text.length;
+                                                
+                                                // If exact match fails, try whitespace-flexible match
+                                                if (startIndex === -1) {
+                                                    const regex = createFlexibleRegex(clause.text);
+                                                    const remainingText = text.substring(lastIndex);
+                                                    const match = remainingText.match(regex);
+                                                    
+                                                    if (match && match.index !== undefined) {
+                                                        startIndex = lastIndex + match.index;
+                                                        matchLength = match[0].length;
+                                                    }
                                                 }
+                                                
+                                                // If still no match, push to unmapped
+                                                if (startIndex === -1) {
+                                                    unmappedClauses.push({ ...clause, idx });
+                                                    return;
+                                                }
+
+                                                // Push text before the highlight with search
+                                                parts.push(renderWithSearch(text.substring(lastIndex, startIndex), `pre-${idx}`));
+
+                                                // Push the interactive highlight
+                                                const colorClass =
+                                                    clause.type === 'CRITICAL' ? 'bg-red-100/80 border-b-2 border-red-500 text-red-900' :
+                                                        clause.type === 'UNFAVORABLE' ? 'bg-orange-100/80 border-b-2 border-orange-500 text-orange-900' :
+                                                            clause.type === 'POSITIVE' ? 'bg-green-100/80 border-b-2 border-green-500 text-green-900' :
+                                                                'bg-secondary border-b-2 border-violet-400 text-foreground';
+
+                                                parts.push(
+                                                    <span
+                                                        key={`mapped-${idx}`}
+                                                        className={`${colorClass} px-1.5 py-0.5 rounded-sm font-bold cursor-help transition-all duration-200 relative group/h`}
+                                                        onMouseEnter={() => setActiveHighlightIndex(idx)}
+                                                        onMouseLeave={() => setActiveHighlightIndex(null)}
+                                                    >
+                                                        {renderWithSearch(clause.text, `highlight-${idx}`)}
+
+                                                        {/* Floating Explanation Point */}
+                                                        {activeHighlightIndex === idx && (
+                                                            <div className="absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full w-80 p-5 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 text-sm normal-case animate-in fade-in zoom-in-95 duration-200 pointer-events-none">
+                                                                <div className="flex items-center gap-2 mb-3 font-black uppercase tracking-widest text-[11px]">
+                                                                    {clause.type === 'CRITICAL' ? <AlertTriangle className="h-4 w-4 text-red-500" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                                                                    <span className={clause.type === 'CRITICAL' ? 'text-red-600' : 'text-primary'}>AI Analysis</span>
+                                                                </div>
+                                                                <p className="font-bold text-gray-900 mb-2 leading-relaxed">
+                                                                    {clause.issue}
+                                                                </p>
+                                                                <p className="text-gray-600 font-medium leading-relaxed">
+                                                                    {clause.explanation || "This clause has been flagged for review based on standard legal practices."}
+                                                                </p>
+                                                                {clause.suggestion && (
+                                                                    <div className="mt-4 pt-4 border-t border-gray-100 bg-secondary/30 -mx-5 -mb-5 p-5 rounded-b-2xl">
+                                                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">Suggested Revision</p>
+                                                                        <p className="text-primary font-bold italic leading-relaxed">"{clause.suggestion}"</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Visual Indicator Pulse */}
+                                                        <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full animate-ping ${clause.type === 'CRITICAL' ? 'bg-red-400' : 'bg-violet-400'}`}></span>
+                                                        <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full ${clause.type === 'CRITICAL' ? 'bg-red-500' : 'bg-primary/90'}`}></span>
+                                                    </span>
+                                                );
+
+                                                lastIndex = startIndex + matchLength;
                                             });
 
                                             // Push remaining text with search
                                             parts.push(renderWithSearch(text.substring(lastIndex), "post"));
-                                            return parts;
+
+                                            return (
+                                                <div className="space-y-12 pb-16">
+                                                    <div className="bg-white p-12 md:p-20 shadow-xl border border-gray-200 relative text-justify min-h-[297mm]">
+                                                        {parts}
+                                                    </div>
+                                                    
+                                                    {unmappedClauses.length > 0 && (
+                                                        <div className="mt-12 space-y-6">
+                                                            <div className="flex items-center gap-3 mb-6">
+                                                                <div className="h-10 w-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600">
+                                                                    <ShieldAlert className="h-5 w-5" />
+                                                                </div>
+                                                                <div>
+                                                                    <h3 className="text-xl font-bold text-gray-900">Additional Identified Clauses</h3>
+                                                                    <p className="text-sm text-gray-500">The AI identified these clauses, but they were modified or re-formatted in the original document.</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                {unmappedClauses.map((clause, idx) => (
+                                                                    <div key={`unmapped-${idx}`} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                                                                        <div className="flex items-start justify-between gap-4">
+                                                                            <Badge className={clause.type === 'CRITICAL' ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary'}>
+                                                                                {clause.type}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 font-mono text-sm text-gray-700 italic">
+                                                                            "{clause.text}"
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-bold text-gray-900 mb-1">{clause.issue}</p>
+                                                                            <p className="text-sm text-gray-600 leading-relaxed">{clause.explanation}</p>
+                                                                        </div>
+                                                                        {clause.suggestion && (
+                                                                            <div className="bg-secondary/30 p-4 rounded-xl border border-primary/10">
+                                                                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Suggested Revision</p>
+                                                                                <p className="text-sm text-primary font-bold">"{clause.suggestion}"</p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
                                         })()}
                                     </div>
                                 ) : (
@@ -761,9 +976,9 @@ export default function DocumentReviewPage() {
                     </Card>
 
                     {/* Bottom Panel: Analysis Metrics / Final Action */}
-                    <div className="w-full flex flex-col items-center justify-center p-12 bg-violet-50/40 rounded-[3rem] border-2 border-dashed border-violet-200/50 transition-all hover:bg-violet-50/60 mb-10">
+                    <div className="w-full flex flex-col items-center justify-center p-12 bg-secondary/40 rounded-[3rem] border-2 border-dashed border-primary/20/50 transition-all hover:bg-secondary/60 mb-10">
                         <div className="text-center space-y-6 w-full max-w-2xl">
-                            <div className="w-24 h-24 bg-violet-600 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-violet-200 mb-8 animate-pulse">
+                            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-sm mb-8 animate-pulse">
                                 <Check className="h-12 w-12 text-white stroke-[4]" />
                             </div>
                             <h3 className="text-3xl font-black text-gray-900 tracking-tight">Audit Successfully Completed</h3>
@@ -774,11 +989,11 @@ export default function DocumentReviewPage() {
 
                             {/* Final Stats Button - THE FINAL DESTINATION */}
                             <div className="pt-10">
-                                <Button className="w-full max-w-md h-20 bg-violet-600 hover:bg-violet-700 rounded-[2rem] text-2xl font-black gap-4 shadow-[0_20px_50px_rgba(37,99,235,0.4)] transition-all hover:scale-[1.02] active:scale-95 group" onClick={() => setViewMode('SUMMARY')}>
+                                <Button className="w-full max-w-md h-20 bg-primary hover:bg-primary rounded-[2rem] text-2xl font-black gap-4 shadow-[0_20px_50px_rgba(37,99,235,0.4)] transition-all hover:scale-[1.02] active:scale-95 group" onClick={() => setViewMode('SUMMARY')}>
                                     Finish Audit & View Dashboard
                                     <ArrowRight className="h-7 w-7 group-hover:translate-x-2 transition-transform" />
                                 </Button>
-                                <p className="mt-6 text-sm font-bold text-violet-600/60 uppercase tracking-widest">Securely processed via SOC2 Encryption</p>
+                                <p className="mt-6 text-sm font-bold text-primary/60 uppercase tracking-widest">Securely processed via SOC2 Encryption</p>
                             </div>
                         </div>
                     </div>

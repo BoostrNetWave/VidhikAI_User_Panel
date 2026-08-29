@@ -460,7 +460,7 @@ export default function ConsultationMeeting() {
                     </button>
 
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-xl shadow-inner">
-                        <Lock className="w-4 h-4 text-violet-700" />
+                        <Lock className="w-4 h-4 text-primary" />
                         Secure Encrypted Consultation Room
                     </div>
                 </div>
@@ -478,7 +478,7 @@ export default function ConsultationMeeting() {
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 bg-[#0F172A] px-3 py-1 rounded-lg border border-slate-800 text-[11px] font-bold text-slate-400">
-                                <Clock className="w-3.5 h-3.5 text-violet-500" />
+                                <Clock className="w-3.5 h-3.5 text-primary" />
                                 Active Session
                             </div>
                         </div>
@@ -567,8 +567,8 @@ export default function ConsultationMeeting() {
                                     /* Waiting Overlay */
                                     <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 animate-pulse">
                                         <div className="relative">
-                                            <div className="absolute inset-0 bg-violet-500/20 rounded-full blur-xl animate-ping"></div>
-                                            <div className="relative h-20 w-20 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-violet-400">
+                                            <div className="absolute inset-0 bg-primary/90/20 rounded-full blur-xl animate-ping"></div>
+                                            <div className="relative h-20 w-20 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-primary/80">
                                                 <Video className="w-10 h-10 animate-bounce" />
                                             </div>
                                         </div>
@@ -655,7 +655,7 @@ export default function ConsultationMeeting() {
                                     onClick={handleShareScreen}
                                     className={`h-12 w-12 rounded-2xl flex items-center justify-center border transition-all ${
                                         isScreenSharing
-                                        ? 'bg-violet-650 bg-violet-600 border-violet-500 text-white'
+                                        ? 'bg-violet-650 bg-primary border-primary text-white'
                                         : 'bg-slate-800 border-slate-700 text-white hover:bg-slate-700'
                                     }`}
                                     title="Share Screen"
@@ -707,11 +707,11 @@ export default function ConsultationMeeting() {
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Advocate Assigned</span>
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400">
-                                                <ShieldCheck className="w-5 h-5 text-violet-700" />
+                                                <ShieldCheck className="w-5 h-5 text-primary" />
                                             </div>
                                             <div>
                                                 <h4 className="font-extrabold text-slate-900 text-sm leading-none">{caseData.lawyer?.fullName}</h4>
-                                                <p className="text-[10px] text-violet-700 font-extrabold uppercase mt-1">{caseData.lawyer?.expertise || "General Counsel"}</p>
+                                                <p className="text-[10px] text-primary font-extrabold uppercase mt-1">{caseData.lawyer?.expertise || "General Counsel"}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -727,7 +727,7 @@ export default function ConsultationMeeting() {
                                         <div className="space-y-1.5">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scheduled consultation</span>
                                             <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl flex items-center gap-3 text-xs font-semibold text-slate-700">
-                                                <Clock className="w-4 h-4 text-violet-700" />
+                                                <Clock className="w-4 h-4 text-primary" />
                                                 <span>
                                                     {new Date(caseData.bookingDate).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} • {caseData.bookingTime}
                                                 </span>
@@ -771,7 +771,7 @@ export default function ConsultationMeeting() {
                                                 </p>
                                                 <button 
                                                     onClick={fetchCaseDetails}
-                                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 hover:underline"
+                                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
                                                 >
                                                     <RefreshCcw size={10} /> Check for updates
                                                 </button>
@@ -785,7 +785,7 @@ export default function ConsultationMeeting() {
                                         <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">Shared Consultation files</h4>
                                         <button 
                                             onClick={fetchCaseDetails}
-                                            className="text-[10px] font-bold text-violet-750 text-violet-700 flex items-center gap-1"
+                                            className="text-[10px] font-bold text-violet-750 text-primary flex items-center gap-1"
                                         >
                                             <RefreshCcw size={10} /> Sync
                                         </button>
@@ -793,21 +793,21 @@ export default function ConsultationMeeting() {
 
                                     {/* Meeting Summary File (rendered first if available) */}
                                     {caseData.meetingSummaryUrl && (
-                                        <div className="p-3.5 bg-violet-50/50 border border-violet-100 rounded-xl flex items-center justify-between gap-4 shadow-sm">
+                                        <div className="p-3.5 bg-secondary/50 border border-border rounded-xl flex items-center justify-between gap-4 shadow-sm">
                                             <div className="flex items-center gap-2.5 truncate">
-                                                <div className="p-2 bg-violet-100 rounded-lg text-violet-700 shrink-0">
+                                                <div className="p-2 bg-secondary/80 rounded-lg text-primary shrink-0">
                                                     <FileText size={16} />
                                                 </div>
                                                 <div className="truncate">
                                                     <h5 className="font-bold text-slate-900 text-xs truncate">{caseData.meetingSummaryName}</h5>
-                                                    <span className="text-[9px] text-violet-700 font-black uppercase tracking-wider">Meeting Summary</span>
+                                                    <span className="text-[9px] text-primary font-black uppercase tracking-wider">Meeting Summary</span>
                                                 </div>
                                             </div>
                                             <a
                                                 href={`/lawyer${caseData.meetingSummaryUrl}`}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="h-8 w-8 rounded-lg bg-white border border-violet-100 flex items-center justify-center hover:bg-violet-50 text-violet-750 hover:text-violet-700 shrink-0 transition-colors"
+                                                className="h-8 w-8 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-secondary text-violet-750 hover:text-primary shrink-0 transition-colors"
                                             >
                                                 <Download size={14} />
                                             </a>

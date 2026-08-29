@@ -78,7 +78,7 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -86,9 +86,9 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
             </div>
 
             {/* Section 1: Company Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Details
                     </CardTitle>
@@ -164,9 +164,9 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
             </Card>
 
             {/* Section 2: Employee Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Employee Details
                     </CardTitle>
@@ -237,9 +237,9 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
             </Card>
 
             {/* Section 3: Probation & Confirmation Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Calendar className="h-5 w-5" />
                         Probation & Confirmation Timelines
                     </CardTitle>
@@ -384,9 +384,9 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
             </Card>
 
             {/* Section 4: Compensation & Benefits */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Compensation & Benefits
                     </CardTitle>
@@ -442,9 +442,9 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
             </Card>
 
             {/* Section 5: Legal & General Clauses */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Legal & General Clauses
                     </CardTitle>
@@ -486,9 +486,9 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
             </Card>
 
             {/* Section 6: Signing & Locations */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution Details
                     </CardTitle>
@@ -560,9 +560,9 @@ const ProbationConfirmationLetterForm: React.FC<ProbationConfirmationLetterFormP
             </Card>
 
             {/* Section 7: Setup Compliance Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Compliance Flags
                     </CardTitle>

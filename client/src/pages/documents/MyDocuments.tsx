@@ -278,13 +278,13 @@ export default function MyDocuments() {
                         <div className="flex p-1 bg-gray-100 rounded-lg border">
                             <button
                                 onClick={() => setActiveTab('workspace')}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'workspace' ? 'bg-white shadow-sm text-violet-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'workspace' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 Workspace
                             </button>
                             <button
                                 onClick={() => setActiveTab('trash')}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'trash' ? 'bg-white shadow-sm text-red-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'trash' ? 'bg-background shadow-sm text-destructive' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 <Trash2 className="h-4 w-4" />
                                 Dustbin
@@ -293,7 +293,7 @@ export default function MyDocuments() {
                         {activeTab === 'workspace' && (
                             <Button
                                 onClick={() => setIsUploadOpen(true)}
-                                className="bg-violet-600 hover:bg-violet-700 text-white rounded-lg flex items-center gap-2 font-semibold text-sm h-9"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg flex items-center gap-2 font-semibold text-sm h-9"
                             >
                                 <Upload className="h-4 w-4" />
                                 Upload Document
@@ -332,7 +332,7 @@ export default function MyDocuments() {
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-20">
                                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                            <div className="h-8 w-8 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
+                                            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                                             <span>Loading your workspace...</span>
                                         </div>
                                     </TableCell>
@@ -354,11 +354,11 @@ export default function MyDocuments() {
                                     <TableRow key={doc._id} className="hover:bg-gray-50/50 transition-colors">
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-violet-50 text-violet-600 rounded-lg">
+                                                <div className="p-2.5 bg-secondary text-primary rounded-lg">
                                                     <FileText className="h-5 w-5" />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-gray-900">{doc.title}</span>
+                                                    <span className="text-foreground">{doc.title}</span>
                                                     <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{doc.documentType}</span>
                                                 </div>
                                             </div>
@@ -404,7 +404,7 @@ export default function MyDocuments() {
                                                         title="Restore"
                                                         onClick={() => handleRestore(doc._id)}
                                                         disabled={isRestoring === doc._id}
-                                                        className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                                                        className="text-primary hover:text-primary hover:bg-secondary"
                                                     >
                                                         {isRestoring === doc._id ? (
                                                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -480,7 +480,7 @@ export default function MyDocuments() {
                                                 key={pageNum}
                                                 variant={currentPage === pageNum ? "default" : "outline"}
                                                 size="sm"
-                                                className={`h-9 w-9 ${currentPage === pageNum ? 'bg-violet-600 hover:bg-violet-700' : ''}`}
+                                                className={`h-9 w-9 ${currentPage === pageNum ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}`}
                                                 onClick={() => setCurrentPage(pageNum)}
                                             >
                                                 {pageNum}
@@ -525,7 +525,7 @@ export default function MyDocuments() {
                     <DialogHeader className="p-6 border-b">
                         <DialogTitle className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <FileText className="h-5 w-5 text-violet-600" />
+                                <FileText className="h-5 w-5 text-primary" />
                                 <span>{selectedDoc?.title}</span>
                             </div>
                             <Button
@@ -597,7 +597,7 @@ export default function MyDocuments() {
             <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                 <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-violet-600">
+                        <DialogTitle className="flex items-center gap-2 text-primary">
                             <Upload className="h-5 w-5" />
                             Upload Document
                         </DialogTitle>
@@ -614,7 +614,7 @@ export default function MyDocuments() {
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-gray-700">Document Type</label>
                             <select
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-violet-600 focus:border-violet-600 text-gray-800"
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary focus:border-primary text-gray-800"
                                 value={uploadType}
                                 onChange={(e) => setUploadType(e.target.value)}
                             >
@@ -661,7 +661,7 @@ export default function MyDocuments() {
                             <Button
                                 type="submit"
                                 disabled={isUploading || !uploadFile}
-                                className="bg-violet-600 hover:bg-violet-700 text-white font-semibold"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                             >
                                 {isUploading ? (
                                     <>

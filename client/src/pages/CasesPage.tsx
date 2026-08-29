@@ -242,7 +242,7 @@ export default function CasesPage() {
                                 setShowNewCaseFlow(true);
                                 setSelectedCase(null);
                             }}
-                            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-755 hover:to-indigo-755 bg-violet-700 text-white rounded-xl font-bold px-6 py-5 shadow-lg shadow-violet-200/50 flex items-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold px-6 py-5 shadow-sm flex items-center gap-2 transition-all duration-200"
                         >
                             <span>+ Start New Case</span>
                         </Button>
@@ -297,7 +297,7 @@ export default function CasesPage() {
                                             variant={selectedCategory === cat ? "default" : "outline"}
                                             className={`rounded-xl font-bold h-9 px-4 text-xs whitespace-nowrap transition-all ${
                                                 selectedCategory === cat 
-                                                ? "bg-violet-700 text-white hover:bg-violet-800 shadow-sm" 
+                                                ? "bg-primary text-white hover:bg-violet-800 shadow-sm" 
                                                 : "border-border text-muted-foreground hover:bg-slate-50"
                                             }`}
                                             onClick={() => setSelectedCategory(cat)}
@@ -332,9 +332,9 @@ export default function CasesPage() {
                                                                 <div>
                                                                     <div className="flex items-center gap-1.5">
                                                                         <h3 className="font-extrabold text-slate-900 text-base">{lawyer.fullName}</h3>
-                                                                        {lawyer.isVerified && <ShieldCheck className="h-4.5 w-4.5 text-violet-700" />}
+                                                                        {lawyer.isVerified && <ShieldCheck className="h-4.5 w-4.5 text-primary" />}
                                                                     </div>
-                                                                    <p className="text-[10px] text-violet-700 font-extrabold uppercase tracking-wider">{lawyer.expertise || "General Practice"}</p>
+                                                                    <p className="text-[10px] text-primary font-extrabold uppercase tracking-wider">{lawyer.expertise || "General Practice"}</p>
                                                                 </div>
                                                                 <div className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-border text-xs font-bold">
                                                                     <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
@@ -352,7 +352,7 @@ export default function CasesPage() {
                                                                 </div>
                                                                 <Button 
                                                                     onClick={() => setSelectedLawyer(lawyer)}
-                                                                    className="bg-violet-700 text-white hover:bg-violet-800 rounded-xl font-bold text-xs h-9 px-4 flex items-center gap-1.5"
+                                                                    className="bg-primary text-white hover:bg-violet-800 rounded-xl font-bold text-xs h-9 px-4 flex items-center gap-1.5"
                                                                 >
                                                                     <span>Book Now</span>
                                                                     <ArrowRight size={13} />
@@ -392,7 +392,7 @@ export default function CasesPage() {
                                                 <h3 className="font-extrabold text-slate-900 text-base leading-none">{selectedLawyer.fullName}</h3>
                                                 {selectedLawyer.isVerified && <ShieldCheck className="h-4 w-4 text-violet-750" />}
                                             </div>
-                                            <p className="text-xs text-violet-700 font-extrabold uppercase tracking-widest mt-0.5">{selectedLawyer.expertise || "General Practice"}</p>
+                                            <p className="text-xs text-primary font-extrabold uppercase tracking-widest mt-0.5">{selectedLawyer.expertise || "General Practice"}</p>
                                         </div>
                                     </div>
                                     
@@ -411,14 +411,14 @@ export default function CasesPage() {
                                             <div className="space-y-0.5 border-x border-slate-100">
                                                 <span className="text-[8px] uppercase font-bold text-slate-400">Experience</span>
                                                 <p className="text-slate-900 font-black flex items-center justify-center gap-1">
-                                                    <Clock size={11} className="text-violet-700" />
+                                                    <Clock size={11} className="text-primary" />
                                                     {selectedLawyer.experience || "10+"}
                                                 </p>
                                             </div>
                                             <div className="space-y-0.5">
                                                 <span className="text-[8px] uppercase font-bold text-slate-400">Location</span>
                                                 <p className="text-slate-900 font-black flex items-center justify-center gap-1 truncate max-w-[80px] mx-auto">
-                                                    <MapPin size={11} className="text-violet-700" />
+                                                    <MapPin size={11} className="text-primary" />
                                                     {selectedLawyer.location || "Remote"}
                                                 </p>
                                             </div>
@@ -504,7 +504,7 @@ export default function CasesPage() {
                                                                     onClick={() => setBookingDate(day)}
                                                                     className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center shrink-0 w-16 transition-all ${
                                                                         isSelected 
-                                                                        ? "border-violet-700 bg-violet-50 text-violet-700 ring-1 ring-violet-700" 
+                                                                        ? "border-primary bg-secondary text-primary ring-1 ring-violet-700" 
                                                                         : "border-border hover:border-slate-350"
                                                                     }`}
                                                                 >
@@ -533,7 +533,7 @@ export default function CasesPage() {
                                                                     onClick={() => setBookingTime(slot)}
                                                                     className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
                                                                         isSelected 
-                                                                        ? "border-violet-700 bg-violet-50 text-violet-700 ring-1 ring-violet-700" 
+                                                                        ? "border-primary bg-secondary text-primary ring-1 ring-violet-700" 
                                                                         : "border-border hover:border-slate-350 bg-white"
                                                                     }`}
                                                                 >
@@ -562,7 +562,7 @@ export default function CasesPage() {
                                                 <Separator />
                                                 <div className="flex justify-between text-sm font-black text-slate-900 pt-1">
                                                     <span>Total Amount</span>
-                                                    <span className="text-violet-700">
+                                                    <span className="text-primary">
                                                         ₹{Math.round((selectedLawyer.hourlyRate || 1000) + 150 + ((selectedLawyer.hourlyRate || 1000) * 0.18)).toLocaleString()}
                                                     </span>
                                                 </div>
@@ -571,7 +571,7 @@ export default function CasesPage() {
                                             <Button
                                                 onClick={handleSendBookingRequest}
                                                 disabled={submittingBooking}
-                                                className="w-full h-12 bg-violet-700 text-white hover:bg-violet-800 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                                                className="w-full h-12 bg-primary text-white hover:bg-violet-800 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2"
                                             >
                                                 <Calendar className="w-4 h-4" />
                                                 {submittingBooking ? "Sending Request..." : "Send Booking Request"}
@@ -602,7 +602,7 @@ export default function CasesPage() {
                                         Back to Case Details
                                     </button>
                                     <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                        <Lock className="w-4 h-4 text-violet-700" />
+                                        <Lock className="w-4 h-4 text-primary" />
                                         Secure Checkout
                                     </div>
                                 </div>
@@ -627,7 +627,7 @@ export default function CasesPage() {
                                                     onClick={() => setPaymentMethod('card')}
                                                     className={`p-3.5 border rounded-2xl flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
                                                         paymentMethod === 'card' 
-                                                        ? 'border-violet-700 bg-violet-50 text-violet-700 ring-1 ring-violet-700' 
+                                                        ? 'border-primary bg-secondary text-primary ring-1 ring-violet-700' 
                                                         : 'border-border bg-white hover:bg-slate-50'
                                                     }`}
                                                 >
@@ -638,7 +638,7 @@ export default function CasesPage() {
                                                     onClick={() => setPaymentMethod('upi')}
                                                     className={`p-3.5 border rounded-2xl flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
                                                         paymentMethod === 'upi' 
-                                                        ? 'border-violet-700 bg-violet-50 text-violet-700 ring-1 ring-violet-700' 
+                                                        ? 'border-primary bg-secondary text-primary ring-1 ring-violet-700' 
                                                         : 'border-border bg-white hover:bg-slate-50'
                                                     }`}
                                                 >
@@ -649,7 +649,7 @@ export default function CasesPage() {
                                                     onClick={() => setPaymentMethod('netbanking')}
                                                     className={`p-3.5 border rounded-2xl flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
                                                         paymentMethod === 'netbanking' 
-                                                        ? 'border-violet-700 bg-violet-50 text-violet-700 ring-1 ring-violet-700' 
+                                                        ? 'border-primary bg-secondary text-primary ring-1 ring-violet-700' 
                                                         : 'border-border bg-white hover:bg-slate-50'
                                                     }`}
                                                 >
@@ -754,7 +754,7 @@ export default function CasesPage() {
                                         <Button
                                             onClick={handleCheckoutPayment}
                                             disabled={isProcessingPayment}
-                                            className="w-full h-12 bg-violet-705 text-white hover:bg-violet-800 bg-violet-700 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                                            className="w-full h-12 bg-violet-705 text-white hover:bg-violet-800 bg-primary rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2"
                                         >
                                             <Lock size={14} />
                                             {isProcessingPayment ? "Processing..." : "Pay & Confirm Booking"}
@@ -772,7 +772,7 @@ export default function CasesPage() {
                         <div className="lg:col-span-4 bg-card border border-border rounded-3xl p-6 space-y-6 shadow-sm">
                             <div className="flex justify-between items-center">
                                 <h3 className="font-extrabold text-slate-900 text-lg">My Cases</h3>
-                                <Badge className="bg-violet-50 text-violet-700 hover:bg-violet-50 text-[10px] font-black border-none px-2 py-0.5 rounded">
+                                <Badge className="bg-secondary text-primary hover:bg-secondary text-[10px] font-black border-none px-2 py-0.5 rounded">
                                     {cases.length} Total
                                 </Badge>
                             </div>
@@ -782,7 +782,7 @@ export default function CasesPage() {
                                 <div className="relative">
                                     <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                                     <Input 
-                                        className="pl-9 h-10 text-xs rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-violet-500 font-semibold"
+                                        className="pl-9 h-10 text-xs rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary font-semibold"
                                         placeholder="Search cases or advocates..."
                                         value={caseSearchQuery}
                                         onChange={(e) => setCaseSearchQuery(e.target.value)}
@@ -792,19 +792,19 @@ export default function CasesPage() {
 
                             {loading && cases.length === 0 ? (
                                 <div className="py-12 text-center">
-                                    <div className="inline-block w-6 h-6 border-2 border-violet-700 border-t-transparent rounded-full animate-spin"></div>
+                                    <div className="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                                     <p className="mt-2 text-xs text-slate-400 font-bold">Loading engagements...</p>
                                 </div>
                             ) : cases.length === 0 ? (
                                 <div className="py-16 text-center text-slate-400 border border-dashed border-border rounded-2xl bg-slate-50/50 p-6">
-                                    <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-violet-50 text-violet-700 mb-4 border border-violet-100 shadow-sm">
+                                    <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-primary mb-4 border border-border shadow-sm">
                                         <Briefcase size={24} />
                                     </div>
                                     <p className="font-extrabold text-slate-900 text-base">No active cases</p>
                                     <p className="text-xs text-slate-500 max-w-[220px] mx-auto mt-2 leading-relaxed font-semibold">Once you hire a lawyer for a case or book a consultation, it will show up here.</p>
                                     <Button
                                         onClick={() => setShowNewCaseFlow(true)}
-                                        className="mt-5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs h-10 px-6 shadow-lg shadow-violet-100/30"
+                                        className="mt-5 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary hover:to-indigo-700 text-white rounded-xl font-bold text-xs h-10 px-6 shadow-lg shadow-sm/30"
                                     >
                                         + Start First Case
                                     </Button>
@@ -823,7 +823,7 @@ export default function CasesPage() {
                                             onClick={() => setSelectedCase(c)}
                                             className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                                                 selectedCase?._id === c._id
-                                                    ? "border-violet-600 bg-violet-50/30 shadow-sm"
+                                                    ? "border-primary bg-secondary/30 shadow-sm"
                                                     : "border-border bg-card hover:border-slate-300 hover:shadow-sm"
                                             }`}
                                         >
@@ -853,7 +853,7 @@ export default function CasesPage() {
                                                                 : c.status === 'pending_payment' 
                                                                     ? 'bg-orange-50 text-orange-700 border border-orange-200/50' 
                                                                     : c.status === 'active'
-                                                                        ? 'bg-violet-50 text-violet-705 border border-violet-200/50'
+                                                                        ? 'bg-secondary text-violet-705 border border-primary/20/50'
                                                                         : 'bg-green-50 text-green-700 border border-green-200/50'
                                                             }`}
                                                         >
@@ -869,7 +869,7 @@ export default function CasesPage() {
                                                     <span>Verification Progress</span>
                                                     <span className="text-violet-705">{c.currentProgress}%</span>
                                                 </div>
-                                                <Progress value={c.currentProgress} className="h-1.5 bg-slate-100 [&>div]:bg-violet-700" />
+                                                <Progress value={c.currentProgress} className="h-1.5 bg-slate-100 [&>div]:bg-primary" />
                                             </div>
                                         </div>
                                     ))}
@@ -902,7 +902,7 @@ export default function CasesPage() {
                                                             : selectedCase.status === 'pending_payment' 
                                                                 ? 'bg-orange-100 text-orange-800' 
                                                                 : selectedCase.status === 'active'
-                                                                    ? 'bg-violet-100 text-violet-800'
+                                                                    ? 'bg-secondary/80 text-primary'
                                                                     : 'bg-green-100 text-green-800'
                                                         }`}
                                                     >
@@ -912,7 +912,7 @@ export default function CasesPage() {
                                                 <div className="w-px h-8 bg-slate-200" />
                                                 <div>
                                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Contract Fee</p>
-                                                    <p className="text-sm font-black text-violet-700 mt-1">₹{selectedCase.totalFee.toLocaleString()}</p>
+                                                    <p className="text-sm font-black text-primary mt-1">₹{selectedCase.totalFee.toLocaleString()}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -920,20 +920,20 @@ export default function CasesPage() {
                                         {/* Lawyer Details card */}
                                         <div className="bg-slate-50/50 border border-border p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                             <div className="flex items-center gap-4">
-                                                <Avatar className="h-14 w-14 rounded-xl border border-violet-200 shrink-0">
+                                                <Avatar className="h-14 w-14 rounded-xl border border-primary/20 shrink-0">
                                                     <AvatarImage 
                                                         src={selectedCase.lawyer?.avatar ? (selectedCase.lawyer.avatar.startsWith('http') ? selectedCase.lawyer.avatar : (selectedCase.lawyer.avatar.startsWith('/') ? `/lawyer${selectedCase.lawyer.avatar}` : `/lawyer/${selectedCase.lawyer.avatar}`)) : ""} 
                                                         alt={selectedCase.lawyer?.fullName || "Lawyer"} 
                                                         className="object-cover"
                                                     />
-                                                    <AvatarFallback className="rounded-xl bg-violet-50 text-violet-700">
-                                                        <User className="h-7 w-7 text-violet-400" />
+                                                    <AvatarFallback className="rounded-xl bg-secondary text-primary">
+                                                        <User className="h-7 w-7 text-primary/80" />
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <h4 className="font-extrabold text-slate-900 text-sm">{selectedCase.lawyer?.fullName}</h4>
-                                                        <span className="text-[9px] font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100 uppercase tracking-wider">VERIFIED ADVOCATE</span>
+                                                        <span className="text-[9px] font-bold text-primary bg-secondary px-1.5 py-0.5 rounded border border-border uppercase tracking-wider">VERIFIED ADVOCATE</span>
                                                     </div>
                                                     <p className="text-xs text-slate-500 font-semibold mt-1">{selectedCase.lawyer?.title || "Senior Counsel"} • {selectedCase.lawyer?.expertise || "Corporate Specialist"}</p>
                                                     <p className="text-[10px] text-slate-400 mt-1 font-bold">Contact: {selectedCase.lawyer?.email}</p>
@@ -955,14 +955,14 @@ export default function CasesPage() {
                                                 <div className="space-y-1">
                                                     <p className="text-[9px] font-bold text-slate-405 text-slate-400 uppercase tracking-widest">Scheduled Consultation Date</p>
                                                     <p className="text-sm font-black text-slate-900 flex items-center gap-1.5 mt-1.5">
-                                                        <Calendar className="h-4 w-4 text-violet-700" />
+                                                        <Calendar className="h-4 w-4 text-primary" />
                                                         {new Date(selectedCase.bookingDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                                     </p>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="text-[9px] font-bold text-slate-405 text-slate-400 uppercase tracking-widest">Scheduled Consultation Time</p>
                                                     <p className="text-sm font-black text-slate-900 flex items-center gap-1.5 mt-1.5">
-                                                        <Clock className="h-4 w-4 text-violet-700" />
+                                                        <Clock className="h-4 w-4 text-primary" />
                                                         {selectedCase.bookingTime}
                                                     </p>
                                                 </div>
@@ -1018,9 +1018,9 @@ export default function CasesPage() {
                                             <div className="space-y-6 animate-in fade-in duration-300">
                                                 {/* Meeting Summary Document Card */}
                                                 {selectedCase.meetingSummaryUrl && (
-                                                    <div className="bg-violet-50 border border-violet-100 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm animate-in fade-in duration-300">
+                                                    <div className="bg-secondary border border-border rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm animate-in fade-in duration-300">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-3 bg-violet-100 rounded-xl text-violet-750 text-violet-750 text-violet-700">
+                                                            <div className="p-3 bg-secondary/80 rounded-xl text-violet-750 text-violet-750 text-primary">
                                                                 <FileText size={24} />
                                                             </div>
                                                             <div>
@@ -1033,7 +1033,7 @@ export default function CasesPage() {
                                                             href={`/lawyer${selectedCase.meetingSummaryUrl}`}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="bg-violet-700 hover:bg-violet-850 hover:bg-violet-800 text-white rounded-xl font-bold px-5 py-2.5 text-xs flex items-center gap-1.5 shadow-sm transition-all text-center shrink-0"
+                                                            className="bg-primary hover:bg-violet-850 hover:bg-violet-800 text-white rounded-xl font-bold px-5 py-2.5 text-xs flex items-center gap-1.5 shadow-sm transition-all text-center shrink-0"
                                                         >
                                                             <Download size={14} />
                                                             Download Summary Briefing
@@ -1047,7 +1047,7 @@ export default function CasesPage() {
                                                         {selectedCase.meetingLink && (
                                                             <Button
                                                                 onClick={() => navigate(`/cases/${selectedCase._id}/meet`)}
-                                                                className="mt-2 bg-violet-700 hover:bg-violet-800 text-white rounded-xl font-bold px-4 py-2 text-xs flex items-center gap-2 shadow-sm"
+                                                                className="mt-2 bg-primary hover:bg-violet-800 text-white rounded-xl font-bold px-4 py-2 text-xs flex items-center gap-2 shadow-sm"
                                                             >
                                                                 <Video className="w-4 h-4" />
                                                                 <span>Join Video Consultation</span>
@@ -1081,7 +1081,7 @@ export default function CasesPage() {
                                                                 <div className="flex justify-center pt-2">
                                                                     <Button
                                                                         onClick={() => navigate(`/cases/${selectedCase._id}/meet`)}
-                                                                        className="bg-violet-700 hover:bg-violet-850 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md shadow-violet-100"
+                                                                        className="bg-primary hover:bg-violet-850 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md shadow-sm"
                                                                     >
                                                                         <Video className="w-4 h-4" />
                                                                         <span>Join Video Consultation Call</span>
@@ -1171,7 +1171,7 @@ export default function CasesPage() {
                                                                             isCompleted 
                                                                                 ? "bg-green-500 shadow-md ring-4 ring-green-100" 
                                                                                 : isInProgress 
-                                                                                    ? "bg-violet-700 animate-pulse ring-4 ring-violet-100" 
+                                                                                    ? "bg-primary animate-pulse ring-4 ring-violet-100" 
                                                                                     : "bg-slate-300"
                                                                         }`} />
 
@@ -1185,7 +1185,7 @@ export default function CasesPage() {
                                                                                     isCompleted 
                                                                                     ? "bg-green-50 text-green-700 hover:bg-green-50" 
                                                                                     : isInProgress 
-                                                                                        ? "bg-violet-50 text-violet-700 hover:bg-violet-50" 
+                                                                                        ? "bg-secondary text-primary hover:bg-secondary" 
                                                                                         : "bg-slate-50 text-slate-400 hover:bg-slate-50"
                                                                                 }`}>
                                                                                     {m.status.replace('_', ' ')}
@@ -1292,7 +1292,7 @@ export default function CasesPage() {
                                         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Active Cases</span>
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-700">
+                                                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary">
                                                     <Briefcase size={20} />
                                                 </div>
                                                 <span className="text-2xl font-black text-slate-900">{cases.filter(c => c.status === 'active').length}</span>
@@ -1301,7 +1301,7 @@ export default function CasesPage() {
                                         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Pending Actions</span>
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                                                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary">
                                                     <Clock size={20} />
                                                 </div>
                                                 <span className="text-2xl font-black text-slate-900">
@@ -1312,7 +1312,7 @@ export default function CasesPage() {
                                         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Completed</span>
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary">
                                                     <CheckCircle2 size={20} />
                                                 </div>
                                                 <span className="text-2xl font-black text-slate-900">{cases.filter(c => c.status === 'completed').length}</span>
@@ -1322,10 +1322,10 @@ export default function CasesPage() {
 
                                     {/* Select a Case Hero Panel */}
                                     <div className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm text-center space-y-6 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-violet-100/30 rounded-full blur-3xl -z-10" />
-                                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-100/30 rounded-full blur-3xl -z-10" />
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/80 rounded-full blur-3xl -z-10" />
+                                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/30 rounded-full blur-3xl -z-10" />
                                         
-                                        <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto text-violet-750 border border-violet-100 shadow-sm">
+                                        <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto text-primary border border-border shadow-sm">
                                             <Briefcase size={32} />
                                         </div>
                                         
@@ -1338,13 +1338,13 @@ export default function CasesPage() {
 
                                         <div className="pt-6 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-lg mx-auto">
                                             <div className="flex items-start gap-3">
-                                                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-violet-50 text-violet-750 font-black text-[10px] shrink-0 border border-violet-100 shadow-sm">01</span>
+                                                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-secondary text-violet-750 font-black text-[10px] shrink-0 border border-border shadow-sm">01</span>
                                                 <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
                                                     Select a case or booking to load the lawyer's professional details and consultation slots.
                                                 </p>
                                             </div>
                                             <div className="flex items-start gap-3">
-                                                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-violet-50 text-violet-750 font-black text-[10px] shrink-0 border border-violet-100 shadow-sm">02</span>
+                                                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-secondary text-violet-750 font-black text-[10px] shrink-0 border border-border shadow-sm">02</span>
                                                 <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
                                                     Follow visual timeline stages, join Jitsi video links, and release payouts once milestones are achieved.
                                                 </p>

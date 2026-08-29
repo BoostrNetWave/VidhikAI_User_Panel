@@ -66,12 +66,18 @@ app.get(['/user', '/user/*'], (_req, res) => {
     res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
+import http from 'http';
+import { initSocket } from './socket';
+
+const server = http.createServer(app);
+initSocket(server);
+
 mongoose.connect(MONGO_URI)
     .then(async () => {
         console.log('Connected to MongoDB Atlas');
         console.log('URI used:', MONGO_URI);
 
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log(`\n=================================================`);
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`👉 API URL: http://localhost:${PORT}/api`);

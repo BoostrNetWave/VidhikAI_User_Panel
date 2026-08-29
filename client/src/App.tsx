@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Toaster } from 'sonner'
+import { Toaster, toast } from 'sonner'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
 import Dashboard from './pages/Dashboard'
@@ -49,7 +49,45 @@ import ConsultationMeeting from './pages/ConsultationMeeting'
 import ConsultationsPage from './pages/ConsultationsPage'
 import ConsultationRoom from './pages/ConsultationRoom'
 
+import { useEffect } from 'react'
+import { getSocket, registerSocketUser, disconnectSocket } from './lib/socket'
+
 function App() {
+    useEffect(() => {
+        const userDataStr = localStorage.getItem('user_profile_data');
+        if (userDataStr) {
+            try {
+                const user = JSON.parse(userDataStr);
+                if (user && user._id) {
+                    registerSocketUser(user._id);
+                    const socket = getSocket();
+                    
+                    socket.on('USER_SUSPENDED', (data) => {
+                        toast.error(data.message || 'Your account has been suspended.');
+                        localStorage.clear();
+                        window.location.href = '/user/login';
+                    });
+
+                    socket.on('USER_VERIFICATION_REVOKED', (data) => {
+                        toast.error(data.message || 'Please re-verify your account.');
+                    });
+
+                    socket.on('SUBSCRIPTION_UPDATED', (data) => {
+                        toast.success(`Your subscription has been updated to ${data.subscription}`);
+                        const updatedUser = { ...user, subscription: data.subscription };
+                        localStorage.setItem('user_profile_data', JSON.stringify(updatedUser));
+                        window.dispatchEvent(new Event('storage'));
+                    });
+                }
+            } catch (e) {
+                console.error("Error parsing user data for socket:", e);
+            }
+        }
+        return () => {
+            disconnectSocket();
+        };
+    }, []);
+
     return (
         <BrowserRouter basename="/user">
             <Routes>
@@ -66,6 +104,7 @@ function App() {
                 <Route path="/documents/hub" element={<DocumentHub />} />
                 <Route path="/documents/workspace" element={<MyDocuments />} />
                 <Route path="/documents/review" element={<DocumentReviewPage />} />
+                <Route path="/documents/shared/:id" element={<DocumentReviewPage />} />
                 <Route path="/workspace" element={<MyDocuments />} />
 
                 {/* Specific Document Generators */}

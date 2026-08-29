@@ -10,7 +10,9 @@ import {
     restoreDocument,
     permanentlyDeleteDocument,
     reviewDocument,
-    uploadDocument
+    uploadDocument,
+    shareReview,
+    getSharedReview
 } from '../controllers/documentController';
 import multer from 'multer';
 import { protect } from '../middleware/authMiddleware';
@@ -48,6 +50,12 @@ router.post('/save', protect, saveDocument);
 
 // Upload a document directly to workspace
 router.post('/upload', protect, upload.single('file'), uploadDocument);
+
+// Share a reviewed document (creates public link)
+router.post('/share-review', protect, shareReview);
+
+// Get a shared review (public endpoint)
+router.get('/shared-review/:id', getSharedReview);
 
 // Legacy endpoint for employment contracts (backward compatibility)
 router.post('/generate-employment-contract', protect, checkUserLimit('documents'), generateEmploymentContract);

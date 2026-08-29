@@ -174,7 +174,7 @@ export default function ConsultationsPage() {
             case 'pending_lawyer_approval':
                 return <Badge className="bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-50">Pending Advocate Approval</Badge>;
             case 'pending_user_approval':
-                return <Badge className="bg-violet-50 text-violet-700 border border-violet-100 hover:bg-violet-50">Proposed Counter-Time</Badge>;
+                return <Badge className="bg-secondary text-primary border border-border hover:bg-secondary">Proposed Counter-Time</Badge>;
             case 'pending_payment':
                 return <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-50">Awaiting Payment</Badge>;
             case 'scheduled':
@@ -303,7 +303,7 @@ export default function ConsultationsPage() {
                                             {consultation.status === 'scheduled' && (
                                                 <Button 
                                                     onClick={() => navigate(`/consultations/${consultation._id}/meet`)}
-                                                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md shadow-violet-100"
+                                                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md shadow-sm"
                                                 >
                                                     <Video className="h-4 w-4" />
                                                     Join Jitsi Call
@@ -533,7 +533,7 @@ export default function ConsultationsPage() {
                                             <span className="text-slate-900 font-bold">{consult.lawyer?.fullName}</span>
                                         </div>
                                     </div>
-                                    <div className="flex justify-between items-center bg-violet-50/50 p-4 border border-violet-100 rounded-2xl text-slate-900">
+                                    <div className="flex justify-between items-center bg-secondary/50 p-4 border border-border rounded-2xl text-slate-900">
                                         <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Amount Due:</span>
                                         <span className="text-2xl font-black">₹{consult.totalFee}</span>
                                     </div>

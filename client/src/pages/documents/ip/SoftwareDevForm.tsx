@@ -92,16 +92,16 @@ const SoftwareDevForm: React.FC<SoftwareDevFormProps> = ({
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100 dark:from-slate-800 dark:to-slate-900 dark:border-slate-700">
+            <div className="flex justify-between items-center bg-gradient-to-r from-zinc-50 to-indigo-50 p-4 rounded-lg border border-zinc-100 dark:from-slate-800 dark:to-slate-900 dark:border-slate-700">
                 <div>
-                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200">Software Development Agreement Form</h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">Govern custom software creation, technical deliverables, IP ownership, milestones, acceptance criteria, and maintenance under Indian IT and Contract laws.</p>
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-200">Software Development Agreement Form</h3>
+                    <p className="text-sm text-zinc-700 dark:text-zinc-300">Govern custom software creation, technical deliverables, IP ownership, milestones, acceptance criteria, and maintenance under Indian IT and Contract laws.</p>
                 </div>
                 <Button
                     type="button"
                     variant="outline"
                     onClick={fillDummyData}
-                    className="flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 border-blue-200 dark:bg-slate-800 dark:text-blue-300 dark:border-slate-600 dark:hover:bg-slate-700 shadow-sm transition-all"
+                    className="flex items-center gap-2 bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200 dark:bg-slate-800 dark:text-zinc-300 dark:border-slate-600 dark:hover:bg-slate-700 shadow-sm transition-all"
                 >
                     <Sparkles className="w-4 h-4 text-amber-500" />
                     Auto-Fill Demo Data
@@ -112,7 +112,7 @@ const SoftwareDevForm: React.FC<SoftwareDevFormProps> = ({
             <Card className="border-slate-200 dark:border-slate-700">
                 <CardHeader className="bg-slate-50 dark:bg-slate-800/50">
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-blue-600" />
+                        <FileText className="w-5 h-5 text-zinc-600" />
                         1. Agreement Details & Business Purpose
                     </CardTitle>
                     <CardDescription>Reference details, effective date, project title, and software creation goals.</CardDescription>
@@ -243,7 +243,7 @@ const SoftwareDevForm: React.FC<SoftwareDevFormProps> = ({
             <Card className="border-slate-200 dark:border-slate-700">
                 <CardHeader className="bg-slate-50 dark:bg-slate-800/50">
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                        <Code className="w-5 h-5 text-blue-600" />
+                        <Code className="w-5 h-5 text-zinc-600" />
                         3. Software Type, Platform & Architecture Objectives
                     </CardTitle>
                     <CardDescription>Define technology stack, target platforms, software category, and architectural objectives.</CardDescription>
@@ -617,7 +617,7 @@ const SoftwareDevForm: React.FC<SoftwareDevFormProps> = ({
             <Card className="border-slate-200 dark:border-slate-700">
                 <CardHeader className="bg-slate-50 dark:bg-slate-800/50">
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-blue-600" />
+                        <Shield className="w-5 h-5 text-zinc-600" />
                         7. Confidentiality, Security, Warranty & Maintenance
                     </CardTitle>
                     <CardDescription>Cybersecurity controls, DPDP Act data protection, warranty period, SLA, and maintenance scope.</CardDescription>

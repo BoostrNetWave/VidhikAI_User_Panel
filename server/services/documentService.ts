@@ -35,10 +35,27 @@ class DocumentService {
         }
 
         // 2. Get appropriate prompt
-        const { systemPrompt, userPrompt } = promptRegistry.getPrompt(
+        let { systemPrompt, userPrompt } = promptRegistry.getPrompt(
             request.documentType,
             request.formData
         );
+
+        // Inject standard formatting rules to ensure uniform premium output across all document types
+        const formattingRules = `
+FORMATTING RULES:
+1. You MUST use <h1> for the main document title. Add inline CSS: style="font-size: 28px; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 40px;"
+2. You MUST use <h2> for all major sections (e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS). Add inline CSS: style="font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;"
+3. You MUST use <h3> for sub-sections. Add inline CSS: style="font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;"
+4. Use <p> for all regular paragraphs. Add inline CSS: style="margin-bottom: 15px; line-height: 1.6; text-align: justify;"
+5. Use proper HTML <table> tags if a table is generated. The table MUST have borders using inline CSS (e.g., style="border: 1px solid black; border-collapse: collapse; width: 100%; margin-top: 20px; margin-bottom: 20px;"). All <th> and <td> must have style="border: 1px solid black; padding: 10px; text-align: left;"
+6. Use <strong> to highlight important names and numbers.
+7. Wrap the entire document in a main container with Calibri font, 1.5 line-height, text-justify alignment, and 11pt (15px) text size:
+   <div style="font-family: 'Calibri', sans-serif; line-height: 1.6; text-align: justify; font-size: 15px; color: #1a202c; padding: 10px;">
+`;
+        
+        if (!systemPrompt.includes('FORMATTING RULES:')) {
+            systemPrompt += "\n" + formattingRules;
+        }
 
         // 3. Determine model to use
         const model = request.customModel || getRecommendedModel(request.documentType);
@@ -52,7 +69,8 @@ class DocumentService {
             systemPrompt,
             userPrompt,
             temperature: 0.7,
-            maxTokens: documentConfig.estimatedTokens || 4000
+            maxTokens: documentConfig.estimatedTokens || 4000,
+            feature: 'doc_gen'
         };
 
         const llmResponse: LLMResponse = await llmService.generate(llmRequest);
@@ -125,7 +143,8 @@ class DocumentService {
             systemPrompt: getAnalysisSystemPrompt(isDeepScanEnabled),
             userPrompt: getAnalysisUserPrompt(text, filename),
             temperature: isDeepScanEnabled ? 0.2 : 0.3, // Even lower temperature for deep scan
-            maxTokens: isDeepScanEnabled ? 4000 : 3000
+            maxTokens: isDeepScanEnabled ? 4000 : 3000,
+            feature: 'doc_review'
         };
 
         const llmResponse: LLMResponse = await llmService.generate(llmRequest);

@@ -64,6 +64,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from 'date-fns';
 
 interface DocumentType {
     id: string;
@@ -73,6 +75,7 @@ interface DocumentType {
     icon: string;
     complexity: string;
     applicableLaws: string[];
+    isLocked?: boolean;
 }
 
 const iconMap: Record<string, any> = {
@@ -93,15 +96,45 @@ export default function DocumentHub() {
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    
+    const [recentDocuments, setRecentDocuments] = useState<any[]>([]);
+    const [loadingRecent, setLoadingRecent] = useState(true);
 
     useEffect(() => {
         fetchDocumentTypes();
+        fetchRecentDocuments();
     }, []);
+
+    const fetchRecentDocuments = async () => {
+        try {
+            setLoadingRecent(true);
+            const user = JSON.parse(localStorage.getItem('user_profile_data') || '{}');
+            const userId = user._id || user.id;
+            
+            if (userId) {
+                const response = await api.get(`/documents/user/${userId}`);
+                if (response.data.success) {
+                    // Get only the 5 most recent documents
+                    setRecentDocuments(response.data.data.slice(0, 5));
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching recent documents:', error);
+        } finally {
+            setLoadingRecent(false);
+        }
+    };
 
     const fetchDocumentTypes = async () => {
         try {
             const response = await api.get('/documents/types');
-            setDocumentTypes(response.data.data);
+            const data = response.data.data;
+            const swIndex = data.findIndex((doc: DocumentType) => doc.id === 'software-development');
+            const docsWithLock = data.map((doc: DocumentType, index: number) => ({
+                ...doc,
+                isLocked: swIndex !== -1 && index > swIndex
+            }));
+            setDocumentTypes(docsWithLock);
         } catch (error) {
             console.error('Error fetching document types:', error);
         } finally {
@@ -202,9 +235,9 @@ export default function DocumentHub() {
                     {/* Centered Hero Search Box */}
                     <div className="max-w-2xl mx-auto w-full">
                         <div className="relative group">
-                            <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl blur opacity-15 group-focus-within:opacity-30 transition duration-500"></div>
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-indigo-600 rounded-2xl blur opacity-15 group-focus-within:opacity-30 transition duration-500"></div>
                             <div className="relative flex items-center bg-white rounded-2xl border border-slate-200 shadow-sm focus-within:shadow-xl focus-within:border-violet-400/50 transition-all duration-300">
-                                <Search className="ml-5 h-5 w-5 text-slate-400 group-focus-within:text-violet-600 transition-colors" />
+                                <Search className="ml-5 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                                 <Input
                                     placeholder="Search from 50+ legal document templates..."
                                     value={searchQuery}
@@ -233,7 +266,7 @@ export default function DocumentHub() {
                                 onClick={() => setSelectedCategory(cat.id)}
                                 className={`whitespace-nowrap transition-all duration-200 ${selectedCategory === cat.id
                                     ? "shadow-md scale-105"
-                                    : "hover:border-violet-200 hover:bg-violet-50/50"
+                                    : "hover:border-primary/20 hover:bg-secondary/50"
                                     }`}
                             >
                                 {cat.name}
@@ -241,6 +274,49 @@ export default function DocumentHub() {
                         ))}
                     </div>
                 </div>
+
+                {/* Recent Documents History Section */}
+                {!loadingRecent && recentDocuments.length > 0 && selectedCategory === 'all' && !searchQuery && (
+                    <div className="mb-10">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-primary" />
+                                Recent Generations
+                            </h2>
+                            <Button variant="ghost" className="text-sm font-medium text-primary hover:bg-primary/5" onClick={() => navigate('/documents/workspace')}>
+                                View All History <ArrowRight className="ml-1 h-4 w-4" />
+                            </Button>
+                        </div>
+                        <ScrollArea className="w-full whitespace-nowrap pb-4">
+                            <div className="flex w-max space-x-4">
+                                {recentDocuments.map(doc => (
+                                    <Card key={doc._id} className="w-[300px] hover:shadow-md transition-shadow cursor-pointer bg-white border-slate-200" onClick={() => navigate('/documents/workspace')}>
+                                        <CardContent className="p-5">
+                                            <div className="flex items-start justify-between">
+                                                <div className="p-2 bg-primary/10 rounded-lg">
+                                                    <FileText className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <Badge variant="secondary" className="font-normal text-xs uppercase tracking-wider">
+                                                    {doc.documentType.split('-').join(' ')}
+                                                </Badge>
+                                            </div>
+                                            <h3 className="mt-4 font-semibold text-slate-900 truncate" title={doc.title}>{doc.title}</h3>
+                                            <div className="flex items-center justify-between mt-4">
+                                                <p className="text-xs text-slate-500 font-medium">
+                                                    {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}
+                                                </p>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${doc.status === 'final' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                    {doc.status}
+                                                </span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </div>
+                )}
 
                 <Separator />
 
@@ -257,16 +333,22 @@ export default function DocumentHub() {
                             return (
                                 <Card
                                     key={doc.id}
-                                    className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-muted hover:border-primary"
-                                    onClick={() => handleDocumentSelect(doc.id)}
+                                    className={`group transition-all duration-300 border-muted ${doc.isLocked ? 'opacity-70 cursor-not-allowed bg-slate-50' : 'hover:shadow-lg cursor-pointer hover:border-primary'}`}
+                                    onClick={() => !doc.isLocked && handleDocumentSelect(doc.id)}
                                 >
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <div className="p-2 bg-primary/10 rounded-lg text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                        <div className={`p-2 rounded-lg transition-colors ${doc.isLocked ? 'bg-slate-200 text-slate-500' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'}`}>
                                             <IconComponent size={24} />
                                         </div>
+                                        {doc.isLocked && (
+                                            <Badge variant="secondary" className="bg-slate-200 text-slate-600 hover:bg-slate-200 border-none flex gap-1 items-center">
+                                                <Lock className="w-3 h-3" />
+                                                Coming Soon
+                                            </Badge>
+                                        )}
                                     </CardHeader>
                                     <CardContent className="pt-4">
-                                        <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors">
+                                        <CardTitle className={`text-xl mb-2 transition-colors ${doc.isLocked ? 'text-slate-600' : 'group-hover:text-primary'}`}>
                                             {doc.name}
                                         </CardTitle>
                                         <CardDescription className="line-clamp-2 mb-4">
@@ -276,7 +358,7 @@ export default function DocumentHub() {
                                         {doc.applicableLaws && doc.applicableLaws.length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-2">
                                                 {doc.applicableLaws.slice(0, 2).map((law, idx) => (
-                                                    <Badge key={idx} variant="outline" className="text-xs font-normal">
+                                                    <Badge key={idx} variant="outline" className={`text-xs font-normal ${doc.isLocked ? 'border-slate-300 text-slate-500' : ''}`}>
                                                         {law.split(',')[0]}
                                                     </Badge>
                                                 ))}
@@ -289,9 +371,13 @@ export default function DocumentHub() {
                                         )}
                                     </CardContent>
                                     <CardFooter>
-                                        <Button className="w-full group-hover:bg-primary group-hover:text-white" variant="secondary">
-                                            Generate Document
-                                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                        <Button 
+                                            className={`w-full ${doc.isLocked ? 'bg-slate-200 text-slate-500 hover:bg-slate-200 cursor-not-allowed border-none' : 'group-hover:bg-primary group-hover:text-white'}`} 
+                                            variant={doc.isLocked ? "outline" : "secondary"}
+                                            disabled={doc.isLocked}
+                                        >
+                                            {doc.isLocked ? 'Locked' : 'Generate Document'}
+                                            {!doc.isLocked && <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />}
                                         </Button>
                                     </CardFooter>
                                 </Card>

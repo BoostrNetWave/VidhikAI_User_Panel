@@ -1,63 +1,74 @@
-# Vidhik AI Admin Panel - System Design
+# Vidhik AI - Frontend UI/UX Design System & Details
 
-## Overview
+## 1. Design Philosophy
+Vidhik AI is designed with a premium, professional, and trustworthy aesthetic, suitable for a legal technology platform. The interface balances high-density information (like legal documents and case details) with clean, breathable whitespace. 
+- **Modern & Clean:** A minimalist approach utilizing ample whitespace to avoid cognitive overload.
+- **Trust & Authority:** Utilizing deep blues, crisp whites, and slate grays to convey professionalism and security.
+- **Accessibility:** High contrast ratios, clear typography, and logical tab orders.
+- **Responsiveness:** Fluid layouts that adapt seamlessly from desktop to mobile screens.
 
-The Vidhik AI Admin Panel is a comprehensive, centralized dashboard designed for super administrators. It provides full control over the platform's ecosystem, bridging the Client application, Lawyer application, and the public-facing Landing Page. The panel allows for real-time configuration changes, user moderation, financial approvals, and support ticket management.
+## 2. Core Technologies
+- **Framework:** React 18 with Vite for lightning-fast HMR and optimized builds.
+- **Styling:** Tailwind CSS (utility-first CSS framework) for rapid and consistent styling.
+- **Component Library:** Radix UI primitives for accessible, unstyled foundational components (Dialogs, Tabs, Selects, Accordions).
+- **Icons:** Lucide React for consistent, crisp, and scalable SVG iconography.
+- **Animations:** Framer Motion / Tailwind CSS transitions for fluid micro-interactions and page transitions.
 
----
+## 3. Typography & Color Palette
+### Typography
+- **Primary Font:** `Inter` or `Roboto` - Used for general UI, readable at small sizes.
+- **Headings:** Bold, clear font weights (600-800) for section titles and page headers.
+- **Monospace (for legal formatting):** `JetBrains Mono` or similar for specific data points or code-like snippets if needed.
 
-## Core Features & Capabilities
+### Color Palette
+- **Primary Blue:** Used for primary actions (buttons, active states, links).
+- **Slate/Gray Scale:** Used for backgrounds (`bg-slate-50`), borders (`border-gray-200`), and secondary text (`text-gray-500`).
+- **Success Green:** For completed actions, approved statuses, and successful notifications.
+- **Warning/Error Red:** For destructive actions, errors, and urgent alerts.
+- **Surface Colors:** Pure white (`bg-white`) for cards and modals to create elevation against lighter gray backgrounds.
 
-### 1. Unified Dashboard & Analytics
-Provides a high-level operational overview at a glance.
-- **Key Metrics**: Tracks Total Users, Pending Lawyer Approvals, Active Live Consultations, Unresolved Support Tickets, total Client Documents generated, and overall System Status.
+## 4. Layout Architecture
+### 4.1 DashboardLayout (`layout/DashboardLayout.tsx`)
+- **Sidebar (Left):** Contains main navigation links (Dashboard, Cases, Documents, Legal Research, Consultations, Settings). Collapsible on smaller screens. Features the Vidhik AI brand logo at the top.
+- **Top Navbar:** Contains user profile dropdown, notification bell, and global search.
+- **Main Content Area:** The dynamic area where page components are rendered. Features a subtle gray background to contrast with white content cards.
 
-### 2. Dynamic Configuration Management
-A powerful JSON-based editor that allows admins to update platform content and limits without requiring a code deployment.
-- **Landing Page Controls**: Customize Hero sections, How It Works steps, Core Features, Pricing Plans, Contact Information, and FAQs.
-- **User Module Limits**: Toggle active status and set limits for the AI Document Generator, Document Review file sizes, and AI Legal Assistant daily quotas.
-- **Lawyer Module Settings**: Manage Lawyer dashboard announcements, blog post limits, minimum appointment notice hours, minimum payout amounts, and TDS (commission) percentages.
+### 4.2 AdminLayout (`layout/AdminLayout.tsx`)
+- Specifically tailored for super admins.
+- Similar structure to the DashboardLayout but with admin-specific navigation (System Config, User Management, Lawyer Approvals, Financials).
 
-### 3. Comprehensive User Management
-- **Master User Directory**: A searchable table of all registered users (clients and lawyers).
-- **Deep-Dive Profiles**: View a user's associated cases, generated legal documents, and current subscription plan in a detailed modal.
-- **Subscription Overrides**: Manually upgrade, downgrade, or extend user subscription plans.
-- **Verification Bypassing**: Ability to manually verify user emails if they face issues with standard OTP/link verification.
+## 5. Key UI Components & Features
 
-### 4. Lawyer Onboarding & Moderation
-- **Approval Queue**: Dedicated view for new lawyer registrations.
-- **Credential Review**: Evaluate lawyer specializations, credentials, and approve or reject their profiles to maintain platform quality.
+### 5.1 Authentication Module (`pages/auth/`)
+- **Login/Register:** Clean card-based forms with clear input fields.
+- **Transitions:** Smooth fade-ins when switching between Login, Register, and Forgot Password states.
+- **Validation:** Real-time inline error messages using React Hook Form + Zod.
 
-### 5. Case & Financial Administration
-- **Milestone Payout Approvals**: Manage escrow/payouts for legal cases. When a lawyer completes a milestone, admins review and explicitly approve or reject the payout.
-- **Consultation Oversight**: Monitor all booked and active live consultations (video/audio) between clients and lawyers.
+### 5.2 Document Hub (`pages/documents/DocumentHub.tsx`)
+- **Grid Layout:** Displays available document templates (Consultant Agreement, Board Resolution, etc.) in a responsive grid of cards.
+- **Hover Effects:** Cards slightly elevate (`-translate-y-1`) with a soft shadow (`shadow-lg`) on hover to indicate interactivity.
+- **Document Generation Flow:** Step-by-step wizard style or long-form with sticky navigation. Uses progress bars to show completion status.
 
-### 6. Support & Operations
-- **Ticketing System**: Centralized inbox for all user support tickets. Admins can read user queries, reply directly, and update the ticket status (e.g., to "Closed").
-- **Document Audit Trail**: Global view of all AI-generated legal documents to monitor usage and system performance.
+### 5.3 Legal Research (`pages/research/LegalResearchPage.tsx`)
+- **Search Interface:** Prominent, centered search bar resembling a high-end search engine.
+- **Results View:** Clean list view with expandable accordions for detailed case summaries or legal precedents.
 
----
+### 5.4 Lawyer Consultation (`pages/AILawyerList.tsx`, `ConsultationRoom.tsx`)
+- **Lawyer Directory:** Profile cards showing lawyer picture, specialization tags, rating, and hourly rate.
+- **Booking Flow (`LawyerBooking.tsx`):** Interactive calendar (likely using `react-day-picker`) for selecting slots, followed by a summary and payment checkout modal.
+- **Consultation Room:** Video/Audio interface with side-panel chat. Features glowing active-speaker borders and clear mute/camera toggle buttons.
 
-## Architecture & Technical Stack
+### 5.5 Data Tables & Lists
+- Used extensively in Cases (`CasesPage.tsx`) and Admin panels.
+- Features sorting headers, pagination, and sticky headers.
+- **Row Hover:** Subtle background color change on row hover (`hover:bg-slate-50`).
 
-### Frontend (Client-side)
-- **Component Entry Point**: `client/src/pages/admin/AdminSettings.tsx`
-- **Routing**: Handled by React Router on `/admin` and `/admin/:tab`. Protected client-side by the `<AdminProtectedRoute>` wrapper.
-- **UI/UX**: Built with React, styled using Tailwind CSS, and heavily utilizes `lucide-react` for iconography to create a clean, modern, and professional aesthetic.
-- **State Management**: Relies on React hooks (`useState`, `useEffect`) to handle complex JSON configuration editing, modal states, and data fetching via the `adminService`.
+## 6. Micro-Interactions & Transitions
+- **Buttons:** Active scale down (`active:scale-95`), background color transitions (`transition-colors duration-200`).
+- **Modals/Dialogs:** Backdrop blur (`backdrop-blur-sm`) with a quick fade and slight scale-up animation for the modal card.
+- **Skeletons:** Loading states use pulsing skeleton loaders (`animate-pulse`) matching the shape of the content to reduce perceived loading time.
+- **Toast Notifications:** Slide-in toasts from the bottom-right or top-right (using `sonner` or similar) for success/error feedback.
 
-### Backend (Server-side)
-- **Routes**: `server/routes/adminRoutes.ts`
-- **Controllers**: `server/controllers/adminController.ts`
-- **Security Middlewares**: Every admin route uses `protect` (JWT validation) and `adminOnly` (RBAC role verification) to ensure strict access control.
-- **Database Entities (MongoDB)**:
-  - `SystemConfig`: Stores the dynamic configurations.
-  - `User`: Handles all role-based accounts.
-  - `Case` & `LiveConsultation`: Manages legal matters and appointments.
-  - `SupportTicket` & `DocumentModel`: Handles operations and audits.
-
----
-
-## Security Model
-- **Strict Role-Based Access Control (RBAC)**: Both the UI and API layer enforce that only users with the `admin` role can view the dashboard or trigger controller actions.
-- **Data Isolation**: While admins can see metadata (like document titles and statuses), the architecture ensures they can facilitate support without compromising deep sensitive content unless explicitly built into the audit views.
+## 7. Responsiveness
+- **Mobile First Approach:** Base classes target mobile, with `md:`, `lg:`, `xl:` breakpoints adjusting layouts (e.g., stacking grids, hiding sidebars into hamburger menus).
+- **Touch Targets:** Minimum 44px height for interactive elements on mobile devices.

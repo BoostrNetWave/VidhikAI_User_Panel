@@ -7,6 +7,7 @@ import { AIDocumentGenerator } from "@/components/dashboard/AIDocumentGenerator"
 import { RecentActivity } from "@/components/dashboard/RecentActivity"
 import { UserNav } from "@/components/dashboard/UserNav"
 import { Calendar } from "lucide-react"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function Dashboard() {
     const user = JSON.parse(localStorage.getItem('user_profile_data') || '{}');
@@ -31,16 +32,10 @@ export default function Dashboard() {
 
     return (
         <DashboardLayout userNav={<UserNav />}>
-            {/* Header Section */}
-            <div className="space-y-1">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                    Welcome back, {fullName}
-                </h1>
-                <div className="flex items-center text-sm text-slate-500">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <span>{currentDate}</span>
-                </div>
-            </div>
+            <PageHeader 
+                title={`Welcome back, ${fullName}`} 
+                description={`Manage your legal work, documents, research and consultations from one workspace.`}
+            />
 
             {/* Stats Cards */}
             <StatsCards />

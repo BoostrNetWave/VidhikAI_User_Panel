@@ -303,6 +303,30 @@ const seedData = [
         value: 'support@vidhik.ai',
         category: 'system',
         description: 'Central support email displayed across all panels'
+    },
+    {
+        key: 'LLM_CONFIG_DEFAULT',
+        value: { provider: 'openai', model: 'gpt-4o', apiKey: '' },
+        category: 'system',
+        description: 'Default LLM Configuration'
+    },
+    {
+        key: 'LLM_CONFIG_CHATBOT',
+        value: { provider: 'openai', model: 'gpt-4o', apiKey: '' },
+        category: 'system',
+        description: 'LLM Configuration for Legal Assistant Chatbot'
+    },
+    {
+        key: 'LLM_CONFIG_DOC_GEN',
+        value: { provider: 'openai', model: 'gpt-4o', apiKey: '' },
+        category: 'system',
+        description: 'LLM Configuration for Document Generation'
+    },
+    {
+        key: 'LLM_CONFIG_DOC_REVIEW',
+        value: { provider: 'openai', model: 'gpt-4o', apiKey: '' },
+        category: 'system',
+        description: 'LLM Configuration for Contract Review'
     }
 ];
 

@@ -909,7 +909,7 @@ export default function BillingPlans() {
             <Dialog open={isTicketModalOpen} onOpenChange={setIsTicketModalOpen}>
                 <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-violet-600">
+                        <DialogTitle className="flex items-center gap-2 text-primary">
                             <HelpCircle className="h-5 w-5" />
                             Open Support Ticket
                         </DialogTitle>
@@ -922,7 +922,7 @@ export default function BillingPlans() {
                                 placeholder="Brief summary of the issue"
                                 value={ticketSubject}
                                 onChange={(e) => setTicketSubject(e.target.value)}
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-violet-600 focus:border-violet-600 text-gray-800"
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary focus:border-primary text-gray-800"
                                 required
                             />
                         </div>
@@ -930,7 +930,7 @@ export default function BillingPlans() {
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-700">Category</label>
                                 <select
-                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-violet-600 focus:border-violet-600 text-gray-800"
+                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary focus:border-primary text-gray-800"
                                     value={ticketCategory}
                                     onChange={(e) => setTicketCategory(e.target.value)}
                                 >
@@ -944,7 +944,7 @@ export default function BillingPlans() {
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-700">Priority</label>
                                 <select
-                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-violet-600 focus:border-violet-600 text-gray-800"
+                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary focus:border-primary text-gray-800"
                                     value={ticketPriority}
                                     onChange={(e) => setTicketPriority(e.target.value)}
                                 >
@@ -958,7 +958,7 @@ export default function BillingPlans() {
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-gray-700">Description</label>
                             <textarea
-                                className="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-violet-600 focus:border-violet-600 resize-none min-h-[120px] text-gray-800"
+                                className="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none min-h-[120px] text-gray-800"
                                 placeholder="Describe your issue in detail..."
                                 value={ticketDescription}
                                 onChange={(e) => setTicketDescription(e.target.value)}
@@ -977,7 +977,7 @@ export default function BillingPlans() {
                             <Button
                                 type="submit"
                                 disabled={isSubmittingTicket}
-                                className="bg-violet-600 hover:bg-violet-700 text-white font-semibold"
+                                className="bg-primary hover:bg-primary text-white font-semibold"
                             >
                                 {isSubmittingTicket ? (
                                     <>

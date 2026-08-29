@@ -93,7 +93,7 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={fillDummyData}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                    className="gap-2 text-primary border-primary/20 hover:bg-secondary"
                 >
                     <Sparkles className="h-4 w-4" />
                     Fill Dummy Data
@@ -101,9 +101,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </div>
 
             {/* Section 1: Company Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Building2 className="h-5 w-5" />
                         Company Details
                     </CardTitle>
@@ -184,9 +184,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 2: Parties Details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <UserCheck className="h-5 w-5" />
                         Parties Details
                     </CardTitle>
@@ -287,9 +287,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 3: Shares details */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Award className="h-5 w-5" />
                         Shares Being Transferred
                     </CardTitle>
@@ -398,9 +398,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 4: Purchase Consideration */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Purchase Consideration & Stamp Duty
                     </CardTitle>
@@ -515,9 +515,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 5: Conditions Precedent & Closing */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Conditions Precedent & Closing
                     </CardTitle>
@@ -580,9 +580,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 6: Covenants & Representations */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Representations & Covenants
                     </CardTitle>
@@ -672,9 +672,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 7: Governance & Terminations */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Scale className="h-5 w-5" />
                         Governance, Disputes & Terminations
                     </CardTitle>
@@ -737,9 +737,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 8: Execution & Signatories */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Clock className="h-5 w-5" />
                         Execution & Reference
                     </CardTitle>
@@ -818,9 +818,9 @@ const ShareTransferForm: React.FC<ShareTransferFormProps> = ({
             </Card>
 
             {/* Section 9: Specific Compliance Flags */}
-            <Card className="border-violet-100 shadow-sm">
-                <CardHeader className="bg-violet-50/50 pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2 text-violet-800">
+            <Card className="border-border shadow-sm">
+                <CardHeader className="bg-secondary/50 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
                         <Shield className="h-5 w-5" />
                         Specific Setup Flags
                     </CardTitle>
