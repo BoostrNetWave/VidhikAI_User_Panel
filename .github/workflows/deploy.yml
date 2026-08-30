@@ -4,7 +4,6 @@ on:
 push:
 branches:
 - main
-
 workflow_dispatch:
 
 jobs:
@@ -12,15 +11,12 @@ deploy:
 name: Build and Deploy User Panel
 runs-on: ubuntu-latest
 
-
 steps:
-
   # ============================================================
   # 1. Checkout latest code
   # ============================================================
   - name: Checkout source code
     uses: actions/checkout@v4
-
 
   # ============================================================
   # 2. Setup Node.js 20
@@ -28,25 +24,20 @@ steps:
   - name: Setup Node.js
     uses: actions/setup-node@v4
     with:
-      node-version: 20
-      cache: npm
-
+      node-version: "20"
+      cache: "npm"
 
   # ============================================================
   # 3. Install dependencies
-  # npm install is used because package-lock.json is currently
-  # out of sync with package.json
   # ============================================================
   - name: Install dependencies
     run: npm install
-
 
   # ============================================================
   # 4. Build application
   # ============================================================
   - name: Build application
     run: npm run build
-
 
   # ============================================================
   # 5. Verify build
@@ -63,7 +54,6 @@ steps:
       echo "Build completed successfully"
       ls -la dist/
 
-
   # ============================================================
   # 6. Install SSH tools
   # ============================================================
@@ -72,9 +62,8 @@ steps:
       sudo apt-get update
       sudo apt-get install -y sshpass rsync
 
-
   # ============================================================
-  # 7. Create backup on server before deployment
+  # 7. Backup current application
   # ============================================================
   - name: Backup current application
     env:
@@ -84,19 +73,15 @@ steps:
     run: |
       sshpass -e ssh \
         -o StrictHostKeyChecking=no \
-        ${SERVER_USER}@${SERVER_HOST} \
-        "mkdir -p /var/www/backups && \
-         if [ -d /var/www/html/VidhikAI_User_Panel/dist ]; then \
-           rm -rf /var/www/backups/VidhikAI_User_Panel-dist-previous && \
-           cp -a /var/www/html/VidhikAI_User_Panel/dist \
-           /var/www/backups/VidhikAI_User_Panel-dist-previous; \
-         fi"
-
+        "${SERVER_USER}@${SERVER_HOST}" \
+        'mkdir -p /var/www/backups
+         if [ -d /var/www/html/VidhikAI_User_Panel/dist ]; then
+           rm -rf /var/www/backups/VidhikAI_User_Panel-dist-previous
+           cp -a /var/www/html/VidhikAI_User_Panel/dist /var/www/backups/VidhikAI_User_Panel-dist-previous
+         fi'
 
   # ============================================================
-  # 8. Deploy latest source code and build files
-  #
-  # .env is excluded because production .env already exists
+  # 8. Deploy application
   # ============================================================
   - name: Deploy application to Vultr
     env:
@@ -111,13 +96,10 @@ steps:
         --exclude='node_modules/' \
         -e "ssh -o StrictHostKeyChecking=no" \
         ./ \
-        ${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/
-
+        "${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/"
 
   # ============================================================
-  # 9. Install dependencies on server
-  #
-  # npm install is used instead of npm ci
+  # 9. Install server dependencies
   # ============================================================
   - name: Install server dependencies
     env:
@@ -127,13 +109,11 @@ steps:
     run: |
       sshpass -e ssh \
         -o StrictHostKeyChecking=no \
-        ${SERVER_USER}@${SERVER_HOST} \
-        "cd /var/www/html/VidhikAI_User_Panel && \
-         npm install"
-
+        "${SERVER_USER}@${SERVER_HOST}" \
+        "cd /var/www/html/VidhikAI_User_Panel && npm install"
 
   # ============================================================
-  # 10. Restart application using PM2
+  # 10. Restart PM2 application
   # ============================================================
   - name: Restart PM2 application
     env:
@@ -143,15 +123,14 @@ steps:
     run: |
       sshpass -e ssh \
         -o StrictHostKeyChecking=no \
-        ${SERVER_USER}@${SERVER_HOST} \
+        "${SERVER_USER}@${SERVER_HOST}" \
         "cd /var/www/html/VidhikAI_User_Panel && \
-         if pm2 describe vidhik-user-panel > /dev/null 2>&1; then \
-           pm2 restart vidhik-user-panel --update-env; \
-         else \
-           pm2 start 'npm start' --name vidhik-user-panel; \
-         fi && \
-         pm2 save"
-
+        if pm2 describe vidhik-user-panel > /dev/null 2>&1; then
+          pm2 restart vidhik-user-panel --update-env
+        else
+          pm2 start 'npm start' --name vidhik-user-panel
+        fi
+        pm2 save"
 
   # ============================================================
   # 11. Check PM2 status
@@ -164,9 +143,8 @@ steps:
     run: |
       sshpass -e ssh \
         -o StrictHostKeyChecking=no \
-        ${SERVER_USER}@${SERVER_HOST} \
+        "${SERVER_USER}@${SERVER_HOST}" \
         "pm2 status"
-
 
   # ============================================================
   # 12. Test Nginx configuration
@@ -179,9 +157,8 @@ steps:
     run: |
       sshpass -e ssh \
         -o StrictHostKeyChecking=no \
-        ${SERVER_USER}@${SERVER_HOST} \
+        "${SERVER_USER}@${SERVER_HOST}" \
         "nginx -t"
-
 
   # ============================================================
   # 13. Reload Nginx
@@ -194,9 +171,8 @@ steps:
     run: |
       sshpass -e ssh \
         -o StrictHostKeyChecking=no \
-        ${SERVER_USER}@${SERVER_HOST} \
+        "${SERVER_USER}@${SERVER_HOST}" \
         "systemctl reload nginx"
-
 
   # ============================================================
   # 14. Deployment completed
