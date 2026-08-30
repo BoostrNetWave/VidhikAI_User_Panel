@@ -112,7 +112,7 @@ export const verifyUser = async (req: Request, res: Response) => {
 // @route   GET /api/admin/public/lawyers
 export const getPublicLawyers = async (_req: Request, res: Response) => {
     try {
-        const lawyers = await User.find({ role: 'lawyer', isApproved: true }).select('-password');
+        const lawyers = await User.find({ role: 'lawyer' }).select('-password');
         res.json(lawyers);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching lawyers' });
@@ -191,7 +191,10 @@ export const rejectMilestonePayout = async (req: Request, res: Response) => {
 // @route   GET /api/admin/public/lawyers/:id
 export const getPublicLawyerById = async (req: Request, res: Response) => {
     try {
-        const lawyer = await User.findOne({ _id: req.params.id, role: 'lawyer', isApproved: true }).select('-password');
+        const lawyer = await User.findOne({ 
+            _id: req.params.id, 
+            role: 'lawyer'
+        }).select('-password');
         if (!lawyer) {
             res.status(404).json({ message: 'Lawyer not found' });
             return;
