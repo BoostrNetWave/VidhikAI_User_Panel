@@ -1,147 +1,147 @@
 name: Deploy Vidhik AI User Panel
 
 on:
-push:
-branches:
-- main
-workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-deploy:
-name: Build and Deploy User Panel
-runs-on: ubuntu-latest
+  deploy:
+    name: Build and Deploy User Panel
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Checkout source code
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-  - name: Setup Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: "20"
-      cache: "npm"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
 
-  - name: Install dependencies
-    run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-  - name: Build application
-    run: npm run build
+      - name: Build application
+        run: npm run build
 
-  - name: Verify build
-    run: |
-      echo "Checking build output..."
+      - name: Verify build
+        run: |
+          echo "Checking build output..."
 
-      if [ ! -d "dist" ]; then
-        echo "ERROR: dist directory not found"
-        exit 1
-      fi
+          if [ ! -d "dist" ]; then
+            echo "ERROR: dist directory not found"
+            exit 1
+          fi
 
-      echo "Build completed successfully"
-      ls -la dist/
+          echo "Build completed successfully"
+          ls -la dist/
 
-  - name: Install SSH tools
-    run: |
-      sudo apt-get update
-      sudo apt-get install -y sshpass rsync
+      - name: Install SSH tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync
 
-  - name: Backup current application
-    env:
-      SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-    run: |
-      sshpass -e ssh \
-        -o StrictHostKeyChecking=no \
-        "${SERVER_USER}@${SERVER_HOST}" \
-        "mkdir -p /var/www/backups && \
-         if [ -d /var/www/html/VidhikAI_User_Panel/dist ]; then \
-           rm -rf /var/www/backups/VidhikAI_User_Panel-dist-previous && \
-           cp -a /var/www/html/VidhikAI_User_Panel/dist \
-             /var/www/backups/VidhikAI_User_Panel-dist-previous; \
-         fi"
+      - name: Backup current application
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "mkdir -p /var/www/backups && \
+             if [ -d /var/www/html/VidhikAI_User_Panel/dist ]; then \
+               rm -rf /var/www/backups/VidhikAI_User_Panel-dist-previous && \
+               cp -a /var/www/html/VidhikAI_User_Panel/dist \
+                 /var/www/backups/VidhikAI_User_Panel-dist-previous; \
+             fi"
 
-  - name: Deploy application to Vultr
-    env:
-      SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-    run: |
-      sshpass -e rsync -avz --delete \
-        --exclude='.git/' \
-        --exclude='.github/' \
-        --exclude='.env' \
-        --exclude='node_modules/' \
-        -e "ssh -o StrictHostKeyChecking=no" \
-        ./ \
-        "${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/"
+      - name: Deploy application to Vultr
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e rsync -avz --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='node_modules/' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ \
+            "${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/"
 
-  - name: Install server dependencies
-    env:
-      SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-    run: |
-      sshpass -e ssh \
-        -o StrictHostKeyChecking=no \
-        "${SERVER_USER}@${SERVER_HOST}" \
-        "cd /var/www/html/VidhikAI_User_Panel && npm install"
+      - name: Install server dependencies
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "cd /var/www/html/VidhikAI_User_Panel && npm ci"
 
-  - name: Restart PM2 application
-    env:
-      SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-    run: |
-      sshpass -e ssh \
-        -o StrictHostKeyChecking=no \
-        "${SERVER_USER}@${SERVER_HOST}" \
-        "cd /var/www/html/VidhikAI_User_Panel && \
-         if pm2 describe vidhik-user-panel > /dev/null 2>&1; then \
-           pm2 restart vidhik-user-panel --update-env; \
-         else \
-           pm2 start 'npm start' --name vidhik-user-panel; \
-         fi && \
-         pm2 save"
+      - name: Restart PM2 application
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "cd /var/www/html/VidhikAI_User_Panel && \
+             if pm2 describe vidhik-user-panel > /dev/null 2>&1; then \
+               pm2 restart vidhik-user-panel --update-env; \
+             else \
+               pm2 start npm --name vidhik-user-panel -- start; \
+             fi && \
+             pm2 save"
 
-  - name: Check PM2 status
-    env:
-      SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-    run: |
-      sshpass -e ssh \
-        -o StrictHostKeyChecking=no \
-        "${SERVER_USER}@${SERVER_HOST}" \
-        "pm2 status"
+      - name: Check PM2 status
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "pm2 status"
 
-  - name: Test Nginx configuration
-    env:
-      SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-    run: |
-      sshpass -e ssh \
-        -o StrictHostKeyChecking=no \
-        "${SERVER_USER}@${SERVER_HOST}" \
-        "nginx -t"
+      - name: Test Nginx configuration
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "sudo nginx -t"
 
-  - name: Reload Nginx
-    env:
-      SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-    run: |
-      sshpass -e ssh \
-        -o StrictHostKeyChecking=no \
-        "${SERVER_USER}@${SERVER_HOST}" \
-        "systemctl reload nginx"
+      - name: Reload Nginx
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "sudo systemctl reload nginx"
 
-  - name: Deployment completed
-    run: |
-      echo "================================================"
-      echo "Vidhik AI User Panel Deployment Successful"
-      echo "================================================"
-      echo "Application: VidhikAI_User_Panel"
-      echo "PM2 Process: vidhik-user-panel"
-      echo "Deployment Path: /var/www/html/VidhikAI_User_Panel"
-      echo "================================================"
+      - name: Deployment completed
+        run: |
+          echo "================================================"
+          echo "Vidhik AI User Panel Deployment Successful"
+          echo "================================================"
+          echo "Application: VidhikAI_User_Panel"
+          echo "PM2 Process: vidhik-user-panel"
+          echo "Deployment Path: /var/www/html/VidhikAI_User_Panel"
+          echo "================================================"
