@@ -51,6 +51,8 @@ export default function ConsultationsPage() {
         if (location.state && location.state.startConsultationWithLawyer) {
             setSelectedLawyer(location.state.startConsultationWithLawyer);
             setShowNewRequest(true);
+        } else if (location.state && location.state.showNewRequest) {
+            setShowNewRequest(true);
         }
     }, [location.state]);
 

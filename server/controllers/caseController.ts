@@ -303,3 +303,73 @@ export const clearSignals = async (req: any, res: Response): Promise<void> => {
     }
 };
 
+export const createCase = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { title, description, category, court, filingNumber, nextHearingDate, priority, lawyerId, totalFee } = req.body;
+
+        if (!title || !description) {
+            res.status(400).json({ message: 'Title and description are required to create a case' });
+            return;
+        }
+
+        const newCase = await Case.create({
+            title: title.trim(),
+            description: description.trim(),
+            client: req.user._id,
+            lawyer: lawyerId || undefined,
+            category: category || 'General Legal',
+            court: court || '',
+            filingNumber: filingNumber || `CAS-${Math.floor(100000 + Math.random() * 900000)}`,
+            nextHearingDate: nextHearingDate ? new Date(nextHearingDate) : undefined,
+            priority: priority || 'medium',
+            status: lawyerId ? 'pending_lawyer' : 'active',
+            totalFee: Number(totalFee) || 0,
+            currentProgress: 0,
+            planSubmitted: false,
+            planApproved: false,
+            milestones: [],
+            notes: [],
+            documents: []
+        });
+
+        const populated = await Case.findById(newCase._id)
+            .populate('lawyer', 'fullName email phone location title expertise avatar');
+
+        res.status(201).json(populated);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const addCaseNote = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { text } = req.body;
+
+        if (!text || !text.trim()) {
+            res.status(400).json({ message: 'Note text cannot be empty' });
+            return;
+        }
+
+        const kase = await Case.findOne({ _id: id, client: req.user._id })
+            .populate('lawyer', 'fullName email phone location title expertise avatar');
+        if (!kase) {
+            res.status(404).json({ message: 'Case not found' });
+            return;
+        }
+
+        kase.notes = kase.notes || [];
+        kase.notes.push({
+            text: text.trim(),
+            createdAt: new Date(),
+            createdBy: req.user.fullName || 'Client'
+        });
+
+        await kase.save();
+        res.json(kase);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+

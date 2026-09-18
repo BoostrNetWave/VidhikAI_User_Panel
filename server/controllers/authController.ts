@@ -4,6 +4,7 @@ import LoginHistory from '../models/LoginHistory';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '../utils/emailService';
+import CreditService from '../services/creditService';
 
 // Generate JWT Token
 const generateToken = (id: string, userId: string, role: string) => {
@@ -114,6 +115,7 @@ export const loginUser = async (req: Request, res: Response) => {
             console.log(`[LOGIN] Success for email: ${email}`);
             
             user.lastActiveAt = new Date();
+            await CreditService.syncUserSubscription(user);
             await user.save();
 
             await LoginHistory.create({

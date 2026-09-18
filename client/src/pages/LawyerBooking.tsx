@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { lawyerService } from '@/services/lawyerService';
-import { caseService } from '@/services/caseService';
+import { consultationService } from '@/services/consultationService';
 
 export default function LawyerBooking() {
     const navigate = useNavigate();
@@ -132,13 +132,13 @@ export default function LawyerBooking() {
         try {
             toast.info("Submitting booking request...");
             
-            // Invoke the case creation/booking endpoint on the user backend
-            await caseService.bookLawyer({
+            // Create Live Consultation record
+            await consultationService.createConsultation({
                 lawyerId: lawyer._id,
                 title: caseTitle.trim(),
                 description: description.trim(),
-                bookingDate: bookingDate!.toISOString(),
-                bookingTime,
+                scheduledDate: bookingDate!.toISOString(),
+                scheduledTime: bookingTime,
                 totalFee: totalAmount
             });
 

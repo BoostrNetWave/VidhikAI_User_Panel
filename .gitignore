@@ -38,4 +38,6 @@ server/.env.*
 
 # Build output
 dist
+*.timestamp-*.mjs
+
 build

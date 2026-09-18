@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const api = axios.create({
     baseURL: '/api',
@@ -39,6 +40,11 @@ api.interceptors.response.use(
             localStorage.removeItem('user_profile_data');
             window.location.href = '/user/login';
         }
+        
+        if (error.response?.data?.error === 'INSUFFICIENT_CREDITS') {
+            toast.error(error.response.data.message || 'You have insufficient AI credits.');
+        }
+
         return Promise.reject(error);
     }
 );

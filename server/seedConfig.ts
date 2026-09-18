@@ -93,13 +93,89 @@ const seedData = [
     {
         key: 'USER_PRICING_PLANS',
         value: [
-            { name: "Free", priceMonthly: 0, priceYearly: 0, desc: "Perfect for trying out Vidhik AI", features: ["5 documents per month", "2 contract reviews per month", "5 AI queries per day", "1 lawyer booking per month"], gradient: "from-slate-500 to-slate-600", popular: false, iconName: "Zap", cta: "Current Active Plan", disabled: true, current: true, limits: { documents: 5, reviews: 2, research: 5, bookings: 1 } },
-            { name: "Starter", priceMonthly: 2499, priceYearly: 23990, desc: "Basic AI tools for startups", features: ["30 documents per month", "10 contract reviews per month", "20 AI queries per day", "5 lawyer bookings per month"], gradient: "from-accent to-purple-500", popular: false, iconName: "Zap", cta: "Upgrade to Starter", disabled: false, limits: { documents: 30, reviews: 10, research: 20, bookings: 5 } },
-            { name: "Professional", priceMonthly: 8299, priceYearly: 79670, desc: "Unlimited AI capabilities for professionals", features: ["50 documents per month", "30 contract reviews per month", "100 AI queries per day", "15 lawyer bookings per month"], gradient: "from-indigo-500 to-blue-600", popular: true, iconName: "Crown", cta: "Upgrade to Professional", disabled: false, bestValue: true, limits: { documents: 50, reviews: 30, research: 100, bookings: 15 } },
-            { name: "Enterprise", priceMonthly: "Custom", priceYearly: "Custom", desc: "For large enterprise legal teams", features: ["Unlimited documents", "Unlimited reviews", "Unlimited AI queries", "Unlimited lawyer bookings"], gradient: "from-slate-900 to-slate-800", popular: false, iconName: "Building2", cta: "Contact Sales", disabled: false, limits: { documents: 999999, reviews: 999999, research: 999999, bookings: 999999 } }
+            { 
+                id: "free",
+                name: "Free", 
+                priceMonthly: 0, 
+                priceYearly: 0, 
+                monthlyCredits: 30,
+                desc: "Perfect for getting started with AI legal assistance", 
+                features: [
+                    "30 Monthly AI Credits", 
+                    "Simple & Detailed Legal Chat (1–3 credits)", 
+                    "Basic Document Generation (5 credits)", 
+                    "Short Document Review (up to 5,000 words)",
+                    "Verified Lawyer Marketplace access",
+                    "Credits reset each billing cycle"
+                ], 
+                gradient: "from-slate-500 to-slate-600", 
+                popular: false, 
+                iconName: "Zap", 
+                cta: "Current Active Plan", 
+                disabled: true, 
+                current: true, 
+                limits: { monthlyCredits: 30, maxChatWords: 5000, maxDocGenWords: 2000, maxDocReviewWords: 5000 } 
+            },
+            { 
+                id: "starter",
+                name: "Starter", 
+                priceMonthly: 499, 
+                priceYearly: 4990, 
+                monthlyCredits: 150,
+                desc: "Designed for individuals, freelancers & emerging startups", 
+                features: [
+                    "150 Monthly AI Credits", 
+                    "Advanced Legal Chat (up to 10,000 words)", 
+                    "Standard Document Generation (10 credits)", 
+                    "Standard Document Review (up to 15,000 words)",
+                    "Verified Lawyer Marketplace access",
+                    "Priority AI processing speed"
+                ], 
+                gradient: "from-accent to-purple-500", 
+                popular: true, 
+                bestValue: true,
+                iconName: "Crown", 
+                cta: "Upgrade to Starter", 
+                disabled: false, 
+                limits: { monthlyCredits: 150, maxChatWords: 10000, maxDocGenWords: 5000, maxDocReviewWords: 15000 } 
+            },
+            { 
+                id: "growth",
+                name: "Growth", 
+                priceMonthly: 1499, 
+                priceYearly: 14990, 
+                monthlyCredits: 500,
+                desc: "For growing businesses, law chambers & comprehensive legal operations", 
+                features: [
+                    "500 Monthly AI Credits", 
+                    "All Legal Chat tiers with extended context", 
+                    "Large Document Generation (up to 15,000 words)", 
+                    "Large Document Review (up to 50,000 words)",
+                    "Verified Lawyer Marketplace access",
+                    "Maximum AI speed & priority support"
+                ], 
+                gradient: "from-indigo-500 to-blue-600", 
+                popular: false, 
+                iconName: "Building2", 
+                cta: "Upgrade to Growth", 
+                disabled: false, 
+                limits: { monthlyCredits: 500, maxChatWords: 10000, maxDocGenWords: 15000, maxDocReviewWords: 50000 } 
+            }
         ],
         category: 'user_panel',
         description: 'JSON array of subscription plans displayed in the User Panel Billing section (prices in INR)'
+    },
+    {
+        key: 'EXTRA_CREDIT_PACKAGES',
+        value: [
+            { id: "extra-50", credits: 50, price: 199, desc: "50 Extra AI Credits", popular: false },
+            { id: "extra-100", credits: 100, price: 349, desc: "100 Extra AI Credits", popular: true },
+            { id: "extra-250", credits: 250, price: 749, desc: "250 Extra AI Credits", popular: false },
+            { id: "extra-500", credits: 500, price: 1299, desc: "500 Extra AI Credits", popular: false },
+            { id: "extra-1000", credits: 1000, price: 2299, desc: "1,000 Extra AI Credits", popular: false }
+        ],
+        category: 'user_panel',
+        description: 'JSON array of top-up extra credit packages (prices in INR)'
     },
     {
         key: 'LAWYER_PRICING_PLANS',

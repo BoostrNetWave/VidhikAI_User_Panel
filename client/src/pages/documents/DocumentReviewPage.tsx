@@ -9,6 +9,7 @@ import {
     AlertTriangle,
     Loader2,
     ChevronRight,
+    ChevronLeft,
     Activity,
     FileCheck,
     Maximize2,
@@ -32,16 +33,18 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
 type ReviewState = 'UPLOAD' | 'PROCESSING' | 'COMPLETED';
 
 export default function DocumentReviewPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const [state, setState] = useState<ReviewState>(id ? 'PROCESSING' : 'UPLOAD');
     const [viewMode, setViewMode] = useState<'SUMMARY' | 'DETAILED'>('DETAILED');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [sourceDocument, setSourceDocument] = useState<any>(null);
     const [analysisData, setAnalysisData] = useState<any>(null);
     const [progress, setProgress] = useState(0);
     const [isDeepScanEnabled] = useState(false);
@@ -78,8 +81,50 @@ export default function DocumentReviewPage() {
                 }
             };
             fetchSharedReview();
+        } else if (location.state && (location.state as any).fileToReview) {
+            const file = (location.state as any).fileToReview;
+            const doc = (location.state as any).selectedDocument;
+            setSelectedFile(file);
+            if (doc) {
+                setSourceDocument(doc);
+                try {
+                    sessionStorage.setItem('vidhik_selected_review_doc', JSON.stringify(doc));
+                } catch (e) {}
+            }
+            startAnalysis(file);
+            // Clear the state so it doesn't run again on browser back/forward,
+            // while sessionStorage preserves the selected review document
+            window.history.replaceState({}, document.title);
+        } else {
+            // Restore preserved document or analysis session from sessionStorage
+            try {
+                const cachedDocStr = sessionStorage.getItem('vidhik_selected_review_doc');
+                const cachedAnalysisStr = sessionStorage.getItem('vidhik_active_review_data');
+                if (cachedDocStr) {
+                    const cachedDoc = JSON.parse(cachedDocStr);
+                    setSourceDocument(cachedDoc);
+                    const file = new File(
+                        [cachedDoc.content || ''],
+                        `${cachedDoc.title || 'Document'}.txt`,
+                        { type: 'text/plain' }
+                    );
+                    setSelectedFile(file);
+
+                    if (cachedAnalysisStr) {
+                        const parsedAnalysis = JSON.parse(cachedAnalysisStr);
+                        setAnalysisData(parsedAnalysis);
+                        setProgress(100);
+                        setState('COMPLETED');
+                        setViewMode('DETAILED');
+                    } else {
+                        startAnalysis(file);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to restore preserved review session:", e);
+            }
         }
-    }, [id, navigate]);
+    }, [id, navigate, location.state]);
 
     // Simulated Log Steps
     const getAnalysisSteps = (deepScan: boolean) => [
@@ -144,6 +189,9 @@ export default function DocumentReviewPage() {
 
             if (response.data.success) {
                 setAnalysisData(response.data.data);
+                try {
+                    sessionStorage.setItem('vidhik_active_review_data', JSON.stringify(response.data.data));
+                } catch (e) {}
                 // Simulate progress finishing
                 setProgress(100);
                 setTimeout(() => {
@@ -161,7 +209,7 @@ export default function DocumentReviewPage() {
                         onClick: () => window.location.href = '/user/billing'
                     }
                 });
-                setState('UPLOAD');
+                handleResetReview();
             } else {
                 const errorMessage = error.response?.data?.message || "AI Analysis failed. Showing simulated results.";
                 toast.error(error.response?.data?.error || "Analysis Failed", {
@@ -177,6 +225,17 @@ export default function DocumentReviewPage() {
                 }, 1000);
             }
         }
+    };
+
+    const handleResetReview = () => {
+        try {
+            sessionStorage.removeItem('vidhik_selected_review_doc');
+            sessionStorage.removeItem('vidhik_active_review_data');
+        } catch (e) {}
+        setSourceDocument(null);
+        setSelectedFile(null);
+        setAnalysisData(null);
+        setState('UPLOAD');
     };
 
     useEffect(() => {
@@ -379,7 +438,7 @@ export default function DocumentReviewPage() {
                             Analysis in Progress
                         </Badge>
                     </div>
-                    <Button variant="ghost" className="text-muted-foreground hover:text-destructive gap-2" onClick={() => setState('UPLOAD')}>
+                    <Button variant="ghost" className="text-muted-foreground hover:text-destructive gap-2" onClick={handleResetReview}>
                         Cancel Process
                         <X className="h-4 w-4" />
                     </Button>
@@ -391,8 +450,8 @@ export default function DocumentReviewPage() {
                         <div className="flex flex-col items-center gap-2">
                             <h2 className="text-2xl font-bold text-foreground">Processing Document</h2>
                             <p className="text-muted-foreground font-medium text-sm">
-                                {selectedFile ? selectedFile.name : "Service_Agreement_v2.pdf"} •
-                                {selectedFile ? (selectedFile.size / (1024 * 1024)).toFixed(1) + " MB" : "1.2 MB"}
+                                {selectedFile ? selectedFile.name : (sourceDocument ? `${sourceDocument.title}.txt` : "Service_Agreement_v2.pdf")} •
+                                {selectedFile && selectedFile.size > 0 ? (selectedFile.size / (1024 * 1024)).toFixed(1) + " MB" : "Workspace Document"}
                             </p>
                             <Badge variant="outline" className="mt-2 text-xs uppercase tracking-widest text-primary border-primary/20 bg-primary/5">
                                 Deep Structural Analysis
@@ -635,7 +694,7 @@ export default function DocumentReviewPage() {
                     </Card>
 
                     <div className="flex gap-4 w-full">
-                        <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-gray-200 text-gray-600 hover:bg-gray-50" onClick={() => setState('UPLOAD')}>
+                        <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-gray-200 text-gray-600 hover:bg-gray-50" onClick={handleResetReview}>
                             Upload Another Document
                         </Button>
                         <Button className="flex-[2] h-14 rounded-2xl font-black bg-primary hover:bg-primary text-lg gap-2 shadow-lg shadow-sm" onClick={() => setViewMode('DETAILED')}>
@@ -677,6 +736,43 @@ export default function DocumentReviewPage() {
                     </div>
                 </div>
 
+                {/* Source Document Context Bar */}
+                {sourceDocument && (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-primary/5 border border-primary/20 rounded-2xl px-5 py-3.5 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shrink-0" />
+                            <div className="text-sm">
+                                <span className="text-muted-foreground">Reviewing document: </span>
+                                <span className="font-bold text-foreground">{sourceDocument.title}</span>
+                                {sourceDocument.documentType && (
+                                    <span className="ml-2 text-[10px] font-semibold text-primary uppercase px-2 py-0.5 bg-primary/10 rounded-md">
+                                        {sourceDocument.documentType}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleResetReview}
+                                className="text-xs text-muted-foreground hover:text-foreground h-8 rounded-lg"
+                            >
+                                Review Different Document
+                            </Button>
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => navigate('/documents/workspace')}
+                                className="text-xs gap-1.5 h-8 font-semibold rounded-lg"
+                            >
+                                <ChevronLeft className="h-3.5 w-3.5" />
+                                Back to My Documents
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col gap-10 items-start">
                     {/* Top Section: Document Preview (Full Width) */}
                     <Card className={`w-full rounded-[2.5rem] border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] bg-white overflow-hidden flex flex-col transition-all duration-500 ${isFullscreen ? 'fixed inset-4 z-[100]' : 'min-h-[900px]'}`}>
@@ -685,7 +781,7 @@ export default function DocumentReviewPage() {
                                 <div className="w-10 h-10 bg-secondary/80 rounded-xl flex items-center justify-center text-primary">
                                     <FileText className="h-6 w-6" />
                                 </div>
-                                <CardTitle className="text-base font-bold">{selectedFile?.name || "Service_Agreement_v2.pdf"}</CardTitle>
+                                <CardTitle className="text-base font-bold">{selectedFile?.name || (sourceDocument ? `${sourceDocument.title}.txt` : "Service_Agreement_v2.pdf")}</CardTitle>
                             </div>
                             <div className="flex items-center gap-2">
                                 {isSearchVisible && (

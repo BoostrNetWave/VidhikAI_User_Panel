@@ -25,6 +25,27 @@ export default function AILawyerList() {
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [lawyers, setLawyers] = useState<any[]>([]);
 
+    const [failedAvatars, setFailedAvatars] = useState<Record<string, boolean>>({});
+
+    const getAvatarSrc = (avatar?: string) => {
+        if (!avatar) return "";
+        if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:')) {
+            return avatar;
+        }
+        const clean = avatar.startsWith('/') ? avatar : `/${avatar}`;
+        if (clean.startsWith('/lawyer/')) {
+            return clean;
+        }
+        return `/lawyer${clean}`;
+    };
+
+    const getInitials = (name?: string) => {
+        if (!name) return "L";
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    };
+
     useEffect(() => {
         const fetchLawyers = async () => {
             try {
@@ -67,7 +88,7 @@ export default function AILawyerList() {
                         </Button>
                         <Button 
                             className="bg-primary text-white hover:bg-violet-800 rounded-xl font-bold h-11 shadow-sm"
-                            onClick={() => navigate('/cases', { state: { startBookingFlow: true } })}
+                            onClick={() => navigate('/consultations', { state: { showNewRequest: true } })}
                         >
                             Book Consultation
                         </Button>
@@ -125,12 +146,19 @@ export default function AILawyerList() {
                                         {/* Profile Image / Avatar Placeholder */}
                                         <div className="relative shrink-0">
                                             <div className="h-20 w-20 rounded-2xl bg-secondary flex items-center justify-center border border-border shadow-sm overflow-hidden">
-                                                {lawyer.avatar ? (
+                                                {lawyer.avatar && !failedAvatars[lawyer._id || lawyer.id] ? (
                                                     <img 
-                                                        src={lawyer.avatar.startsWith('http') ? lawyer.avatar : (lawyer.avatar.startsWith('/') ? `/lawyer${lawyer.avatar}` : `/lawyer/${lawyer.avatar}`)} 
+                                                        src={getAvatarSrc(lawyer.avatar)} 
                                                         alt={lawyer.fullName} 
                                                         className="h-full w-full object-cover"
+                                                        onError={() => {
+                                                            setFailedAvatars(prev => ({ ...prev, [lawyer._id || lawyer.id]: true }));
+                                                        }}
                                                     />
+                                                ) : lawyer.fullName ? (
+                                                    <div className="h-full w-full flex items-center justify-center bg-violet-100 text-primary font-bold text-lg select-none">
+                                                        {getInitials(lawyer.fullName)}
+                                                    </div>
                                                 ) : (
                                                     <UserIcon className="h-10 w-10 text-muted-foreground/40" />
                                                 )}

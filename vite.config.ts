@@ -32,15 +32,26 @@ export default defineConfig({
                 secure: false,
             },
             '/lawyer/uploads': {
-                target: 'http://localhost:5025',
+                target: 'http://127.0.0.1:5003',
                 changeOrigin: true,
                 secure: false,
-                rewrite: (path) => path.replace(/^\/lawyer\/uploads/, '/uploads'),
             },
             '/uploads': {
-                target: 'http://localhost:5025',
+                target: 'http://127.0.0.1:5003',
                 changeOrigin: true,
                 secure: false,
+            },
+            '/user/uploads': {
+                target: 'http://127.0.0.1:5003',
+                changeOrigin: true,
+                secure: false,
+                rewrite: (path) => path.replace(/^\/user\/uploads/, '/uploads'),
+            },
+            '/user/lawyer/uploads': {
+                target: 'http://127.0.0.1:5003',
+                changeOrigin: true,
+                secure: false,
+                rewrite: (path) => path.replace(/^\/user\/lawyer\/uploads/, '/lawyer/uploads'),
             }
         }
     }

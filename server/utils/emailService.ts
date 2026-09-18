@@ -18,15 +18,15 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
             html
         };
 
-        // Fire-and-forget email sending in the background to prevent blocking HTTP requests.
-        // This resolves hanging requests caused by AWS port 25 blocking.
-        transporter.sendMail(mailOptions)
-            .then((info) => {
-                console.log('[EmailService] Email sent successfully: ' + info.response);
-            })
-            .catch((error) => {
-                console.error('[EmailService] Async email sending failed:', error);
-            });
+        // Await the email sending to catch errors properly instead of fire-and-forget.
+        try {
+            const info = await transporter.sendMail(mailOptions);
+            console.log('[EmailService] Email sent successfully: ' + info.response);
+        } catch (error) {
+            console.error('[EmailService] Email sending failed:', error);
+            // We return false or throw an error depending on how we want to handle it.
+            // For now, logging it is the most important part so we can debug SMTP issues.
+        }
 
         return true;
     } catch (error) {

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster, toast } from 'sonner'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
+import VerifyEmail from './pages/auth/VerifyEmail'
 import Dashboard from './pages/Dashboard'
 import NotificationsPage from './pages/NotificationsPage'
 import DocumentGeneratorPage from './pages/documents/DocumentGeneratorPage'
@@ -48,6 +49,7 @@ import AdminProtectedRoute from './components/auth/AdminProtectedRoute'
 import ConsultationMeeting from './pages/ConsultationMeeting'
 import ConsultationsPage from './pages/ConsultationsPage'
 import ConsultationRoom from './pages/ConsultationRoom'
+import MySupportTicketsPage from './pages/support/MySupportTicketsPage'
 
 import { useEffect } from 'react'
 import { getSocket, registerSocketUser, disconnectSocket } from './lib/socket'
@@ -94,6 +96,7 @@ function App() {
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
+                <Route path="/verify-otp" element={<VerifyEmail />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/document-generator" element={<DocumentGeneratorPage />} />
@@ -146,6 +149,8 @@ function App() {
                 <Route path="/consultations/:id/meet" element={<ConsultationRoom />} />
                 <Route path="/billing" element={<BillingPlans />} />
                 <Route path="/billing/checkout" element={<BillingCheckout />} />
+                <Route path="/support" element={<MySupportTicketsPage />} />
+                <Route path="/support/tickets" element={<MySupportTicketsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/admin" element={
                     <AdminProtectedRoute>

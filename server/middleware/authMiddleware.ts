@@ -32,3 +32,16 @@ export const adminOnly = (req: any, res: Response, next: NextFunction) => {
         res.status(403).json({ message: 'Access denied: Admin role required' });
     }
 };
+
+export const optionalAuth = async (req: any, res: Response, next: NextFunction) => {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+            req.user = await User.findById(decoded.id).select('-password');
+        } catch (error) {
+            // Ignore invalid token for optional auth
+        }
+    }
+    next();
+};

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/layout/DashboardLayout";
 import { UserNav } from "@/components/dashboard/UserNav";
 import {
@@ -32,20 +33,32 @@ import {
     ChevronRight,
     ChevronsLeft,
     ChevronsRight,
-    Upload
+    Upload,
+    Sparkles,
+    FileEdit,
+    Save,
+    CheckCircle2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { parseHtmlToDocx } from '@/lib/docxUtils';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import { DocumentPreview } from '@/components/documents/DocumentPreview';
+import { DocumentPreview, formatToLegalHtml } from '@/components/documents/DocumentPreview';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 export default function MyDocuments() {
+    const navigate = useNavigate();
     const [documents, setDocuments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedDoc, setSelectedDoc] = useState<any>(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [docModalMode, setDocModalMode] = useState<'review' | 'edit'>('review');
+    const [editTitle, setEditTitle] = useState("");
+    const [editContent, setEditContent] = useState("");
+    const [editStatus, setEditStatus] = useState("draft");
+    const [isSavingDoc, setIsSavingDoc] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -225,9 +238,101 @@ export default function MyDocuments() {
         }
     };
 
-    const handleView = (doc: any) => {
+    const handleOpenDocument = (doc: any, mode: 'review' | 'edit' = 'review') => {
         setSelectedDoc(doc);
+        setEditTitle(doc.title || '');
+        const formatted = formatToLegalHtml(doc.content || '');
+        setEditContent(doc.content && /<\s*(p|div|h[1-6]|ul|ol)\b[^>]*>/i.test(doc.content) ? doc.content : formatted);
+        setEditStatus(doc.status || 'draft');
+        setDocModalMode(mode);
         setIsPreviewOpen(true);
+    };
+
+    const handleView = (doc: any) => {
+        handleOpenDocument(doc, 'review');
+    };
+
+    const handleSaveDocument = async () => {
+        if (!selectedDoc?._id) return;
+        setIsSavingDoc(true);
+        try {
+            const response = await api.put(`/documents/${selectedDoc._id}`, {
+                title: editTitle.trim() || selectedDoc.title,
+                content: editContent,
+                status: editStatus
+            });
+            if (response.data.success) {
+                const updated = response.data.data;
+                setSelectedDoc(updated);
+                setDocuments(prev => prev.map(d => d._id === updated._id ? { ...d, ...updated } : d));
+                toast.success("Document updated successfully");
+                setDocModalMode('review');
+            }
+        } catch (error: any) {
+            console.error("Failed to save document:", error);
+            toast.error(error.response?.data?.message || "Failed to save document changes");
+        } finally {
+            setIsSavingDoc(false);
+        }
+    };
+
+    const quillModules = useMemo(() => ({
+        toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            [{ 'align': [] }],
+            ['clean']
+        ]
+    }), []);
+
+    const handleReviewDocument = (doc: any) => {
+        let plainText = "";
+        if (doc.content) {
+            // Convert HTML to formatted text if it contains HTML tags
+            if (/<[a-z][\s\S]*>/i.test(doc.content)) {
+                const formatted = doc.content
+                    .replace(/<\s*br\s*[\/]?>/gi, "\n")
+                    .replace(/<\s*\/p\s*>/gi, "\n\n")
+                    .replace(/<\s*\/h[1-6]\s*>/gi, "\n\n")
+                    .replace(/<\s*\/li\s*>/gi, "\n");
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = formatted;
+                plainText = tempDiv.innerText || tempDiv.textContent || "";
+            } else {
+                plainText = doc.content;
+            }
+        }
+        
+        if (!plainText.trim()) {
+            plainText = `${doc.title}\n\nDocument Type: ${doc.documentType}\nNo content available.`;
+        }
+
+        const safeFilename = `${doc.title.replace(/[^\w\s-]/g, '').trim() || 'Document'}.txt`;
+        const file = new File([plainText], safeFilename, { type: "text/plain" });
+
+        // Save selected document in sessionStorage to preserve selection
+        try {
+            sessionStorage.setItem('vidhik_selected_review_doc', JSON.stringify({
+                _id: doc._id,
+                title: doc.title,
+                documentType: doc.documentType,
+                content: plainText,
+                status: doc.status || 'draft',
+                updatedAt: doc.updatedAt
+            }));
+        } catch (e) {
+            console.error("Failed to save selected review doc to sessionStorage", e);
+        }
+
+        // Close modal if open
+        setIsPreviewOpen(false);
+        navigate('/documents/review', { 
+            state: { 
+                fileToReview: file,
+                selectedDocument: doc
+            } 
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -320,11 +425,11 @@ export default function MyDocuments() {
                     <Table>
                         <TableHeader className="bg-gray-50/50">
                             <TableRow>
-                                <TableHead className="w-[40%]">Document Title</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Last Modified</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead className="w-[38%]">Document Title</TableHead>
+                                <TableHead className="w-[18%]">Type</TableHead>
+                                <TableHead className="w-[18%]">Status</TableHead>
+                                <TableHead className="w-[16%]">Last Modified</TableHead>
+                                <TableHead className="text-right w-[10%]">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -351,15 +456,23 @@ export default function MyDocuments() {
                                 </TableRow>
                             ) : (
                                 paginatedDocuments.map((doc) => (
-                                    <TableRow key={doc._id} className="hover:bg-gray-50/50 transition-colors">
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-secondary text-primary rounded-lg">
+                                    <TableRow
+                                        key={doc._id}
+                                        onClick={() => handleOpenDocument(doc, 'review')}
+                                        className="hover:bg-primary/5 transition-colors cursor-pointer group"
+                                    >
+                                        <TableCell className="font-medium py-3.5">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="p-2.5 bg-secondary text-primary rounded-lg shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                                                     <FileText className="h-5 w-5" />
                                                 </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-foreground">{doc.title}</span>
-                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{doc.documentType}</span>
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-foreground font-semibold truncate group-hover:text-primary transition-colors text-sm">
+                                                        {doc.title}
+                                                    </span>
+                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                        {doc.documentType}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -370,29 +483,49 @@ export default function MyDocuments() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className={`border-none capitalize font-medium ${getStatusColor(doc.status)}`}>
-                                                {doc.status}
+                                                {doc.status || 'Draft'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                             {formatDate(doc.updatedAt)}
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-1">
                                                 {activeTab === 'workspace' ? (
                                                     <>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            title="View"
-                                                            onClick={() => handleView(doc)}
+                                                            title="Review / View Document"
+                                                            onClick={() => handleOpenDocument(doc, 'review')}
+                                                            className="hover:text-primary hover:bg-primary/10"
                                                         >
-                                                            <Eye className="h-4 w-4 text-gray-500" />
+                                                            <Eye className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            title="Download"
+                                                            title="Edit Document"
+                                                            onClick={() => handleOpenDocument(doc, 'edit')}
+                                                            className="hover:text-primary hover:bg-primary/10"
+                                                        >
+                                                            <FileEdit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            title="Review with AI"
+                                                            onClick={() => handleReviewDocument(doc)}
+                                                            className="hover:text-primary hover:bg-primary/10"
+                                                        >
+                                                            <Sparkles className="h-4 w-4 text-primary" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            title="Download DOCX"
                                                             onClick={() => handleDownload(doc)}
+                                                            className="hover:text-primary hover:bg-primary/10"
                                                         >
                                                             <Download className="h-4 w-4 text-gray-500" />
                                                         </Button>
@@ -519,30 +652,180 @@ export default function MyDocuments() {
                 )}
             </div>
 
-            {/* Preview Modal */}
+            {/* Review & Edit Document Modal */}
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-                    <DialogHeader className="p-6 border-b">
-                        <DialogTitle className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <FileText className="h-5 w-5 text-primary" />
-                                <span>{selectedDoc?.title}</span>
+                <DialogContent className="max-w-5xl w-[95vw] max-h-[92vh] flex flex-col p-0 overflow-hidden border border-border shadow-2xl rounded-2xl bg-white">
+                    {/* Modal Header */}
+                    <div className="p-4 sm:p-5 border-b bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0">
+                                <FileText className="h-5 w-5" />
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="gap-2"
-                                onClick={() => handleDownload(selectedDoc)}
-                            >
-                                <Download className="h-4 w-4" />
-                                Download DOCX
-                            </Button>
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-                        <div className="max-w-3xl mx-auto">
-                            <DocumentPreview content={selectedDoc?.content || ''} />
+                            <div className="flex flex-col min-w-0 flex-1">
+                                {docModalMode === 'edit' ? (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <Input
+                                            value={editTitle}
+                                            onChange={(e) => setEditTitle(e.target.value)}
+                                            placeholder="Document Title"
+                                            className="h-9 text-base font-bold text-foreground max-w-sm bg-white"
+                                        />
+                                        <select
+                                            value={editStatus}
+                                            onChange={(e) => setEditStatus(e.target.value)}
+                                            className="h-9 text-xs font-semibold px-2.5 rounded-md border border-gray-300 bg-white text-gray-800"
+                                        >
+                                            <option value="draft">Draft</option>
+                                            <option value="final">Final</option>
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h2 className="text-base sm:text-lg font-bold text-foreground truncate max-w-md">
+                                            {selectedDoc?.title}
+                                        </h2>
+                                        <Badge variant="outline" className={`border-none capitalize font-medium text-xs ${getStatusColor(selectedDoc?.status)}`}>
+                                            {selectedDoc?.status || 'Draft'}
+                                        </Badge>
+                                    </div>
+                                )}
+                                <span className="text-xs text-muted-foreground mt-0.5">
+                                    {selectedDoc?.documentType?.split('-').join(' ').toUpperCase()} • Last modified: {selectedDoc?.updatedAt ? formatDate(selectedDoc.updatedAt) : 'Recent'}
+                                </span>
+                            </div>
                         </div>
+
+                        {/* Controls: Mode Switcher and Actions */}
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                            {/* Review vs Edit Toggle */}
+                            <div className="inline-flex rounded-lg bg-gray-200/90 p-0.5 text-xs font-semibold">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (docModalMode === 'edit') {
+                                            setSelectedDoc((prev: any) => ({ ...prev, title: editTitle, content: editContent, status: editStatus }));
+                                        }
+                                        setDocModalMode('review');
+                                    }}
+                                    className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                                        docModalMode === 'review'
+                                            ? 'bg-white text-primary shadow-sm font-bold'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                    }`}
+                                >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    Review Mode
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setDocModalMode('edit')}
+                                    className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                                        docModalMode === 'edit'
+                                            ? 'bg-white text-primary shadow-sm font-bold'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                    }`}
+                                >
+                                    <FileEdit className="h-3.5 w-3.5" />
+                                    Edit Mode
+                                </button>
+                            </div>
+
+                            {docModalMode === 'review' ? (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1.5 text-xs text-primary border-primary/30 hover:bg-primary/10 h-8"
+                                        onClick={() => handleReviewDocument(selectedDoc)}
+                                    >
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        Review with AI
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1.5 text-xs h-8"
+                                        onClick={() => handleDownload(selectedDoc)}
+                                    >
+                                        <Download className="h-3.5 w-3.5" />
+                                        Download DOCX
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    className="gap-1.5 text-xs h-8 bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
+                                    onClick={handleSaveDocument}
+                                    disabled={isSavingDoc}
+                                >
+                                    {isSavingDoc ? (
+                                        <>
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="h-3.5 w-3.5" />
+                                            Save Changes
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Modal Body */}
+                    <div className="flex-1 overflow-y-auto bg-slate-100/70 p-4 sm:p-6">
+                        {docModalMode === 'review' ? (
+                            <div className="max-w-4xl mx-auto">
+                                <DocumentPreview content={selectedDoc?.content || editContent || ''} />
+                            </div>
+                        ) : (
+                            <div className="max-w-4xl mx-auto space-y-4">
+                                <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                                    <div className="px-4 py-2.5 bg-slate-50 border-b text-xs text-muted-foreground flex justify-between items-center flex-wrap gap-2">
+                                        <span className="font-medium text-gray-700">Legal Document Editor</span>
+                                        <span className="italic text-gray-500">Edit clauses, headings, and legal terms in place</span>
+                                    </div>
+                                    <div className="p-4 sm:p-6 min-h-[550px] bg-white">
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={editContent}
+                                            onChange={setEditContent}
+                                            modules={quillModules}
+                                            className="font-serif text-slate-900 min-h-[500px]"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setDocModalMode('review')}
+                                    >
+                                        Cancel / View Preview
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        className="gap-1.5 bg-primary hover:bg-primary/90 text-white font-semibold"
+                                        onClick={handleSaveDocument}
+                                        disabled={isSavingDoc}
+                                    >
+                                        {isSavingDoc ? (
+                                            <>
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="h-3.5 w-3.5" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>

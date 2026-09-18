@@ -84,9 +84,29 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "Free"
     },
+    subscriptionBillingCycle: {
+        type: String,
+        default: 'monthly'
+    },
+    monthlyCredits: {
+        type: Number,
+        default: 30
+    },
+    extraCredits: {
+        type: Number,
+        default: 0
+    },
     aiCredits: {
         type: Number,
-        default: 5000
+        default: 30
+    },
+    subscriptionStartedAt: {
+        type: Date,
+        default: Date.now
+    },
+    subscriptionRenewsAt: {
+        type: Date,
+        default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     },
     createdAt: {
         type: Date,

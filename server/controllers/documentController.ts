@@ -10,6 +10,7 @@ import UsageRecord from '../models/UsageRecord';
 import User from '../models/User';
 import mammoth from 'mammoth';
 import { createRequire } from 'module';
+import CreditService from '../services/creditService';
 
 const require = createRequire(import.meta.url);
 const pdfModule = require('pdf-parse');
@@ -48,29 +49,49 @@ export const getDocumentTypes = async (_req: Request, res: Response) => {
 export const generateEmploymentContract = async (req: Request, res: Response) => {
     try {
         const formData = req.body;
+        const userId = (req as any).user?._id || req.body.userId;
 
         console.log('[Employment Contract] Generation request received');
 
-        // Use the new service layer
-        const result = await documentService.generateDocument({
-            documentType: 'employment-contract',
-            formData,
-            userId: req.body.userId,
-            customModel: formData.model
-        });
+        // Calculate and deduct credits for standard document generation
+        const creditPlan = CreditService.calculateDocGenCredits('employment-contract');
+        try {
+            await CreditService.deductCredits(userId, 'document_generation', creditPlan.featureName, creditPlan.credits);
+        } catch (error: any) {
+            if (error.code === 'INSUFFICIENT_CREDITS') {
+                return res.status(403).json({ 
+                    error: 'INSUFFICIENT_CREDITS', 
+                    message: error.message,
+                    required: error.required,
+                    available: error.available,
+                    plan: error.plan
+                });
+            }
+            throw error;
+        }
 
-        // Log usage in UsageRecord
-        await UsageRecord.create({
-            userId: (req as any).user?._id || req.body.userId,
-            featureType: 'document_generation'
-        });
+        // Use the new service layer
+        let result;
+        try {
+            result = await documentService.generateDocument({
+                documentType: 'employment-contract',
+                formData,
+                userId: req.body.userId,
+                customModel: formData.model
+            });
+        } catch (genErr: any) {
+            await CreditService.refundCredits(userId, creditPlan.credits, 'document_generation', genErr.message || 'Generation failed');
+            throw genErr;
+        }
 
         res.json({
             document: result.document,
             message: result.message,
             modelUsed: result.modelUsed,
             provider: result.provider,
-            tokensUsed: result.tokensUsed
+            tokensUsed: result.tokensUsed,
+            creditsUsed: creditPlan.credits,
+            featureTier: creditPlan.featureName
         });
 
     } catch (error: any) {
@@ -88,8 +109,26 @@ export const generateEmploymentContract = async (req: Request, res: Response) =>
 export const generateDocument = async (req: Request, res: Response) => {
     try {
         const { documentType, formData, model } = req.body;
+        const userId = (req as any).user?._id || req.body.userId;
 
         console.log(`[Document Generation] Request for: ${documentType}`);
+
+        // Calculate and deduct credits according to document type tier
+        const creditPlan = CreditService.calculateDocGenCredits(documentType);
+        try {
+            await CreditService.deductCredits(userId, 'document_generation', creditPlan.featureName, creditPlan.credits);
+        } catch (error: any) {
+            if (error.code === 'INSUFFICIENT_CREDITS') {
+                return res.status(403).json({ 
+                    error: 'INSUFFICIENT_CREDITS', 
+                    message: error.message,
+                    required: error.required,
+                    available: error.available,
+                    plan: error.plan
+                });
+            }
+            throw error;
+        }
 
         // Validate form data
         console.log(`[Document Generation] Validating data for ${documentType}...`);
@@ -97,24 +136,22 @@ export const generateDocument = async (req: Request, res: Response) => {
 
         if (!validation.valid) {
             console.warn(`[Document Generation] Validation failed (missing fields):`, validation.errors);
-            // Proceeding anyway because the LLM is instructed to handle missing fields gracefully
-            // by injecting [REQUIRED INPUT MISSING: field_name] placeholders.
         }
         console.log(`[Document Generation] Validation passed. Delegating to service...`);
 
         // Generate document
-        const result = await documentService.generateDocument({
-            documentType,
-            formData,
-            userId: req.body.userId,
-            customModel: model
-        });
-
-        // Log usage in UsageRecord
-        await UsageRecord.create({
-            userId: (req as any).user?._id || req.body.userId,
-            featureType: 'document_generation'
-        });
+        let result;
+        try {
+            result = await documentService.generateDocument({
+                documentType,
+                formData,
+                userId: req.body.userId,
+                customModel: model
+            });
+        } catch (genErr: any) {
+            await CreditService.refundCredits(userId, creditPlan.credits, 'document_generation', genErr.message || 'Generation failed');
+            throw genErr;
+        }
 
         res.json({
             success: true,
@@ -122,7 +159,9 @@ export const generateDocument = async (req: Request, res: Response) => {
             message: result.message,
             modelUsed: result.modelUsed,
             provider: result.provider,
-            tokensUsed: result.tokensUsed
+            tokensUsed: result.tokensUsed,
+            creditsUsed: creditPlan.credits,
+            featureTier: creditPlan.featureName
         });
 
     } catch (error: any) {
@@ -167,6 +206,54 @@ export const saveDocument = async (req: Request, res: Response) => {
         res.status(500).json({
             error: 'Failed to save document',
             message: error?.message || 'Unknown error'
+        });
+    }
+};
+
+/**
+ * Update an existing document (content, title, status)
+ */
+export const updateDocument = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title, content, status, documentType } = req.body;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Document ID is required'
+            });
+        }
+
+        const updateFields: any = { updatedAt: new Date() };
+        if (title !== undefined) updateFields.title = title;
+        if (content !== undefined) updateFields.content = content;
+        if (status !== undefined) updateFields.status = status;
+        if (documentType !== undefined) updateFields.documentType = documentType;
+
+        const updatedDocument = await Document.findByIdAndUpdate(
+            id,
+            { $set: updateFields },
+            { new: true }
+        );
+
+        if (!updatedDocument) {
+            return res.status(404).json({
+                success: false,
+                message: 'Document not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Document updated successfully',
+            data: updatedDocument
+        });
+    } catch (error: any) {
+        console.error('[Update Document] Error:', error);
+        res.status(500).json({
+            success: false,
+            message: error?.message || 'Failed to update document'
         });
     }
 };
@@ -359,6 +446,7 @@ export const reviewDocument = async (req: Request, res: Response) => {
     try {
         const { userId, isDeepScanEnabled } = req.body;
         const file = (req as any).file;
+        const finalUserId = (req as any).user?._id || userId;
         
         const deepScan = isDeepScanEnabled === 'true' || isDeepScanEnabled === true;
 
@@ -368,7 +456,6 @@ export const reviewDocument = async (req: Request, res: Response) => {
                 message: 'A file upload is required'
             });
         }
-
         let extractedText = '';
         const filename = file.originalname;
 
@@ -402,17 +489,55 @@ export const reviewDocument = async (req: Request, res: Response) => {
 
         console.log(`[Document Controller] Extracted ${extractedText.length} characters`);
 
-        const analysisResults = await documentService.reviewDocument(filename, extractedText, userId, deepScan);
+        // Calculate credit tier based on word count & validate 50,000 words limit
+        let reviewPlan;
+        try {
+            reviewPlan = CreditService.calculateReviewCredits(extractedText);
+        } catch (wordErr: any) {
+            return res.status(400).json({
+                error: 'WORD_LIMIT_EXCEEDED',
+                message: wordErr.message,
+                words: wordErr.words,
+                maxWords: wordErr.maxWords
+            });
+        }
 
-        // Log usage in UsageRecord
-        await UsageRecord.create({
-            userId: (req as any).user?._id || userId,
-            featureType: 'document_review'
-        });
+        // Deduct credits (monthly first, then extra)
+        try {
+            await CreditService.deductCredits(
+                finalUserId,
+                'document_review',
+                reviewPlan.featureName,
+                reviewPlan.credits,
+                reviewPlan.words
+            );
+        } catch (error: any) {
+            if (error.code === 'INSUFFICIENT_CREDITS') {
+                return res.status(403).json({
+                    error: 'INSUFFICIENT_CREDITS',
+                    message: error.message,
+                    required: error.required,
+                    available: error.available,
+                    plan: error.plan
+                });
+            }
+            throw error;
+        }
+
+        let analysisResults;
+        try {
+            analysisResults = await documentService.reviewDocument(filename, extractedText, userId, deepScan);
+        } catch (revErr: any) {
+            await CreditService.refundCredits(finalUserId, reviewPlan.credits, 'document_review', revErr.message || 'Review failed');
+            throw revErr;
+        }
 
         res.json({
             success: true,
-            data: analysisResults
+            data: analysisResults,
+            creditsUsed: reviewPlan.credits,
+            featureTier: reviewPlan.featureName,
+            wordCount: reviewPlan.words
         });
     } catch (error: any) {
         console.error('[Document Review] Error:', error);

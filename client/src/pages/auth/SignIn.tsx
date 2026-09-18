@@ -66,13 +66,12 @@ export default function SignIn() {
         } catch (error: any) {
             console.error('Login error:', error)
             
-            // Check if account is not verified
             if (error.response?.status === 403 && error.response?.data?.isVerified === false) {
                 const unverifiedEmail = error.response.data.email || values.email;
                 toast.error("Email not verified! Redirecting to verification page...");
-                // Redirect to main site's verification page
+                // Redirect to main site's verification page using react router
                 setTimeout(() => {
-                    window.location.href = `/verify-otp?email=${encodeURIComponent(unverifiedEmail)}&role=user`;
+                    navigate(`/verify-otp?email=${encodeURIComponent(unverifiedEmail)}`);
                 }, 1500);
                 return;
             }
@@ -136,17 +135,7 @@ export default function SignIn() {
                         </div>
                     </div>
 
-                    {/* Security Badge */}
-                    <div className="flex items-center gap-6 mt-10 text-slate-400/80 text-xs">
-                        <div className="flex items-center gap-1.5">
-                            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                            <span>AES-256 Bit Encrypted</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                            <span>ISO 27001 Certified</span>
-                        </div>
-                    </div>
+
                 </div>
             </div>
 

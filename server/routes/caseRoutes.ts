@@ -11,7 +11,9 @@ import {
     joinMeeting,
     sendSignal,
     getSignals,
-    clearSignals
+    clearSignals,
+    createCase,
+    addCaseNote
 } from '../controllers/caseController';
 
 const router = Router();
@@ -19,8 +21,10 @@ const router = Router();
 router.use(protect);
 
 router.get('/client', getCasesForClient);
+router.post('/', createCase);
 router.post('/hire', hireLawyer);
-router.post('/book', checkUserLimit('bookings'), bookLawyer);
+router.post('/book', bookLawyer);
+router.post('/:id/notes', addCaseNote);
 router.post('/:id/pay', payAndConfirmCase);
 router.post('/:id/join-meeting', joinMeeting);
 router.post('/:id/signal', sendSignal);

@@ -9,7 +9,9 @@ export function StatsCards() {
         pendingReviews: 0,
         activeConsultations: 0,
         aiCredits: 0,
-        plan: "Starter"
+        monthlyCreditsRemaining: 0,
+        extraCreditsRemaining: 0,
+        plan: "Free"
     });
     const [loading, setLoading] = useState(true);
 
@@ -82,16 +84,16 @@ export function StatsCards() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                        AI Credits
+                        Available AI Credits
                     </CardTitle>
-                    <Zap className="h-4 w-4 text-yellow-500" />
+                    <Zap className="h-4 w-4 text-amber-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
                         {loading ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : stats.aiCredits}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        Plan: {stats.plan}
+                        {stats.plan} Plan ({stats.monthlyCreditsRemaining ?? stats.aiCredits} monthly + {stats.extraCreditsRemaining ?? 0} extra)
                     </p>
                 </CardContent>
             </Card>

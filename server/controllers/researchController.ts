@@ -3,6 +3,7 @@ import { llmService } from '../services/llmService';
 import { getResearchSystemPrompt, getResearchUserPrompt } from '../prompts/researchPrompt';
 import Research from '../models/Research';
 import UsageRecord from '../models/UsageRecord';
+import CreditService from '../services/creditService';
 
 export const handleLegalResearch = async (req: any, res: Response) => {
     try {
@@ -21,25 +22,86 @@ export const handleLegalResearch = async (req: any, res: Response) => {
         }));
 
         const isFollowUp = formattedHistory.length > 0;
+        const fullContext = query + ' ' + formattedHistory.map(h => h.content).join(' ');
 
-        const result = await llmService.generate({
-            model: model || 'gpt-4o',
-            systemPrompt: getResearchSystemPrompt(),
-            userPrompt: getResearchUserPrompt(query, isFollowUp),
-            history: formattedHistory,
-            feature: 'chatbot'
-        });
+        // Calculate credit cost (1, 3, or 5) and enforce word limit
+        let creditPlan;
+        try {
+            creditPlan = CreditService.calculateChatCredits(fullContext);
+        } catch (wordErr: any) {
+            return res.status(400).json({ 
+                error: 'WORD_LIMIT_EXCEEDED', 
+                message: wordErr.message,
+                words: wordErr.words,
+                maxWords: wordErr.maxWords
+            });
+        }
 
-        // Log usage in UsageRecord
-        await UsageRecord.create({
-            userId: req.user._id,
-            featureType: 'legal_research'
-        });
+        // Deduct credits (monthly first, then extra)
+        try {
+            await CreditService.deductCredits(
+                req.user._id, 
+                'legal_research', 
+                creditPlan.featureName, 
+                creditPlan.credits, 
+                creditPlan.words
+            );
+        } catch (error: any) {
+            if (error.code === 'INSUFFICIENT_CREDITS') {
+                return res.status(403).json({ 
+                    error: 'INSUFFICIENT_CREDITS', 
+                    message: error.message,
+                    required: error.required,
+                    available: error.available,
+                    plan: error.plan
+                });
+            }
+            throw error;
+        }
+
+        let result;
+        try {
+            result = await llmService.generate({
+                model: model || 'gpt-4o',
+                systemPrompt: getResearchSystemPrompt(),
+                userPrompt: getResearchUserPrompt(query, isFollowUp),
+                history: formattedHistory,
+                feature: 'chatbot'
+            });
+        } catch (llmErr: any) {
+            // Restore reserved credits on AI failure
+            await CreditService.refundCredits(
+                req.user._id,
+                creditPlan.credits,
+                'legal_research',
+                llmErr.message || 'LLM generation failed'
+            );
+            throw llmErr;
+        }
+
+        // Auto-save research to Research collection so it immediately appears in History
+        let savedResearchId: string | null = null;
+        try {
+            const cleanTitle = query.length > 70 ? query.substring(0, 70) + '...' : query;
+            const newResearch = await Research.create({
+                userId: req.user._id,
+                query,
+                answer: result.content,
+                title: cleanTitle,
+                category: 'Legal Research'
+            });
+            savedResearchId = newResearch._id.toString();
+        } catch (saveErr) {
+            console.error('[Research Controller] Warning: Auto-saving research failed:', saveErr);
+        }
 
         res.json({
             answer: result.content,
             provider: result.provider,
-            model: result.model
+            model: result.model,
+            id: savedResearchId,
+            creditsUsed: creditPlan.credits,
+            featureTier: creditPlan.featureName
         });
     } catch (error: any) {
         console.error('[Research Controller] Error performing research:', error);

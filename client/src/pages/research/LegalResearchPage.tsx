@@ -23,6 +23,9 @@ import {
     Trash2,
     AlertTriangle,
     Download,
+    Copy,
+    ChevronDown,
+    Layers,
     History as HistoryIcon
 } from 'lucide-react';
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -39,6 +42,14 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    DropdownMenuLabel
+} from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import jsPDF from 'jspdf';
 
@@ -173,6 +184,9 @@ export default function LegalResearchPage() {
                 ...prev,
                 { role: 'assistant', content: response.data.answer }
             ]);
+
+            // Automatically refresh research history
+            fetchHistory();
         } catch (err: any) {
             console.error("Research failed:", err);
             // Append error message to chat history
@@ -389,6 +403,113 @@ export default function LegalResearchPage() {
         }
     };
 
+    const renderFormattedInlineText = (text: string) => {
+        // Handle bolding: **bold**
+        const parts = text.split(/(\*\*[^*]+\*\*)/g);
+        return parts.map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return (
+                    <strong key={index} className="font-semibold text-gray-900">
+                        {part.slice(2, -2)}
+                    </strong>
+                );
+            }
+            return part;
+        });
+    };
+
+    const renderLegalContent = (content: string) => {
+        // Strip [CITATIONS] from main content
+        const mainText = content.split('[CITATIONS]')[0].trim();
+        const lines = mainText.split('\n');
+
+        const elements: React.ReactNode[] = [];
+        let currentListItems: string[] = [];
+
+        const flushList = () => {
+            if (currentListItems.length > 0) {
+                const itemsToRender = [...currentListItems];
+                elements.push(
+                    <ul key={`list-${elements.length}`} className="my-3 space-y-2.5 pl-2">
+                        {itemsToRender.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2.5 text-[14.5px] leading-[1.7] text-gray-700">
+                                <span className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                                <div>{renderFormattedInlineText(item)}</div>
+                            </li>
+                        ))}
+                    </ul>
+                );
+                currentListItems = [];
+            }
+        };
+
+        lines.forEach((rawLine, idx) => {
+            const line = rawLine.trim();
+
+            if (!line) {
+                flushList();
+                return;
+            }
+
+            // Check if it's a bullet point
+            if (/^[-*•]\s+/.test(line)) {
+                currentListItems.push(line.replace(/^[-*•]\s+/, ''));
+                return;
+            }
+
+            flushList();
+
+            // Check for H1 (# Title) or H2 (## Title)
+            if (/^#+\s+/.test(line)) {
+                const headingText = line.replace(/^#+\s+/, '');
+                elements.push(
+                    <h3 key={`h-${idx}`} className="text-base md:text-lg font-bold text-gray-900 mt-6 mb-2.5 pt-3 border-t border-gray-100 first:border-none first:pt-0 first:mt-0">
+                        {renderFormattedInlineText(headingText)}
+                    </h3>
+                );
+                return;
+            }
+
+            // Check for numbered sections like "1. Explanation:" or "2. Key Legal Sections and Statutes:"
+            const numberedMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (numberedMatch) {
+                const num = numberedMatch[1];
+                const sectionTitle = numberedMatch[2];
+                elements.push(
+                    <div key={`section-${idx}`} className="mt-6 mb-2.5 flex items-center gap-2.5 pt-3 border-t border-gray-100 first:border-none first:pt-0 first:mt-0">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-md bg-primary/10 text-primary text-xs font-bold shrink-0">
+                            {num}
+                        </span>
+                        <h4 className="text-[15px] font-bold text-gray-900">
+                            {renderFormattedInlineText(sectionTitle)}
+                        </h4>
+                    </div>
+                );
+                return;
+            }
+
+            // Check if line looks like an introductory or stand-alone title (e.g., "Understanding GST in India")
+            if (idx === 0 && line.length < 80 && !line.endsWith('.')) {
+                elements.push(
+                    <h2 key={`title-${idx}`} className="text-lg md:text-xl font-bold text-gray-900 tracking-tight mb-4 pb-2 border-b border-gray-100">
+                        {renderFormattedInlineText(line)}
+                    </h2>
+                );
+                return;
+            }
+
+            // Regular paragraph
+            elements.push(
+                <p key={`p-${idx}`} className="text-[14.5px] leading-[1.75] text-gray-700 font-normal my-2.5">
+                    {renderFormattedInlineText(line)}
+                </p>
+            );
+        });
+
+        flushList();
+        return elements;
+    };
+
     const formatAnalysisResult = (content: string) => {
         // Remove citations block from main display
         const displayContent = content.split('[CITATIONS]')[0];
@@ -403,95 +524,309 @@ export default function LegalResearchPage() {
         return cleanContent.split('\n').filter(p => p.trim() !== '');
     };
 
-    const extractCitations = (content: string) => {
-        const parts = content.split('[CITATIONS]');
-        if (parts.length < 2) return [];
-        
-        const citationBlock = parts[1].trim();
-        return citationBlock
-            .split('\n')
-            .map(line => line.replace(/^-\s+/, '').replace(/\*\*/g, '').trim())
-            .filter(line => line.length > 0);
+    const extractCitations = (content: string): string[] => {
+        if (!content) return [];
+        let citationLines: string[] = [];
+
+        // Check if explicit [CITATIONS] marker exists
+        if (content.includes('[CITATIONS]')) {
+            const parts = content.split('[CITATIONS]');
+            if (parts.length >= 2) {
+                const citationBlock = parts[1].trim();
+                citationLines = citationBlock.split('\n');
+            }
+        } else {
+            // Fallback: look for a section like "Key Legal Citations", "Key Citations", "Citations:"
+            const citationHeaderRegex = /(?:###?\s*(?:Key Legal Citations|Citations|References|Key Citations and Statutes|Precedents)[\s\S]*)/i;
+            const match = content.match(citationHeaderRegex);
+            if (match) {
+                const headerContent = match[0].split('\n').slice(1).join('\n');
+                citationLines = headerContent.split('\n');
+            }
+        }
+
+        const cleanedCitations = citationLines
+            .map(line => {
+                // Remove bullet points, numbers, asterisks, dashes, leading quotes
+                return line
+                    .replace(/^[\s\-*•\d\.\)\:]+/, '') // Remove leading bullets like "- ", "* ", "1. ", "• "
+                    .replace(/\*\*/g, '')               // Remove markdown bold
+                    .replace(/^["']|["']$/g, '')        // Remove quotes
+                    .trim();
+            })
+            .filter(line => {
+                // Filter out non-citation lines or noise
+                if (!line || line.length < 5) return false;
+                const lower = line.toLowerCase();
+                if (lower.startsWith('disclaimer') || lower.includes('informational purposes only')) return false;
+                if (lower === 'n/a' || lower === 'none' || lower === 'no citations found') return false;
+                if (lower.startsWith('note:') || lower.startsWith('important:')) return false;
+                return true;
+            });
+
+        // Deduplicate
+        return Array.from(new Set(cleanedCitations));
+    };
+
+    const generateLegalReportPDF = (mode: 'selected' | 'full', selectedAssistantIndex?: number) => {
+        try {
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 18;
+            const maxWidth = pageWidth - (margin * 2);
+            let cursorY = margin;
+
+            const checkPageBreak = (neededSpace: number) => {
+                if (cursorY + neededSpace > pageHeight - 22) {
+                    doc.addPage();
+                    cursorY = margin;
+                    return true;
+                }
+                return false;
+            };
+
+            // Top Header Accent Bar
+            doc.setFillColor(15, 23, 42); // slate-900
+            doc.rect(margin, cursorY, maxWidth, 14, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10.5);
+            doc.setTextColor(255, 255, 255);
+            doc.text("VIDHIK AI  |  LEGAL RESEARCH DOSSIER", margin + 6, cursorY + 9);
+
+            cursorY += 20;
+
+            // Metadata row
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            doc.setTextColor(100, 116, 139);
+            const dateStr = new Date().toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            doc.text(`DATE GENERATED: ${dateStr}`, margin, cursorY);
+            doc.text(`JURISDICTION: INDIAN LAW & JUDICIAL PRECEDENTS`, margin, cursorY + 4.5);
+            doc.text(`SCOPE: ${mode === 'selected' ? 'SELECTED INQUIRY ANALYSIS' : 'FULL MULTI-TURN CONVERSATION'}`, margin, cursorY + 9);
+
+            cursorY += 15;
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.4);
+            doc.line(margin, cursorY, pageWidth - margin, cursorY);
+            cursorY += 8;
+
+            interface Exchange {
+                userQuery: string;
+                assistantAnswer: string;
+                citations: string[];
+                index: number;
+            }
+
+            const exchanges: Exchange[] = [];
+
+            if (mode === 'selected') {
+                const targetIdx = selectedAssistantIndex ?? (messages.length - 1);
+                const assistantMsg = messages[targetIdx];
+                if (!assistantMsg) {
+                    toast.error("No analysis content found to download");
+                    return;
+                }
+                let uQuery = query;
+                for (let j = targetIdx - 1; j >= 0; j--) {
+                    if (messages[j]?.role === 'user') {
+                        uQuery = messages[j].content;
+                        break;
+                    }
+                }
+                exchanges.push({
+                    userQuery: uQuery || "Legal Research Inquiry",
+                    assistantAnswer: assistantMsg.content,
+                    citations: extractCitations(assistantMsg.content),
+                    index: 1
+                });
+            } else {
+                let currentQuery = query || "Initial Inquiry";
+                let exchangeCount = 0;
+
+                for (let i = 0; i < messages.length; i++) {
+                    const msg = messages[i];
+                    if (msg.role === 'user') {
+                        currentQuery = msg.content;
+                    } else if (msg.role === 'assistant') {
+                        exchangeCount++;
+                        exchanges.push({
+                            userQuery: currentQuery,
+                            assistantAnswer: msg.content,
+                            citations: extractCitations(msg.content),
+                            index: exchangeCount
+                        });
+                    }
+                }
+
+                if (exchanges.length === 0 && messages.length > 0) {
+                    exchanges.push({
+                        userQuery: query || "Legal Research Inquiry",
+                        assistantAnswer: messages[messages.length - 1].content,
+                        citations: extractCitations(messages[messages.length - 1].content),
+                        index: 1
+                    });
+                }
+            }
+
+            // Render each exchange
+            exchanges.forEach((ex, idx) => {
+                checkPageBreak(35);
+
+                if (mode === 'full') {
+                    doc.setFillColor(241, 245, 249);
+                    doc.roundedRect(margin, cursorY, maxWidth, 7.5, 1.5, 1.5, 'F');
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(71, 85, 105);
+                    doc.text(`EXCHANGE #${ex.index} ${ex.index === 1 ? '(PRIMARY INQUIRY)' : '(FOLLOW-UP QUESTION)'}`, margin + 4, cursorY + 5.2);
+                    cursorY += 12;
+                }
+
+                // Query Block
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.setTextColor(99, 102, 241);
+                doc.text("RESEARCH QUERY", margin, cursorY);
+                cursorY += 4.5;
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(15, 23, 42);
+                const queryLines = doc.splitTextToSize(ex.userQuery, maxWidth);
+                doc.text(queryLines, margin, cursorY);
+                cursorY += (queryLines.length * 4.8) + 6;
+
+                // Analysis Header
+                checkPageBreak(25);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.setTextColor(99, 102, 241);
+                doc.text("LEGAL ANALYSIS & JURISPRUDENCE", margin, cursorY);
+                cursorY += 5;
+
+                const rawContent = ex.assistantAnswer.split('[CITATIONS]')[0].trim();
+                const contentLines = rawContent.split('\n');
+
+                contentLines.forEach(rawLine => {
+                    const line = rawLine.trim();
+                    if (!line) {
+                        cursorY += 2;
+                        return;
+                    }
+
+                    if (/^#+\s+/.test(line) || /^(\d+)\.\s+/.test(line)) {
+                        checkPageBreak(12);
+                        cursorY += 2;
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(9.5);
+                        doc.setTextColor(30, 41, 59);
+                        const cleanHeader = line.replace(/^#+\s+/, '').replace(/\*\*/g, '');
+                        const headerLines = doc.splitTextToSize(cleanHeader, maxWidth);
+                        doc.text(headerLines, margin, cursorY);
+                        cursorY += (headerLines.length * 4.4) + 2.5;
+                        return;
+                    }
+
+                    if (/^[-*•]\s+/.test(line)) {
+                        checkPageBreak(8);
+                        const cleanBullet = line.replace(/^[-*•]\s+/, '').replace(/\*\*/g, '');
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(8.8);
+                        doc.setTextColor(51, 65, 85);
+                        const bulletLines = doc.splitTextToSize(cleanBullet, maxWidth - 8);
+                        doc.circle(margin + 2.5, cursorY - 1, 0.6, 'F');
+                        doc.text(bulletLines, margin + 6, cursorY);
+                        cursorY += (bulletLines.length * 4) + 1.8;
+                        return;
+                    }
+
+                    checkPageBreak(8);
+                    const cleanPara = line.replace(/\*\*/g, '');
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8.8);
+                    doc.setTextColor(51, 65, 85);
+                    const paraLines = doc.splitTextToSize(cleanPara, maxWidth);
+                    doc.text(paraLines, margin, cursorY);
+                    cursorY += (paraLines.length * 4.1) + 2.2;
+                });
+
+                // Citations Block for this exchange
+                if (ex.citations.length > 0) {
+                    checkPageBreak(25);
+                    cursorY += 4;
+                    doc.setFillColor(248, 250, 252);
+                    doc.roundedRect(margin, cursorY, maxWidth, 6.5 + (ex.citations.length * 5), 1.5, 1.5, 'F');
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(79, 70, 229);
+                    doc.text("KEY LEGAL CITATIONS & STATUTORY REFERENCES", margin + 4, cursorY + 4.5);
+                    cursorY += 8;
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(30, 41, 59);
+
+                    ex.citations.forEach(cit => {
+                        const citLines = doc.splitTextToSize(`•  ${cit}`, maxWidth - 10);
+                        doc.text(citLines, margin + 5, cursorY);
+                        cursorY += (citLines.length * 3.8) + 1;
+                    });
+                    cursorY += 3;
+                }
+
+                if (mode === 'full' && idx < exchanges.length - 1) {
+                    checkPageBreak(15);
+                    cursorY += 4;
+                    doc.setDrawColor(203, 213, 225);
+                    doc.setLineDashPattern([2, 2], 0);
+                    doc.line(margin, cursorY, pageWidth - margin, cursorY);
+                    doc.setLineDashPattern([], 0);
+                    cursorY += 8;
+                }
+            });
+
+            // Footers
+            const totalPages = doc.getNumberOfPages();
+            for (let p = 1; p <= totalPages; p++) {
+                doc.setPage(p);
+                doc.setDrawColor(226, 232, 240);
+                doc.setLineWidth(0.3);
+                doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(148, 163, 184);
+                doc.text("Generated by Vidhik AI Legal Assistant • Strictly for Research & Informational Purposes", margin, pageHeight - 9);
+                doc.text(`Page ${p} of ${totalPages}`, pageWidth - margin - 15, pageHeight - 9);
+            }
+
+            const fileName = mode === 'selected'
+                ? `Vidhik_Legal_Research_${new Date().toISOString().slice(0, 10)}.pdf`
+                : `Vidhik_Full_Chat_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+            doc.save(fileName);
+            toast.success(mode === 'selected' ? "Selected research report downloaded successfully!" : "Full conversation report downloaded successfully!");
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            toast.error("Failed to generate PDF report.");
+        }
     };
 
     const generatePDFReport = async (originalQuery: string, analysisContent: string) => {
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 20;
-        const maxWidth = pageWidth - (margin * 2);
-
-        // Header
-        doc.setFontSize(22);
-        doc.setTextColor(37, 99, 235); // violet-600
-        doc.text("Vidhik AI Legal Research Report", margin, 20);
-        
-        doc.setDrawColor(229, 231, 235); // gray-200
-        doc.line(margin, 25, pageWidth - margin, 25);
-
-        // Query Section
-        doc.setFontSize(12);
-        doc.setTextColor(156, 163, 175); // gray-400
-        doc.text("RESEARCH QUERY", margin, 35);
-        
-        doc.setFontSize(14);
-        doc.setTextColor(31, 41, 55); // gray-800
-        const queryLines = doc.splitTextToSize(originalQuery, maxWidth);
-        doc.text(queryLines, margin, 42);
-        
-        let cursorY = 42 + (queryLines.length * 7) + 10;
-
-        // Analysis Section
-        doc.setFontSize(12);
-        doc.setTextColor(156, 163, 175);
-        doc.text("LEGAL ANALYSIS", margin, cursorY);
-        cursorY += 7;
-
-        doc.setFontSize(11);
-        doc.setTextColor(55, 65, 81); // gray-700
-        const analysisParagraphs = formatAnalysisResult(analysisContent);
-        
-        analysisParagraphs.forEach(para => {
-            const paraLines = doc.splitTextToSize(para, maxWidth);
-            if (cursorY + (paraLines.length * 5) > 280) {
-                doc.addPage();
-                cursorY = 20;
-            }
-            doc.text(paraLines, margin, cursorY);
-            cursorY += (paraLines.length * 5) + 5;
-        });
-
-        // Citations Section
-        const citations = extractCitations(analysisContent);
-        if (citations.length > 0) {
-            cursorY += 5;
-            doc.setFontSize(12);
-            doc.setTextColor(156, 163, 175);
-            doc.text("KEY LEGAL CITATIONS", margin, cursorY);
-            cursorY += 7;
-
-            doc.setFontSize(11);
-            doc.setTextColor(37, 99, 235);
-            citations.forEach(citation => {
-                if (cursorY > 280) {
-                    doc.addPage();
-                    cursorY = 20;
-                }
-                doc.text(`• ${citation}`, margin + 5, cursorY);
-                cursorY += 7;
-            });
-        }
-
-        // Footer
-        const totalPages = doc.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(156, 163, 175);
-            doc.text(`Generated by Vidhik AI • Page ${i} of ${totalPages}`, margin, 285);
-            doc.text(new Date().toLocaleString(), pageWidth - margin - 40, 285);
-        }
-
-        doc.save(`Vidhik_Research_Report_${new Date().getTime()}.pdf`);
+        generateLegalReportPDF('selected');
     };
 
     const formatTime = (seconds: number) => {
@@ -582,7 +917,30 @@ export default function LegalResearchPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
+                                {filteredHistory.length === 0 ? (
+                                    <div className="py-20 text-center flex flex-col items-center justify-center space-y-4">
+                                        <div className="w-16 h-16 rounded-2xl bg-secondary/80 flex items-center justify-center text-primary">
+                                            <BookOpen className="h-8 w-8" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <h3 className="text-lg font-bold text-gray-900">No Research History Yet</h3>
+                                            <p className="text-sm text-gray-500 max-w-md mx-auto">
+                                                Ask any legal question in Vidhik Research. Your queries, legal statutes, and case analyses will automatically be saved and displayed here.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => {
+                                                setActiveTab('research');
+                                                setShowResults(false);
+                                            }}
+                                            className="font-semibold rounded-lg mt-2"
+                                        >
+                                            Start New Research
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
                                     {filteredHistory.map((record: any, i: number) => (
                                         <Card
                                             key={i}
@@ -634,6 +992,7 @@ export default function LegalResearchPage() {
                                         </Card>
                                     ))}
                                 </div>
+                                )}
                             </div>
                         </div>
                     ) : !showResults ? (
@@ -745,123 +1104,169 @@ export default function LegalResearchPage() {
                         </div>
                     ) : (
                         <div className="space-y-8 animate-in slide-in-from-bottom-5 duration-500">
-                            {/* Chat View */}
-                            <div className="flex items-center justify-between bg-card/80 backdrop-blur-xl p-6 rounded-xl shadow-sm border border-border sticky top-4 z-10 mx-1">
-                                <div className="flex items-center gap-6">
-                                    <Button 
-                                        variant="ghost" 
-                                        className="h-12 w-12 rounded-2xl hover:bg-gray-50 bg-white shadow-sm border border-gray-100 flex items-center justify-center transition-all hover:scale-105 active:scale-95" 
-                                        onClick={() => { setShowResults(false); setMessages([]); setQuery(""); }}
-                                    >
-                                        <Plus className="h-6 w-6 text-primary" />
-                                    </Button>
-                                    <div className="h-10 w-[1px] bg-gray-100"></div>
+                            {/* Simplified Professional Top Action Bar */}
+                            <div className="flex items-center justify-between bg-white/90 backdrop-blur-md p-4 px-6 rounded-xl shadow-xs border border-gray-200/80 sticky top-4 z-10 mx-1">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                                        <Gavel className="h-4 w-4" />
+                                    </div>
                                     <div className="space-y-0.5">
-                                        <h2 className="text-xl font-black text-gray-900 tracking-tight">Analysis Result</h2>
                                         <div className="flex items-center gap-2">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verified by Vidhik AI</span>
+                                            <h2 className="text-base font-bold text-gray-900 tracking-tight">Legal Analysis Result</h2>
+                                            <Badge variant="outline" className="text-[10px] font-semibold text-emerald-700 border-emerald-200 bg-emerald-50 py-0.5 px-2">
+                                                Verified by Vidhik AI
+                                            </Badge>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="rounded-xl font-bold bg-white border-gray-100 hover:bg-gray-50 text-gray-600 h-10 px-4 gap-2"
-                                        onClick={() => setActiveTab('history')}
+                                        className="h-8 text-xs font-semibold rounded-lg gap-1.5 text-gray-600 hover:text-gray-900"
+                                        onClick={() => { setShowResults(false); setMessages([]); setQuery(""); }}
                                     >
-                                        <Globe className="h-4 w-4 text-primary" />
-                                        Access History
+                                        <Search className="h-3.5 w-3.5" />
+                                        New Research
                                     </Button>
-                                    <Button
-                                        variant={isSaved ? "secondary" : "outline"}
-                                        size="sm"
-                                        className={`rounded-xl font-bold transition-all duration-300 h-10 px-4 gap-2 ${isSaved ? 'bg-green-50 text-green-700 border-green-200 shadow-none' : 'bg-white border-gray-100 hover:bg-gray-50 text-gray-600'}`}
-                                        onClick={handleSave}
-                                        disabled={isSaved}
-                                    >
-                                        {isSaved ? <Check className="h-4 w-4" /> : <Bookmark className="h-4 w-4 text-gray-400" />}
-                                        {isSaved ? "Analysis Saved" : "Save Result"}
-                                    </Button>
-                                    {/* Settings removed per user request */}
                                 </div>
                             </div>
 
-                            <div className="space-y-10">
+                            <div className="max-w-4xl mx-auto space-y-6 w-full">
                                 {messages.map((m, i) => (
-                                    <div key={i} className={`flex gap-6 ${m.role === 'assistant' ? 'bg-secondary/30 -mx-8 p-12 rounded-[3rem]' : 'px-4'}`}>
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${m.role === 'user' ? 'bg-gray-900 text-white' : 'bg-primary text-white animate-pulse'}`}>
-                                            {m.role === 'user' ? 'US' : <Gavel className="h-6 w-6" />}
-                                        </div>
-                                        <div className="space-y-4 flex-1">
-                                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">{m.role === 'user' ? 'Your Query' : 'Vidhik Legal Analysis'}</p>
-                                            <div className="prose prose-blue max-w-none">
-                                                <div className="space-y-6">
-                                                    {formatAnalysisResult(m.content).map((para, idx) => (
-                                                        <p key={idx} className="text-xl font-medium leading-relaxed text-gray-800">
-                                                            {para}
-                                                        </p>
-                                                    ))}
+                                    <div key={i} className="animate-in fade-in duration-300">
+                                        {m.role === 'user' ? (
+                                            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-5 shadow-2xs">
+                                                <div className="flex items-center gap-2.5 mb-2 text-slate-500">
+                                                    <div className="h-5 w-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center">US</div>
+                                                    <span className="text-[11px] font-bold uppercase tracking-wider">Your Query</span>
                                                 </div>
-                                                {m.role === 'assistant' && (
-                                                    <div className="mt-8 space-y-6">
-                                                        <div className="p-6 bg-white rounded-3xl border border-border space-y-4">
-                                                            <div className="flex items-center gap-2 text-primary">
-                                                                <Sparkles className="h-5 w-5" />
-                                                                <h4 className="font-bold">Key Legal Citations</h4>
-                                                            </div>
-                                                            <ul className="space-y-3">
-                                                                {extractCitations(m.content).length > 0 ? (
-                                                                    extractCitations(m.content).map((citation, idx) => (
-                                                                        <li key={idx} className="flex items-start gap-3 text-sm text-gray-600">
-                                                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0"></div>
-                                                                            <span>{citation}</span>
-                                                                        </li>
-                                                                    ))
-                                                                ) : (
-                                                                    <>
-                                                                        <li className="flex items-start gap-3 text-sm text-gray-600">
-                                                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0"></div>
-                                                                            <span>Section 5 of Transfer of Property Act, 1882</span>
-                                                                        </li>
-                                                                        <li className="flex items-start gap-3 text-sm text-gray-600">
-                                                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0"></div>
-                                                                            <span>Rule 4 of the Gift Deed Validation Framework</span>
-                                                                        </li>
-                                                                    </>
-                                                                )}
-                                                            </ul>
+                                                <p className="text-base font-semibold text-slate-900 pl-7">{m.content}</p>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-white border border-gray-200/90 rounded-2xl p-6 sm:p-8 shadow-xs">
+                                                <div className="flex items-center justify-between pb-4 mb-5 border-b border-gray-100">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                                            <Gavel className="h-4 w-4" />
                                                         </div>
-                                                        <Button 
-                                                            className="rounded-2xl h-14 bg-primary hover:bg-primary px-8 font-black gap-2"
+                                                        <div>
+                                                            <p className="text-xs font-bold uppercase tracking-wider text-primary">Vidhik Legal Analysis</p>
+                                                            <span className="text-[11px] text-gray-400">Jurisprudential AI synthesis & statutory evaluation</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 text-xs text-gray-500 hover:text-gray-900 gap-1.5"
                                                             onClick={() => {
-                                                                const userQuery = messages[i - 1]?.content || query;
-                                                                generatePDFReport(userQuery, m.content);
+                                                                navigator.clipboard.writeText(m.content.split('[CITATIONS]')[0]);
+                                                                toast.success("Analysis copied to clipboard");
                                                             }}
                                                         >
-                                                            Generate Full Report
-                                                            <ArrowRight className="h-5 w-5" />
+                                                            <Copy className="h-3.5 w-3.5" />
+                                                            Copy
                                                         </Button>
                                                     </div>
+                                                </div>
+
+                                                {/* Structured Legal Content with Professional Typography */}
+                                                <div className="legal-research-content space-y-2">
+                                                    {renderLegalContent(m.content)}
+                                                </div>
+
+                                                {/* Key Legal Citations Box */}
+                                                {extractCitations(m.content).length > 0 && (
+                                                    <div className="mt-7 p-4 sm:p-5 bg-slate-50/90 border border-slate-200/90 rounded-xl space-y-3">
+                                                        <div className="flex items-center gap-2 text-primary">
+                                                            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                                                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Key Legal Citations</h4>
+                                                        </div>
+                                                        <ul className="space-y-2">
+                                                            {extractCitations(m.content).map((citation, idx) => (
+                                                                <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-[13px] text-slate-700 font-medium leading-relaxed">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                                                                    <span className="flex-1 select-text">{citation}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
                                                 )}
+
+                                                {/* Download Report Button with Selected vs Full Chat Options */}
+                                                <div className="mt-7 pt-5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                className="h-11 px-5 rounded-xl bg-black hover:bg-black/90 text-white font-semibold text-xs sm:text-sm gap-2.5 shadow-sm hover:shadow-md transition-all inline-flex items-center"
+                                                            >
+                                                                <Download className="h-4 w-4" />
+                                                                <span>Download Report</span>
+                                                                <ChevronDown className="h-3.5 w-3.5 opacity-70 ml-0.5" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="start" className="w-80 p-2 rounded-xl shadow-xl border border-gray-200 bg-white">
+                                                            <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                                                                <p className="text-xs font-bold text-gray-900">Download Research Report</p>
+                                                                <p className="text-[11px] text-gray-500">Choose your preferred export scope</p>
+                                                            </div>
+                                                            <DropdownMenuItem
+                                                                onClick={() => generateLegalReportPDF('selected', i)}
+                                                                className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
+                                                            >
+                                                                <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                                                                    <FileText className="h-4 w-4" />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-semibold text-xs text-gray-900">Download Selected Chat</span>
+                                                                    <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
+                                                                        Download only this specific research query, analysis, and citations
+                                                                    </span>
+                                                                </div>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => generateLegalReportPDF('full')}
+                                                                className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
+                                                            >
+                                                                <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                                                                    <Layers className="h-4 w-4" />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-semibold text-xs text-gray-900">Download Full Chat</span>
+                                                                    <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
+                                                                        Download the complete multi-turn conversation and follow-ups
+                                                                    </span>
+                                                                </div>
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-9 text-xs text-gray-500 hover:text-gray-900 gap-1.5"
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(m.content.split('[CITATIONS]')[0]);
+                                                            toast.success("Analysis copied to clipboard");
+                                                        }}
+                                                    >
+                                                        <Copy className="h-3.5 w-3.5" />
+                                                        Copy Text
+                                                    </Button>
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
                                 ))}
                                 {isSearching && (
-                                    <div className="flex gap-6 bg-secondary/30 -mx-8 p-12 rounded-[3rem] animate-pulse">
-                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-primary text-white animate-pulse">
-                                            <Loader2 className="h-6 w-6 animate-spin" />
+                                    <div className="flex items-center gap-4 bg-white border border-gray-200/80 p-6 rounded-2xl animate-pulse shadow-xs">
+                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 text-primary">
+                                            <Loader2 className="h-5 w-5 animate-spin" />
                                         </div>
-                                        <div className="space-y-4 flex-1">
-                                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Vidhik Legal Analysis</p>
-                                            <div className="flex items-center gap-2 mt-4">
-                                                <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                                <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                                <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                                                <span className="ml-2 text-sm text-gray-500 font-bold">Vidhik AI is researching...</span>
-                                            </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-bold uppercase tracking-wider text-primary">Vidhik AI Research in Progress</p>
+                                            <p className="text-sm text-gray-500 font-medium">Analyzing statutes, case law precedents, and legal provisions...</p>
                                         </div>
                                     </div>
                                 )}
@@ -869,10 +1274,10 @@ export default function LegalResearchPage() {
                             </div>
 
                             {/* Follow up Input */}
-                            <div className="sticky bottom-8 bg-white/80 backdrop-blur-xl border border-gray-100 rounded-[2.5rem] p-3 shadow-2xl flex flex-col animate-in slide-in-from-bottom-10 duration-700">
+                            <div className="sticky bottom-8 max-w-4xl mx-auto w-full bg-white/95 backdrop-blur-xl border border-gray-200/90 rounded-2xl p-2.5 shadow-xl flex flex-col mt-6">
                                 {/* Attachment Preview for Follow-up */}
                                 {(attachedFile || audioBlob || isRecording) && (
-                                    <div className="px-6 pt-2 pb-2 flex flex-wrap gap-2">
+                                    <div className="px-4 pt-2 pb-1.5 flex flex-wrap gap-2">
                                         {attachedFile && (
                                             <Badge className="bg-secondary text-primary border-border flex items-center gap-2 px-3 py-1 rounded-xl">
                                                 <File className="h-3 w-3" />

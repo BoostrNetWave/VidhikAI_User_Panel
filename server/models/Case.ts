@@ -27,6 +27,22 @@ export interface ICase extends Document {
     planSubmitted: boolean;
     planApproved: boolean;
     milestones: IMilestone[];
+    category?: string;
+    court?: string;
+    filingNumber?: string;
+    nextHearingDate?: Date;
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    notes?: {
+        text: string;
+        createdAt: Date;
+        createdBy?: string;
+    }[];
+    documents?: {
+        name: string;
+        url: string;
+        uploadedAt: Date;
+        docType?: string;
+    }[];
     bookingDate?: Date;
     bookingTime?: string;
     meetingLink?: string;
@@ -67,17 +83,37 @@ const caseSchema = new Schema({
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     client: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    lawyer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    lawyer: { type: Schema.Types.ObjectId, ref: 'User' },
+    category: { type: String, default: 'General Legal' },
+    court: { type: String },
+    filingNumber: { type: String },
+    nextHearingDate: { type: Date },
+    priority: { 
+        type: String, 
+        enum: ['low', 'medium', 'high', 'urgent'], 
+        default: 'medium' 
+    },
     status: { 
         type: String, 
         enum: ['pending_lawyer', 'pending_payment', 'active', 'completed', 'cancelled'], 
-        default: 'pending_lawyer' 
+        default: 'active' 
     },
     totalFee: { type: Number, required: true, default: 0 },
     currentProgress: { type: Number, default: 0 },
     planSubmitted: { type: Boolean, default: false },
     planApproved: { type: Boolean, default: false },
     milestones: [milestoneSchema],
+    notes: [{
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        createdBy: { type: String }
+    }],
+    documents: [{
+        name: { type: String, required: true },
+        url: { type: String, required: true },
+        uploadedAt: { type: Date, default: Date.now },
+        docType: { type: String, default: 'General' }
+    }],
     bookingDate: { type: Date },
     bookingTime: { type: String },
     meetingLink: { type: String },

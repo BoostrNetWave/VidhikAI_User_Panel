@@ -9,6 +9,7 @@ import {
     deleteDocument,
     restoreDocument,
     permanentlyDeleteDocument,
+    updateDocument,
     reviewDocument,
     uploadDocument,
     shareReview,
@@ -35,6 +36,9 @@ router.get('/trash/:userId', protect, getTrashedDocuments);
 
 // Restore a document
 router.post('/restore/:id', protect, restoreDocument);
+
+// Update a document (content, title, status)
+router.put('/:id', protect, updateDocument);
 
 // Soft delete (move to trash)
 router.delete('/:id', protect, deleteDocument);

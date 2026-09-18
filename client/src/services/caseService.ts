@@ -37,6 +37,22 @@ export interface ICase {
     planSubmitted: boolean;
     planApproved: boolean;
     milestones: IMilestone[];
+    category?: string;
+    court?: string;
+    filingNumber?: string;
+    nextHearingDate?: string;
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    notes?: {
+        text: string;
+        createdAt: string;
+        createdBy?: string;
+    }[];
+    documents?: {
+        name: string;
+        url: string;
+        uploadedAt: string;
+        docType?: string;
+    }[];
     bookingDate?: string;
     bookingTime?: string;
     meetingLink?: string;
@@ -57,6 +73,26 @@ export const caseService = {
 
     async getCaseById(id: string): Promise<ICase> {
         const response = await api.get(`/cases/${id}`);
+        return response.data;
+    },
+
+    async createCase(data: {
+        title: string;
+        description: string;
+        category?: string;
+        court?: string;
+        filingNumber?: string;
+        nextHearingDate?: string;
+        priority?: string;
+        lawyerId?: string;
+        totalFee?: number;
+    }): Promise<ICase> {
+        const response = await api.post('/cases', data);
+        return response.data;
+    },
+
+    async addCaseNote(id: string, text: string): Promise<ICase> {
+        const response = await api.post(`/cases/${id}/notes`, { text });
         return response.data;
     },
 

@@ -221,21 +221,52 @@ export const getAllTickets = async (_req: Request, res: Response) => {
 export const replyToTicket = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { adminReply, status } = req.body;
+        const { adminReply, text, status } = req.body;
+        const replyMessage = (text || adminReply || '').trim();
 
-        const ticket = await SupportTicket.findByIdAndUpdate(
-            id,
-            { adminReply, status: status || 'Closed' },
-            { new: true }
-        );
+        const ticket = await SupportTicket.findById(id);
 
         if (!ticket) {
             res.status(404).json({ message: 'Ticket not found' });
             return;
         }
 
-        res.json({ message: 'Ticket updated successfully', ticket });
+        if (replyMessage) {
+            ticket.messages.push({
+                sender: 'admin',
+                senderName: 'Support Team',
+                message: replyMessage,
+                createdAt: new Date()
+            } as any);
+            ticket.adminReply = replyMessage;
+        }
+
+        if (status && status !== ticket.status) {
+            ticket.status = status;
+            ticket.statusHistory.push({
+                status: status as any,
+                changedBy: 'admin',
+                changedAt: new Date(),
+                note: replyMessage ? 'Status updated with admin reply' : 'Status updated by admin'
+            } as any);
+        }
+
+        ticket.updatedAt = new Date();
+        const savedTicket = await ticket.save();
+
+        // Emit real-time notification to the customer
+        if (ticket.userId) {
+            emitToUser(ticket.userId.toString(), 'TICKET_UPDATED', savedTicket);
+            emitToUser(ticket.userId.toString(), 'NEW_TICKET_REPLY', {
+                ticketId: ticket.ticketId,
+                message: replyMessage,
+                status: ticket.status
+            });
+        }
+
+        res.json({ message: 'Ticket updated successfully', ticket: savedTicket });
     } catch (error) {
+        console.error('Error updating support ticket:', error);
         res.status(500).json({ message: 'Error updating support ticket' });
     }
 };

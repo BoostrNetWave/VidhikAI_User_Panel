@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button"
-import { Mail, Settings, LayoutDashboard, FileText, CheckSquare, Folder, MessageSquare, ChevronLeft, ChevronRight, Users, CreditCard, Briefcase, Video } from "lucide-react"
+import { Mail, Settings, LayoutDashboard, FileText, CheckSquare, Folder, MessageSquare, ChevronLeft, ChevronRight, Users, CreditCard, Briefcase, Video, LifeBuoy } from "lucide-react"
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Notifications } from "@/components/dashboard/Notifications"
 import { DashboardSearch } from "@/components/dashboard/DashboardSearch"
@@ -185,6 +185,19 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
                     >
                         <CreditCard className="h-5 w-5 shrink-0" />
                         <span className={`font-medium text-sm ${isCollapsed ? 'lg:hidden' : 'block'}`}>Billing & Plans</span>
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        className={`w-full justify-start gap-3 h-10 px-3 rounded-md transition-colors ${location.pathname === '/support' || location.pathname.startsWith('/support')
+                            ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            } ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}`}
+                        title={isCollapsed ? "Support Tickets" : ""}
+                        onClick={() => navigate('/support')}
+                    >
+                        <LifeBuoy className="h-5 w-5 shrink-0" />
+                        <span className={`font-medium text-sm ${isCollapsed ? 'lg:hidden' : 'block'}`}>Support Tickets</span>
                     </Button>
 
                     <div className="pt-4 mt-4 border-t border-slate-200">

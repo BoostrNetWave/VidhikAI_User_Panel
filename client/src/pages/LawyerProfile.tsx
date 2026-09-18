@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
     User, 
     Star, 
-    MapPin, 
     ShieldCheck, 
     Clock, 
     MessageSquare, 
@@ -12,8 +11,7 @@ import {
     Award,
     BookOpen,
     Briefcase,
-    Languages,
-    Share2
+    Languages
 } from 'lucide-react';
 import DashboardLayout from "@/layout/DashboardLayout";
 import { UserNav } from "@/components/dashboard/UserNav";
@@ -30,6 +28,27 @@ export default function LawyerProfile() {
     const [activeTab, setActiveTab] = useState('about');
     const [lawyer, setLawyer] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+
+    const [avatarError, setAvatarError] = useState(false);
+
+    const getAvatarSrc = (avatar?: string) => {
+        if (!avatar) return "";
+        if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:')) {
+            return avatar;
+        }
+        const clean = avatar.startsWith('/') ? avatar : `/${avatar}`;
+        if (clean.startsWith('/lawyer/')) {
+            return clean;
+        }
+        return `/lawyer${clean}`;
+    };
+
+    const getInitials = (name?: string) => {
+        if (!name) return "L";
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    };
 
     useEffect(() => {
         const fetchLawyer = async () => {
@@ -50,9 +69,11 @@ export default function LawyerProfile() {
     if (loading) {
         return (
             <DashboardLayout userNav={<UserNav />}>
-                <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-                    <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-muted-foreground font-semibold">Loading lawyer profile...</p>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-muted-foreground font-medium animate-pulse">Loading verified profile...</p>
+                    </div>
                 </div>
             </DashboardLayout>
         );
@@ -61,22 +82,21 @@ export default function LawyerProfile() {
     if (!lawyer) {
         return (
             <DashboardLayout userNav={<UserNav />}>
-                <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-                    <h3 className="text-xl font-bold text-foreground">Lawyer profile not found</h3>
-                    <Button onClick={() => navigate('/lawyers')} className="bg-primary text-primary-foreground font-bold rounded-xl">
-                        Back to Lawyer List
-                    </Button>
+                <div className="text-center py-20 space-y-4">
+                    <h2 className="text-2xl font-bold">Lawyer Profile Not Found</h2>
+                    <p className="text-muted-foreground">The lawyer profile you're looking for doesn't exist or is currently unavailable.</p>
+                    <Button onClick={() => navigate('/lawyers')}>Back to Lawyers</Button>
                 </div>
             </DashboardLayout>
         );
     }
 
-    const isOnline = (lawyer.status || "Online") === "Online";
+    const isOnline = lawyer.isApproved;
 
     return (
         <DashboardLayout userNav={<UserNav />}>
-            <div className="max-w-7xl mx-auto space-y-8 pb-12">
-                {/* Back Navigation */}
+            <div className="max-w-6xl mx-auto space-y-8 pb-12">
+                {/* Back Button */}
                 <Button 
                     variant="ghost" 
                     className="gap-2 text-muted-foreground hover:text-foreground -ml-2"
@@ -93,12 +113,17 @@ export default function LawyerProfile() {
                         <div className="flex flex-col md:flex-row gap-8 items-start">
                             <div className="relative shrink-0">
                                 <div className="h-32 w-32 rounded-3xl bg-secondary flex items-center justify-center border border-border shadow-sm overflow-hidden">
-                                    {lawyer.avatar ? (
+                                    {lawyer.avatar && !avatarError ? (
                                         <img 
-                                            src={lawyer.avatar.startsWith('http') ? lawyer.avatar : (lawyer.avatar.startsWith('/') ? `/lawyer${lawyer.avatar}` : `/lawyer/${lawyer.avatar}`)} 
+                                            src={getAvatarSrc(lawyer.avatar)} 
                                             alt={lawyer.fullName} 
                                             className="h-full w-full object-cover"
+                                            onError={() => setAvatarError(true)}
                                         />
+                                    ) : lawyer.fullName ? (
+                                        <div className="h-full w-full flex items-center justify-center bg-violet-100 text-primary font-bold text-2xl select-none">
+                                            {getInitials(lawyer.fullName)}
+                                        </div>
                                     ) : (
                                         <User className="h-16 w-16 text-muted-foreground/40" />
                                     )}
@@ -113,39 +138,25 @@ export default function LawyerProfile() {
                             </div>
 
                             <div className="flex-1 space-y-4">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            <h1 className="text-3xl font-bold text-foreground tracking-tight">{lawyer.fullName}</h1>
-                                            {lawyer.isVerified && (
-                                                <ShieldCheck className="h-6 w-6 text-primary" />
-                                            )}
-                                        </div>
-                                        <p className="text-primary font-semibold uppercase tracking-wider text-xs">{lawyer.expertise || "General Practice"}</p>
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2.5">
+                                        <h1 className="text-3xl font-bold text-foreground tracking-tight">{lawyer.fullName}</h1>
+                                        {lawyer.isVerified && (
+                                            <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <Button variant="outline" size="icon" className="rounded-xl border-border">
-                                            <Share2 className="h-4 w-4" />
-                                        </Button>
-                                        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold px-6">
-                                            Contact Now
-                                        </Button>
-                                    </div>
+                                    <p className="text-primary font-semibold uppercase tracking-wider text-xs">{lawyer.expertise || "General Practice"}</p>
                                 </div>
 
-                                <div className="flex flex-wrap gap-6 text-sm text-muted-foreground font-medium">
-                                    <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium pt-0.5">
+                                    <div className="flex items-center gap-1.5 bg-secondary/70 px-3.5 py-1.5 rounded-xl border border-border/60 shadow-2xs">
                                         <Star className="h-4 w-4 text-primary fill-primary" />
                                         <span className="text-foreground font-bold">{lawyer.rating || "5.0"}</span>
-                                        <span>({lawyer.reviews || "0"} Reviews)</span>
+                                        <span className="text-muted-foreground text-xs font-normal">({lawyer.reviews || "0"} Reviews)</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4" />
-                                        <span>{lawyer.experience || "10+"} Experience</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="h-4 w-4" />
-                                        <span>{lawyer.location || "Remote"}</span>
+                                    <div className="flex items-center gap-2 bg-secondary/70 px-3.5 py-1.5 rounded-xl border border-border/60 shadow-2xs">
+                                        <Clock className="h-4 w-4 text-primary" />
+                                        <span className="text-foreground font-medium">{lawyer.experience || "10+"} Experience</span>
                                     </div>
                                 </div>
                             </div>
@@ -304,21 +315,13 @@ export default function LawyerProfile() {
                                 </div>
 
                                 <Button 
-                                    className="w-full bg-primary text-white hover:bg-violet-800 rounded-2xl h-14 font-bold text-base shadow-sm transition-all active:scale-[0.98]"
-                                    onClick={() => navigate('/cases', { state: { startBookingWithLawyer: lawyer } })}
+                                    className="w-full bg-primary text-white hover:bg-violet-800 rounded-2xl h-14 font-bold text-base shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                                    onClick={() => navigate('/consultations', { state: { startConsultationWithLawyer: lawyer } })}
                                 >
                                     Proceed to Booking
                                 </Button>
-
-                                <Button 
-                                    variant="outline"
-                                    className="w-full border-primary text-primary hover:bg-secondary rounded-2xl h-14 font-bold text-base shadow-sm transition-all active:scale-[0.98]"
-                                    onClick={() => navigate('/consultations', { state: { startConsultationWithLawyer: lawyer } })}
-                                >
-                                    Request Live Consultation
-                                </Button>
                                 
-                                <div className="flex flex-col items-center gap-4 pt-2">
+                                <div className="flex flex-col items-center gap-4 pt-1">
                                     <div className="flex items-center gap-2">
                                         <div className="flex -space-x-2">
                                             {[1,2,3].map(i => (

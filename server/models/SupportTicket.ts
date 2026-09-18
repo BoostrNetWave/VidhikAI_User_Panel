@@ -1,18 +1,89 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
 
+export interface ITicketMessage {
+    _id?: any;
+    sender: 'user' | 'admin';
+    senderName?: string;
+    message: string;
+    attachment?: string;
+    attachmentName?: string;
+    createdAt: Date;
+}
+
+export interface IStatusHistory {
+    _id?: any;
+    status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Resolved' | 'Closed';
+    changedBy: 'user' | 'admin';
+    changedAt: Date;
+    note?: string;
+}
+
 export interface ISupportTicket extends Document {
     ticketId: string;
     userId: string;
+    userName?: string;
+    userEmail?: string;
     subject: string;
-    category: 'General' | 'Booking' | 'Payments' | 'Technical' | 'Other';
+    category: string;
     priority: 'Low' | 'Medium' | 'High' | 'Urgent';
     description: string;
     attachment?: string;
-    status: 'Open' | 'Closed' | 'Pending';
-    adminReply?: string;
+    attachmentName?: string;
+    status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Resolved' | 'Closed';
+    messages: ITicketMessage[];
+    statusHistory: IStatusHistory[];
+    adminReply?: string; // backwards compatibility
     createdAt: Date;
     updatedAt: Date;
 }
+
+const ticketMessageSchema = new Schema({
+    sender: {
+        type: String,
+        enum: ['user', 'admin'],
+        required: true
+    },
+    senderName: {
+        type: String,
+        default: ''
+    },
+    message: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    attachment: {
+        type: String
+    },
+    attachmentName: {
+        type: String
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const statusHistorySchema = new Schema({
+    status: {
+        type: String,
+        enum: ['Open', 'In Progress', 'Waiting for Customer', 'Resolved', 'Closed'],
+        required: true
+    },
+    changedBy: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    changedAt: {
+        type: Date,
+        default: Date.now
+    },
+    note: {
+        type: String,
+        default: ''
+    }
+});
 
 const supportTicketSchema: Schema = new Schema({
     ticketId: {
@@ -22,7 +93,16 @@ const supportTicketSchema: Schema = new Schema({
     },
     userId: {
         type: String,
-        required: true
+        required: true,
+        index: true
+    },
+    userName: {
+        type: String,
+        default: ''
+    },
+    userEmail: {
+        type: String,
+        default: ''
     },
     subject: {
         type: String,
@@ -31,7 +111,6 @@ const supportTicketSchema: Schema = new Schema({
     },
     category: {
         type: String,
-        enum: ['General', 'Booking', 'Payments', 'Technical', 'Other'],
         default: 'General'
     },
     priority: {
@@ -46,22 +125,26 @@ const supportTicketSchema: Schema = new Schema({
     attachment: {
         type: String
     },
+    attachmentName: {
+        type: String
+    },
     status: {
         type: String,
-        enum: ['Open', 'Closed', 'Pending'],
+        enum: ['Open', 'In Progress', 'Waiting for Customer', 'Resolved', 'Closed'],
         default: 'Open'
     },
+    messages: [ticketMessageSchema],
+    statusHistory: [statusHistorySchema],
     adminReply: {
         type: String,
         default: ''
     },
     createdAt: {
         type: Date,
-        default: Date.now,
-        expires: 2592000 // 30 days in seconds
+        default: Date.now
     }
 }, {
-    timestamps: { createdAt: false, updatedAt: true }
+    timestamps: true
 });
 
 const SupportTicket: Model<ISupportTicket> = mongoose.models.SupportTicket || mongoose.model<ISupportTicket>('SupportTicket', supportTicketSchema);

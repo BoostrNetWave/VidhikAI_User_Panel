@@ -1,145 +1,170 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
     Dialog, 
     DialogContent, 
     DialogClose 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { X, CreditCard, HelpCircle } from "lucide-react";
+import { X, CreditCard, Coins, Loader2, Check } from "lucide-react";
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 interface BuyCreditsModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
-export const BuyCreditsModal = ({ isOpen, onClose }: BuyCreditsModalProps) => {
-    const [selectedPackage, setSelectedPackage] = useState<'starter' | 'growth' | 'professional' | 'custom'>('growth');
-    const [customAmount, setCustomAmount] = useState<string>('');
+export const BuyCreditsModal = ({ isOpen, onClose, onSuccess }: BuyCreditsModalProps) => {
+    const [packages, setPackages] = useState<any[]>([
+        { id: "extra-50", credits: 50, price: 199, desc: "50 Extra AI Credits", popular: false },
+        { id: "extra-100", credits: 100, price: 349, desc: "100 Extra AI Credits", popular: true },
+        { id: "extra-250", credits: 250, price: 749, desc: "250 Extra AI Credits", popular: false },
+        { id: "extra-500", credits: 500, price: 1299, desc: "500 Extra AI Credits", popular: false },
+        { id: "extra-1000", credits: 1000, price: 2299, desc: "1,000 Extra AI Credits", popular: false }
+    ]);
+    const [selectedPackageId, setSelectedPackageId] = useState<string>("extra-100");
+    const [currentCredits, setCurrentCredits] = useState<number>(0);
+    const [isPurchasing, setIsPurchasing] = useState(false);
 
-    const packages = {
-        starter: { credits: 500, price: 49, bestValue: false },
-        growth: { credits: 2000, price: 149, bestValue: true },
-        professional: { credits: 5000, price: 299, bestValue: false },
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const loadInfo = async () => {
+            try {
+                const res = await api.get('/subscription/plans');
+                if (res.data?.success) {
+                    if (res.data.data.extraCreditPackages) {
+                        setPackages(res.data.data.extraCreditPackages);
+                    }
+                    if (res.data.data.userSubscription) {
+                        setCurrentCredits(res.data.data.userSubscription.totalCredits ?? 0);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load subscription info:", err);
+            }
+        };
+
+        loadInfo();
+    }, [isOpen]);
+
+    const activePkg = packages.find(p => p.id === selectedPackageId) || packages[1] || packages[0];
+    const addedCredits = activePkg?.credits || 100;
+    const price = activePkg?.price || 349;
+
+    const handlePurchase = async () => {
+        setIsPurchasing(true);
+        try {
+            const res = await api.post('/subscription/purchase-extra-credits', {
+                packageId: activePkg.id
+            });
+            if (res.data?.success) {
+                toast.success(`Successfully added ${addedCredits} Extra AI Credits!`, {
+                    description: `New total balance: ${res.data.data.totalCredits} Credits.`
+                });
+                onSuccess?.();
+                onClose();
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || "Failed to purchase extra credits. Please try again.");
+        } finally {
+            setIsPurchasing(false);
+        }
     };
-
-    const getPricePerCredit = () => 0.12;
-
-    const currentCredits = 1240;
-    const addedCredits = selectedPackage === 'custom' 
-        ? (parseInt(customAmount) || 0) 
-        : packages[selectedPackage as keyof typeof packages].credits;
-    
-    const totalPrice = selectedPackage === 'custom'
-        ? (addedCredits * getPricePerCredit()).toFixed(2)
-        : packages[selectedPackage as keyof typeof packages].price.toFixed(2);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
-                <div className="p-8 bg-white relative">
-                    <DialogClose className="absolute right-6 top-6 rounded-full p-2 hover:bg-gray-100 transition-colors">
-                        <X className="h-5 w-5 text-gray-400" />
+                <div className="p-8 bg-card relative">
+                    <DialogClose className="absolute right-6 top-6 rounded-full p-2 hover:bg-secondary transition-colors">
+                        <X className="h-5 w-5 text-muted-foreground" />
                     </DialogClose>
 
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-1">Buy Extra Credits</h2>
-                        <p className="text-gray-500 text-sm">Select a package to top up your resource balance instantly.</p>
-                    </div>
-
-                    <div className="flex bg-gray-50 p-1 rounded-xl mb-8 w-fit mx-auto">
-                        <button className="px-6 py-2 text-sm font-semibold text-primary bg-white rounded-lg shadow-sm">AI Document Credits</button>
-                        <button className="px-6 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700">Notary Sessions</button>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 mb-8">
-                        {Object.entries(packages).map(([key, pkg]) => (
-                            <div 
-                                key={key}
-                                onClick={() => setSelectedPackage(key as any)}
-                                className={`relative cursor-pointer transition-all duration-300 rounded-2xl p-6 border-2 flex flex-col items-center text-center ${
-                                    selectedPackage === key 
-                                    ? 'border-primary bg-secondary/30' 
-                                    : 'border-gray-100 bg-white hover:border-gray-200'
-                                }`}
-                            >
-                                {pkg.bestValue && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg whitespace-nowrap">
-                                        BEST VALUE
-                                    </div>
-                                )}
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">{key}</span>
-                                <div className="text-2xl font-black text-gray-900 mb-1">{pkg.credits.toLocaleString()}</div>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase mb-4">Credits</span>
-                                <div className="h-px w-full bg-gray-100 mb-4" />
-                                <div className="text-xl font-bold text-primary">${pkg.price}</div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="h-px flex-1 bg-gray-100" />
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Or Enter Custom Amount</span>
-                            <div className="h-px flex-1 bg-gray-100" />
+                    <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Coins className="h-5 w-5 text-primary" />
+                            <h2 className="text-2xl font-bold text-foreground">Buy Extra AI Credits</h2>
                         </div>
-                        
-                        <div 
-                            className={`flex items-center gap-4 bg-gray-50 p-4 rounded-xl border-2 transition-all ${
-                                selectedPackage === 'custom' ? 'border-primary ring-2 ring-violet-50' : 'border-transparent'
-                            }`}
-                        >
-                            <Input 
-                                type="number"
-                                placeholder="Enter number of credits (min. 100)"
-                                className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm font-medium"
-                                value={customAmount}
-                                onChange={(e) => {
-                                    setCustomAmount(e.target.value);
-                                    setSelectedPackage('custom');
-                                }}
-                                onFocus={() => setSelectedPackage('custom')}
-                            />
-                            <div className="text-xs font-bold text-primary whitespace-nowrap font-mono tracking-tight bg-secondary px-3 py-1.5 rounded-lg">
-                                ${getPricePerCredit()} / credit
-                            </div>
-                        </div>
+                        <p className="text-muted-foreground text-sm">
+                            Non-expiring credits that roll over automatically. Perfect for high-volume research and large document reviews.
+                        </p>
                     </div>
 
-                    <div className="bg-gray-50/80 rounded-2xl p-6 flex items-center justify-between mb-8 border border-gray-100">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                        {packages.map((pkg) => {
+                            const isSelected = selectedPackageId === pkg.id;
+                            return (
+                                <div 
+                                    key={pkg.id}
+                                    onClick={() => setSelectedPackageId(pkg.id)}
+                                    className={`relative cursor-pointer transition-all duration-200 rounded-2xl p-5 border-2 flex flex-col items-center text-center ${
+                                        isSelected 
+                                        ? 'border-primary bg-primary/5 ring-1 ring-primary/30 shadow-sm scale-[1.02]' 
+                                        : 'border-border bg-card hover:border-muted-foreground/30'
+                                    }`}
+                                >
+                                    {pkg.popular && (
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
+                                            POPULAR
+                                        </div>
+                                    )}
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Package</span>
+                                    <div className="text-2xl font-black text-foreground mb-0.5">{pkg.credits.toLocaleString()}</div>
+                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase mb-3">AI Credits</span>
+                                    <div className="h-px w-full bg-border mb-3" />
+                                    <div className="text-lg font-bold text-primary">₹{pkg.price.toLocaleString()}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="bg-secondary/40 rounded-2xl p-5 flex items-center justify-between mb-6 border border-border">
                         <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center text-primary">
+                            <div className="h-12 w-12 bg-card rounded-xl shadow-sm border border-border flex items-center justify-center text-primary">
                                 <CreditCard className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">New Balance</p>
-                                <div className="text-xl font-black text-gray-900">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">New Balance</p>
+                                <div className="text-xl font-black text-foreground">
                                     {(currentCredits + addedCredits).toLocaleString()} 
-                                    <span className="text-xs font-bold text-gray-400 ml-2">Credits</span>
+                                    <span className="text-xs font-bold text-muted-foreground ml-2">Total Credits</span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Total Charge</p>
-                            <div className="text-2xl font-black text-primary">${totalPrice}</div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Total Charge</p>
+                            <div className="text-2xl font-black text-foreground">₹{price.toLocaleString()}</div>
                         </div>
                     </div>
 
-                    <div className="flex items-start gap-4 mb-8 bg-secondary/30 p-4 rounded-xl border border-border/50">
-                        <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                        <p className="text-xs text-primary leading-relaxed font-medium">
-                            Charges will be applied to your default card ending in 4242. You can manage your payment methods in the billing dashboard.
-                        </p>
+                    <div className="flex gap-4">
+                        <Button 
+                            variant="outline" 
+                            onClick={onClose}
+                            className="flex-1 rounded-xl h-12 font-bold"
+                            disabled={isPurchasing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handlePurchase}
+                            className="flex-1 rounded-xl h-12 font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-2 shadow-sm"
+                            disabled={isPurchasing}
+                        >
+                            {isPurchasing ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Confirming Payment...
+                                </>
+                            ) : (
+                                <>
+                                    <Check className="h-4 w-4" />
+                                    Confirm & Pay ₹{price.toLocaleString()}
+                                </>
+                            )}
+                        </Button>
                     </div>
-
-                    <Button className="w-full h-14 bg-primary hover:bg-primary text-white rounded-2xl font-bold text-lg shadow-xl shadow-sm transition-all hover:scale-[1.02] flex items-center justify-center gap-3">
-                        <CreditCard className="h-5 w-5" />
-                        Confirm Purchase
-                    </Button>
-                    
-                    <p className="text-center mt-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                        Secure 256-bit SSL Encrypted Payment
-                    </p>
                 </div>
             </DialogContent>
         </Dialog>

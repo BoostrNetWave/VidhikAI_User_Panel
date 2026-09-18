@@ -68,18 +68,8 @@ export default function SignUp() {
                 password: values.password
             })
 
-            // Store token and user data
-            localStorage.setItem('user_auth_token', data.token)
-            localStorage.setItem('user_profile_data', JSON.stringify(data))
-
-            // Role-based redirection
-            if (data.role === 'admin') {
-                toast.success("Account created! Logging in as Super Admin...")
-                navigate('/admin')
-            } else {
-                toast.success("Account created! Logging in as User...")
-                navigate('/dashboard')
-            }
+            toast.success("Account created! Please verify your email.")
+            navigate(`/verify-otp?email=${encodeURIComponent(values.email)}`)
         } catch (error: any) {
             console.error(error)
             const message = error.response?.data?.message || "Something went wrong. Please try again."
@@ -141,17 +131,7 @@ export default function SignUp() {
                         </div>
                     </div>
 
-                    {/* Security Badge */}
-                    <div className="flex items-center gap-6 mt-10 text-slate-400/80 text-xs">
-                        <div className="flex items-center gap-1.5">
-                            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                            <span>AES-256 Bit Encrypted</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                            <span>ISO 27001 Certified</span>
-                        </div>
-                    </div>
+
                 </div>
             </div>
 

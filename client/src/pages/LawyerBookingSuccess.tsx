@@ -116,7 +116,7 @@ export default function LawyerBookingSuccess() {
                     <Button 
                         variant="outline" 
                         className="flex-1 border-gray-200 text-gray-700 bg-white hover:bg-gray-50 rounded-2xl h-14 font-bold text-base shadow-sm gap-3"
-                        onClick={() => navigate('/cases')}
+                        onClick={() => navigate('/consultations')}
                     >
                         <LayoutDashboard className="h-5 w-5" />
                         Go to My Consultations
@@ -142,7 +142,7 @@ export default function LawyerBookingSuccess() {
                         </li>
                         <li className="flex items-start gap-4">
                             <span className="flex items-center justify-center h-6 w-6 rounded-full bg-white text-[#7C3AED] font-black text-[10px] shrink-0 shadow-sm border border-indigo-100">03.</span>
-                            <p className="text-sm text-gray-600 font-medium leading-relaxed">Open the roadmap on "My Cases" to track updates shared by your lawyer.</p>
+                            <p className="text-sm text-gray-600 font-medium leading-relaxed">Open "Live Consultations" to view your scheduled session and join the meeting.</p>
                         </li>
                     </ul>
                 </div>
