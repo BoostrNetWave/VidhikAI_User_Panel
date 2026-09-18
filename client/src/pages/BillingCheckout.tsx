@@ -1,22 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
     ArrowLeft, 
     Lock, 
-    CreditCard, 
-    HelpCircle, 
     ShieldCheck, 
     CheckCircle2,
     Gavel,
-    Loader2
+    Loader2,
+    Zap,
+    Crown,
+    Building2,
+    Coins,
+    Check,
+    CreditCard,
+    Smartphone,
+    Globe
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import api from '@/lib/api';
 import { toast } from 'sonner';
+
+// Helper to load Razorpay Checkout Script dynamically
+const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+        if ((window as any).Razorpay) {
+            resolve(true);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+};
 
 export default function BillingCheckout() {
     const navigate = useNavigate();
@@ -33,13 +53,20 @@ export default function BillingCheckout() {
     const selectedPackage = location.state?.package || null;
     const billingCycle = (location.state?.billingCycle || 'monthly') as 'monthly' | 'yearly';
 
-    const [saveCard, setSaveCard] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+
+    useEffect(() => {
+        loadRazorpayScript().then((loaded) => {
+            setIsScriptLoaded(loaded);
+        });
+    }, []);
 
     // Calculate amounts in INR
     let itemName = '';
     let itemSubtext = '';
     let totalAmount = 0;
+    const isFreePlan = checkoutType === 'plan' && (selectedPlan.name.toLowerCase() === 'free' || selectedPlan.priceMonthly === 0);
 
     if (checkoutType === 'package' && selectedPackage) {
         itemName = `${selectedPackage.credits.toLocaleString()} Extra AI Credits`;
@@ -47,7 +74,10 @@ export default function BillingCheckout() {
         totalAmount = selectedPackage.price;
     } else {
         itemName = `${selectedPlan.name} Plan Subscription`;
-        if (billingCycle === 'yearly') {
+        if (isFreePlan) {
+            itemSubtext = 'Free Forever tier with 30 monthly AI credits';
+            totalAmount = 0;
+        } else if (billingCycle === 'yearly') {
             const price = typeof selectedPlan.priceYearly === 'number' ? selectedPlan.priceYearly : 4990;
             itemSubtext = `Billed Annually (₹${Math.round(price / 12).toLocaleString()}/mo equivalent)`;
             totalAmount = price;
@@ -58,35 +88,132 @@ export default function BillingCheckout() {
         }
     }
 
-    const handleConfirmPayment = async () => {
+    const handleInitiatePayment = async () => {
         setIsProcessing(true);
+
         try {
-            if (checkoutType === 'package' && selectedPackage) {
-                const res = await api.post('/subscription/purchase-extra-credits', {
-                    packageId: selectedPackage.id
+            // 1. If Free Plan: Activate immediately through backend without Razorpay
+            if (isFreePlan) {
+                const res = await api.post('/subscription/create-order', {
+                    type: 'plan',
+                    planName: 'Free',
+                    billingCycle: 'monthly'
                 });
+
                 if (res.data?.success) {
-                    toast.success(`Payment Successful! Added ${selectedPackage.credits} Extra AI Credits.`, {
-                        description: `Your new total balance is ${res.data.data.totalCredits} credits.`
+                    toast.success("Free Plan Activated Successfully!", {
+                        description: "Your quota has been reset to 30 monthly AI credits."
                     });
+
+                    // Sync local storage
+                    const userStr = localStorage.getItem('user_profile_data');
+                    if (userStr) {
+                        try {
+                            const u = JSON.parse(userStr);
+                            u.subscription = 'Free';
+                            u.aiCredits = 30;
+                            localStorage.setItem('user_profile_data', JSON.stringify(u));
+                            window.dispatchEvent(new Event('storage'));
+                        } catch (e) {
+                            console.error("Local profile update error:", e);
+                        }
+                    }
+
                     navigate('/billing');
-                }
-            } else {
-                const res = await api.post('/subscription/change-plan', {
-                    planName: selectedPlan.name,
-                    billingCycle
-                });
-                if (res.data?.success) {
-                    toast.success(`Successfully activated ${selectedPlan.name} Plan!`, {
-                        description: `Your quota has been set to ${res.data.data.monthlyCredits} monthly credits.`
-                    });
-                    navigate('/billing');
+                    return;
                 }
             }
+
+            // 2. Load Razorpay script if not already available
+            const loaded = isScriptLoaded || (await loadRazorpayScript());
+            if (!loaded) {
+                toast.error("Failed to load Razorpay payment gateway. Please check your internet connection.");
+                setIsProcessing(false);
+                return;
+            }
+
+            // 3. Request server to create authoritative Razorpay Order
+            const payload = checkoutType === 'package' && selectedPackage
+                ? { type: 'package', packageId: selectedPackage.id }
+                : { type: 'plan', planName: selectedPlan.name, billingCycle };
+
+            const orderRes = await api.post('/subscription/create-order', payload);
+
+            if (!orderRes.data?.success) {
+                throw new Error(orderRes.data?.message || "Failed to initialize payment order.");
+            }
+
+            const { order } = orderRes.data;
+
+            // 4. Open Razorpay Checkout Modal
+            const options = {
+                key: order.keyId,
+                amount: order.amount, // in paise
+                currency: order.currency || "INR",
+                name: "Vidhik AI",
+                description: order.description,
+                order_id: order.id,
+                prefill: order.prefill,
+                theme: order.theme || { color: "#0f172a" },
+                modal: {
+                    ondismiss: () => {
+                        setIsProcessing(false);
+                        toast.info("Payment was cancelled.");
+                    }
+                },
+                handler: async (response: any) => {
+                    // 5. Send cryptographic signatures for backend verification
+                    try {
+                        const verifyRes = await api.post('/subscription/verify-payment', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        });
+
+                        if (verifyRes.data?.success) {
+                            toast.success("Payment Verified & Completed!", {
+                                description: verifyRes.data.message
+                            });
+
+                            // Sync localStorage
+                            const userStr = localStorage.getItem('user_profile_data');
+                            if (userStr && verifyRes.data.data) {
+                                try {
+                                    const u = JSON.parse(userStr);
+                                    if (verifyRes.data.data.plan) u.subscription = verifyRes.data.data.plan;
+                                    if (verifyRes.data.data.totalCredits !== undefined) u.aiCredits = verifyRes.data.data.totalCredits;
+                                    localStorage.setItem('user_profile_data', JSON.stringify(u));
+                                    window.dispatchEvent(new Event('storage'));
+                                } catch (e) {
+                                    console.error("Local profile update error:", e);
+                                }
+                            }
+
+                            navigate('/billing');
+                        } else {
+                            toast.error(verifyRes.data?.message || "Payment verification failed.");
+                        }
+                    } catch (verifyErr: any) {
+                        console.error("Payment verification request failed:", verifyErr);
+                        toast.error(verifyErr.response?.data?.message || "Payment verification failed on server.");
+                    } finally {
+                        setIsProcessing(false);
+                    }
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', (resp: any) => {
+                console.error("Razorpay payment error:", resp.error);
+                toast.error(resp.error?.description || "Payment failed. Please try with another payment method.");
+                setIsProcessing(false);
+            });
+
+            rzp.open();
+
         } catch (err: any) {
-            console.error('Checkout failed:', err);
-            toast.error(err.response?.data?.message || 'Payment processing failed. Please try again.');
-        } finally {
+            console.error("Checkout initialization failed:", err);
+            toast.error(err.response?.data?.message || err.message || "Failed to initialize checkout. Please try again.");
             setIsProcessing(false);
         }
     };
@@ -102,204 +229,206 @@ export default function BillingCheckout() {
                     <span className="leading-none text-gray-900">Vidhik AI</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em]">
-                    <Lock className="w-3 h-3" />
-                    Secure Checkout
+                    <Lock className="w-3 h-3 text-emerald-600" />
+                    Razorpay 256-Bit Encrypted
                 </div>
             </header>
 
-            <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-12">
-                <div className="mb-12">
+            <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
+                <div className="mb-8">
                     <button 
                         onClick={() => navigate('/billing')} 
-                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-all mb-4 group"
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-all mb-3 group"
                     >
                         <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-                        Back to Subscription
+                        Back to Subscription Plans
                     </button>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Checkout</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Checkout &amp; Payment</h1>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Secure instant checkout powered by Razorpay Payment Gateway
+                    </p>
                 </div>
 
-                <div className="flex flex-col lg:flex-row gap-12 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     
-                    {/* Left Column - Payment Information */}
-                    <div className="flex-1 space-y-8 w-full">
-                        <Card className="rounded-[2rem] border-gray-100 bg-white shadow-2xl shadow-gray-200/50 overflow-hidden">
-                            <CardContent className="p-10">
-                                <h2 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-10">Payment Details</h2>
-
-                                {/* Saved Card Selector - Refined */}
-                                <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl p-6 mb-10 cursor-pointer hover:bg-gray-100 transition-colors group">
-                                    <div className="flex items-center gap-5">
-                                        <div className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-[10px] font-black italic text-gray-400 group-hover:border-gray-900 group-hover:text-gray-900 transition-colors">
-                                            VISA
-                                        </div>
-                                        <span className="font-bold text-sm text-gray-900">Visa ending in 4242</span>
+                    {/* Left Column: Razorpay Payment Gateway Info & Action */}
+                    <div className="lg:col-span-7 space-y-6">
+                        <Card className="rounded-3xl border-gray-200/80 bg-white shadow-xl shadow-gray-200/40 overflow-hidden">
+                            <CardContent className="p-8 space-y-6">
+                                <div className="flex items-center justify-between border-b pb-4">
+                                    <div>
+                                        <h2 className="text-base font-bold text-gray-900">Payment Gateway</h2>
+                                        <p className="text-xs text-muted-foreground mt-0.5">Exclusive partner: Razorpay</p>
                                     </div>
-                                    <div className="w-12 h-7 bg-gray-900 rounded-full relative p-1 transition-colors">
-                                        <div className="w-5 h-5 bg-white rounded-full absolute right-1"></div>
+                                    <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-full text-xs border border-blue-200">
+                                        <ShieldCheck className="h-4 w-4 text-blue-600" />
+                                        <span>Verified Gateway</span>
                                     </div>
                                 </div>
 
-                                <div className="space-y-8">
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Cardholder Name</Label>
-                                        <Input 
-                                            placeholder="Enter full name" 
-                                            defaultValue="Client Account"
-                                            className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-gray-300 focus-visible:ring-2 focus-visible:ring-gray-900"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Card Number</Label>
-                                        <div className="relative">
-                                            <Input 
-                                                placeholder="•••• •••• •••• 4242" 
-                                                defaultValue="4242 •••• •••• 4242"
-                                                className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-gray-300 pr-14 focus-visible:ring-2 focus-visible:ring-gray-900"
-                                            />
-                                            <CreditCard className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                                {isFreePlan ? (
+                                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-3">
+                                        <div className="h-12 w-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
+                                            <Zap className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-gray-900">Free Plan Activation</h3>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                No payment is required for the Free plan. Click below to activate your 30 monthly AI credits instantly.
+                                            </p>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {/* Razorpay Gateway Supported Methods Card */}
+                                        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-5 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">All Payment Modes Supported:</span>
+                                                <Badge variant="outline" className="text-[10px] bg-white text-emerald-700 border-emerald-300 font-semibold">
+                                                    Zero Convenience Fee
+                                                </Badge>
+                                            </div>
 
-                                    <div className="grid grid-cols-2 gap-8">
-                                        <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Expiry Date</Label>
-                                            <div className="flex gap-2">
-                                                <select 
-                                                    className="flex-1 h-14 bg-gray-50 border-none rounded-xl px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-gray-900"
-                                                    defaultValue="12"
-                                                >
-                                                    {Array.from({ length: 12 }, (_, i) => (
-                                                        <option key={i} value={(i + 1).toString().padStart(2, '0')}>{(i + 1).toString().padStart(2, '0')}</option>
-                                                    ))}
-                                                </select>
-                                                <select 
-                                                    className="flex-1 h-14 bg-gray-50 border-none rounded-xl px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-gray-900"
-                                                    defaultValue="2026"
-                                                >
-                                                    <option value="2025">2025</option>
-                                                    <option value="2026">2026</option>
-                                                    <option value="2027">2027</option>
-                                                    <option value="2028">2028</option>
-                                                </select>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                                <div className="bg-white p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center gap-1.5 shadow-2xs">
+                                                    <Smartphone className="h-5 w-5 text-indigo-600" />
+                                                    <span className="text-[11px] font-bold text-gray-800">UPI Instant</span>
+                                                    <span className="text-[9px] text-muted-foreground">GPay, PhonePe, Paytm</span>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center gap-1.5 shadow-2xs">
+                                                    <CreditCard className="h-5 w-5 text-blue-600" />
+                                                    <span className="text-[11px] font-bold text-gray-800">Cards</span>
+                                                    <span className="text-[9px] text-muted-foreground">Visa, MC, RuPay</span>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center gap-1.5 shadow-2xs">
+                                                    <Globe className="h-5 w-5 text-teal-600" />
+                                                    <span className="text-[11px] font-bold text-gray-800">NetBanking</span>
+                                                    <span className="text-[9px] text-muted-foreground">50+ Banks</span>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center gap-1.5 shadow-2xs">
+                                                    <Coins className="h-5 w-5 text-amber-600" />
+                                                    <span className="text-[11px] font-bold text-gray-800">Wallets &amp; EMI</span>
+                                                    <span className="text-[9px] text-muted-foreground">Cred, Mobikwik</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">CVV</Label>
-                                            <div className="relative">
-                                                <Input 
-                                                    placeholder="***" 
-                                                    type="password" 
-                                                    maxLength={3}
-                                                    defaultValue="888"
-                                                    className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-gray-300 pr-14 focus-visible:ring-2 focus-visible:ring-gray-900"
-                                                />
-                                                <HelpCircle className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 cursor-help" />
+
+                                        {/* Security Banner */}
+                                        <div className="flex items-start gap-3 p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-900">
+                                            <ShieldCheck className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
+                                            <div>
+                                                <span className="font-bold">PCI-DSS Level 1 Compliant:</span>
+                                                <span className="text-emerald-800 ml-1">
+                                                    Your payment is processed directly inside Razorpay's RBI-regulated infrastructure. Vidhik AI never stores your card or banking credentials.
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="mt-12 flex items-center space-x-3 pt-8 border-t border-gray-50">
-                                    <Checkbox id="save-payment" checked={saveCard} onCheckedChange={(c) => setSaveCard(c as boolean)} className="rounded-md h-5 w-5 border-gray-200 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900" />
-                                    <label htmlFor="save-payment" className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none cursor-pointer">
-                                        Save for future billing
-                                    </label>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <div className="flex flex-row items-center justify-center gap-12 py-8 opacity-30">
-                            <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-gray-900">
-                                <ShieldCheck className="w-3 h-3" />
-                                PCI DSS COMPLIANT
-                            </div>
-                            <div className="flex flex-row items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-gray-900">
-                                <CheckCircle2 className="w-3 h-3" />
-                                SSL SECURE 256-BIT
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column - Order Summary */}
-                    <div className="w-full lg:w-[420px]">
-                        <Card className="rounded-[2rem] border border-gray-200 bg-white shadow-xl shadow-gray-200/50 sticky top-24 overflow-hidden">
-                            <CardContent className="p-10">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-8">Order Summary</h3>
-                                
-                                <div className="space-y-4 pb-8 border-b border-gray-100">
-                                    <div className="flex items-start justify-between">
-                                        <div className="space-y-1">
-                                            <p className="font-black text-gray-900 text-lg tracking-tight leading-none uppercase">{itemName}</p>
-                                            <p className="text-[10px] text-primary font-bold uppercase tracking-widest">{itemSubtext}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg w-fit">
-                                        <Check className="h-3.5 w-3.5" />
-                                        <span>Instant Activation upon Payment</span>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 py-8 border-b border-gray-100">
-                                    <div className="flex justify-between items-center text-xs font-bold text-gray-500">
-                                        <p>Subtotal</p>
-                                        <p className="text-gray-900 font-bold">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs font-bold text-gray-500">
-                                        <p>Platform Taxes (0%)</p>
-                                        <p className="text-gray-900 font-bold">₹0.00</p>
-                                    </div>
-                                </div>
-
-                                <div className="py-8">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Total Amount Due</p>
-                                    <p className="text-4xl font-black text-gray-900 tracking-tight">
-                                        ₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                    </p>
-                                </div>
-
-                                <Button 
-                                    className="w-full h-16 rounded-2xl bg-gray-900 text-white hover:bg-black shadow-xl transition-all font-black text-sm flex items-center justify-center gap-3 uppercase tracking-widest active:scale-[0.98]"
-                                    onClick={handleConfirmPayment}
+                                {/* Main Action Button */}
+                                <Button
+                                    onClick={handleInitiatePayment}
                                     disabled={isProcessing}
+                                    className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
                                 >
                                     {isProcessing ? (
                                         <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Processing Payment...
+                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                            <span>Processing Secure Order...</span>
+                                        </>
+                                    ) : isFreePlan ? (
+                                        <>
+                                            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                                            <span>Activate Free Plan (₹0)</span>
                                         </>
                                     ) : (
                                         <>
-                                            <Lock className="w-4 h-4" />
-                                            Confirm & Activate
+                                            <Lock className="h-4 w-4 text-emerald-400" />
+                                            <span>Pay ₹{totalAmount.toLocaleString()} via Razorpay</span>
                                         </>
                                     )}
                                 </Button>
-
-                                <p className="text-center text-[8px] font-black uppercase tracking-widest text-gray-500 mt-6 leading-loose px-4">
-                                    Protected by Vidhik 256-Bit Bank Grade Encryption
-                                </p>
                             </CardContent>
-
-                            {/* Guarantee Footer */}
-                            <div className="bg-gray-50 p-6 flex gap-4 items-start border-t border-gray-100">
-                                <div className="w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center shrink-0 mt-0.5">
-                                    <CheckCircle2 className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-black uppercase tracking-widest text-gray-900 mb-1">Satisfaction Guarantee</p>
-                                    <p className="text-[10px] text-gray-500 font-medium leading-relaxed">Cancel anytime with 1-click in your user billing dashboard.</p>
-                                </div>
-                            </div>
                         </Card>
                     </div>
+
+                    {/* Right Column: Order Summary Card */}
+                    <div className="lg:col-span-5 space-y-6">
+                        <Card className="rounded-3xl border-gray-200/80 bg-white shadow-xl shadow-gray-200/40 overflow-hidden sticky top-24">
+                            <CardContent className="p-8 space-y-6">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                                    Order Summary
+                                </h3>
+
+                                <div className="space-y-4 pb-6 border-b">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-base">{itemName}</h4>
+                                            <p className="text-xs text-muted-foreground mt-0.5">{itemSubtext}</p>
+                                        </div>
+                                        <span className="font-extrabold text-base text-gray-900 shrink-0">
+                                            ₹{totalAmount.toLocaleString()}
+                                        </span>
+                                    </div>
+
+                                    {checkoutType === 'plan' && (
+                                        <div className="bg-slate-50 p-3 rounded-xl border text-xs space-y-1.5">
+                                            <div className="flex items-center justify-between text-muted-foreground">
+                                                <span>Credit Allocation:</span>
+                                                <span className="font-bold text-foreground">{selectedPlan.monthlyCredits || 150} Monthly Credits</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-muted-foreground">
+                                                <span>Billing Frequency:</span>
+                                                <span className="font-bold text-foreground capitalize">{billingCycle}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {checkoutType === 'package' && (
+                                        <div className="bg-slate-50 p-3 rounded-xl border text-xs space-y-1.5">
+                                            <div className="flex items-center justify-between text-muted-foreground">
+                                                <span>Extra AI Credits:</span>
+                                                <span className="font-bold text-foreground">+{selectedPackage.credits} Credits</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-muted-foreground">
+                                                <span>Expiration:</span>
+                                                <span className="font-bold text-emerald-600">Never Expires (Rollover)</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Price Breakdown */}
+                                <div className="space-y-2 text-xs">
+                                    <div className="flex justify-between text-muted-foreground">
+                                        <span>Subtotal</span>
+                                        <span className="font-semibold text-gray-800">₹{totalAmount.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                        <span>Goods &amp; Services Tax (GST)</span>
+                                        <span className="font-semibold text-emerald-600">Included</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                        <span>Payment Gateway Fee</span>
+                                        <span className="font-semibold text-emerald-600">₹0 (Free)</span>
+                                    </div>
+                                    <div className="flex justify-between items-baseline pt-4 border-t text-sm font-bold text-gray-900">
+                                        <span className="text-base">Total Amount Payable</span>
+                                        <span className="text-2xl font-black text-primary">₹{totalAmount.toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 text-[11px] text-muted-foreground text-center flex items-center justify-center gap-1">
+                                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                    <span>Instant activation upon payment confirmation</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
                 </div>
             </main>
-
-            <footer className="py-8 text-center text-[8px] tracking-[0.3em] font-black uppercase text-gray-400 mt-auto">
-                Vidhik Secure Checkout System v3.0
-            </footer>
         </div>
     );
 }

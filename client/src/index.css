@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Playfair+Display:ital,wght@0,600;1,600&family=Alex+Brush&family=Sacramento&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -88,4 +88,249 @@
         @apply bg-background text-foreground font-sans antialiased;
         font-family: 'Inter', sans-serif;
     }
+}
+
+/* --- Quill Alignment & Indentation Classes for Previews & Documents --- */
+.ql-align-center {
+    text-align: center !important;
+}
+.ql-align-right {
+    text-align: right !important;
+}
+.ql-align-justify {
+    text-align: justify !important;
+}
+.ql-align-left {
+    text-align: left !important;
+}
+
+.ql-indent-1 {
+    padding-left: 2.5rem !important;
+}
+.ql-indent-2 {
+    padding-left: 5rem !important;
+}
+.ql-indent-3 {
+    padding-left: 7.5rem !important;
+}
+.ql-indent-4 {
+    padding-left: 10rem !important;
+}
+.ql-indent-5 {
+    padding-left: 12.5rem !important;
+}
+
+/* --- Legal Document Typography & Formatting Safeguards --- */
+.legal-preview-paper,
+.legal-preview-paper.prose {
+    font-family: 'Lora', 'Georgia', 'Times New Roman', serif !important;
+    color: #0f172a !important;
+}
+
+/* Document Main Title (H1) */
+.legal-preview-paper h1,
+.legal-preview-paper.prose h1,
+.ql-editor h1 {
+    font-size: 26px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.12em !important;
+    margin-top: 14px !important;
+    margin-bottom: 36px !important;
+    line-height: 1.4 !important;
+    color: #0f172a !important;
+}
+
+/* Section Headings (H2) - e.g., COMPANY DETAILS, PRELIMINARY, DEFINITIONS */
+.legal-preview-paper h2,
+.legal-preview-paper.prose h2,
+.ql-editor h2 {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-top: 32px !important;
+    margin-bottom: 14px !important;
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    padding-bottom: 6px !important;
+    line-height: 1.4 !important;
+    color: #0f172a !important;
+}
+
+/* Sub-sections (H3) */
+.legal-preview-paper h3,
+.legal-preview-paper.prose h3,
+.ql-editor h3 {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    margin-top: 22px !important;
+    margin-bottom: 10px !important;
+    line-height: 1.4 !important;
+    color: #1e293b !important;
+}
+
+/* Paragraphs (P) */
+.legal-preview-paper p,
+.legal-preview-paper.prose p,
+.ql-editor p {
+    font-size: 14.5px !important;
+    line-height: 1.8 !important;
+    margin-bottom: 14px !important;
+    text-align: justify !important;
+    color: #1e293b !important;
+}
+
+.legal-preview-paper .ql-align-center,
+.legal-preview-paper [class*="ql-align-center"],
+.legal-preview-paper p.ql-align-center,
+.legal-preview-paper h1.ql-align-center,
+.legal-preview-paper h2.ql-align-center,
+.legal-preview-paper h3.ql-align-center,
+.ql-editor .ql-align-center {
+    text-align: center !important;
+}
+
+.legal-preview-paper .ql-align-right,
+.legal-preview-paper [class*="ql-align-right"],
+.legal-preview-paper p.ql-align-right,
+.ql-editor .ql-align-right {
+    text-align: right !important;
+}
+
+.legal-preview-paper .ql-align-justify,
+.legal-preview-paper p.ql-align-justify,
+.ql-editor .ql-align-justify {
+    text-align: justify !important;
+}
+
+.legal-preview-paper .ql-align-left,
+.legal-preview-paper p.ql-align-left,
+.ql-editor .ql-align-left {
+    text-align: left !important;
+}
+
+/* Tables in Legal Documents */
+.legal-preview-paper table,
+.ql-editor table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+.legal-preview-paper th,
+.legal-preview-paper td,
+.ql-editor th,
+.ql-editor td {
+    border: 1px solid #94a3b8 !important;
+    padding: 8px 12px !important;
+    text-align: left !important;
+}
+
+.legal-preview-paper th,
+.ql-editor th {
+    background-color: #f8fafc !important;
+    font-weight: 700 !important;
+}
+
+/* Empty paragraph line spacing fix */
+.legal-preview-paper p:empty,
+.legal-preview-paper p:has(> br:only-child),
+.ql-editor p:empty,
+.ql-editor p:has(> br:only-child) {
+    margin-bottom: 0.5rem !important;
+    min-height: 1.25em !important;
+}
+
+/* --- Digital Signature Card in Document Preview & Editor --- */
+.vidhik-signature-block {
+    display: inline-block;
+    min-width: 250px;
+    max-width: 360px;
+    border-top: 1.5px solid #1e293b;
+    padding-top: 10px;
+    margin-top: 28px;
+    margin-bottom: 16px;
+    text-align: left;
+    page-break-inside: avoid;
+    font-family: inherit;
+}
+
+.vidhik-signature-block.align-right {
+    display: block;
+    margin-left: auto;
+    margin-right: 0;
+    text-align: left;
+}
+
+.vidhik-signature-block.align-center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.vidhik-signature-block.align-left {
+    display: block;
+    margin-left: 0;
+    margin-right: auto;
+    text-align: left;
+}
+
+.vidhik-signature-block .sig-img {
+    max-height: 70px;
+    max-width: 220px;
+    object-fit: contain;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.vidhik-signature-block.align-center .sig-img {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.vidhik-signature-block .sig-typed {
+    font-size: 28px;
+    line-height: 1.3;
+    color: #1e3a8a;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.vidhik-signature-block .sig-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #0f172a;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.vidhik-signature-block .sig-title {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.vidhik-signature-block .sig-date {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+.vidhik-signature-block .sig-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: #059669;
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }

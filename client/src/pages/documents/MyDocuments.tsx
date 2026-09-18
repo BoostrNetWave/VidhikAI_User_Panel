@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -37,13 +37,15 @@ import {
     Sparkles,
     FileEdit,
     Save,
-    CheckCircle2
+    CheckCircle2,
+    PenTool
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { parseHtmlToDocx } from '@/lib/docxUtils';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 import { DocumentPreview, formatToLegalHtml } from '@/components/documents/DocumentPreview';
+import { DigitalSignatureModal } from '@/components/documents/DigitalSignatureModal';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -59,6 +61,8 @@ export default function MyDocuments() {
     const [editContent, setEditContent] = useState("");
     const [editStatus, setEditStatus] = useState("draft");
     const [isSavingDoc, setIsSavingDoc] = useState(false);
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const quillRef = useRef<any>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -252,13 +256,44 @@ export default function MyDocuments() {
         handleOpenDocument(doc, 'review');
     };
 
+    const handleInsertSignature = (signatureHtml: string) => {
+        if (quillRef.current) {
+            try {
+                const editor = quillRef.current.getEditor();
+                const range = editor.getSelection();
+                const index = range ? range.index : editor.getLength();
+                editor.clipboard.dangerouslyPasteHTML(index, signatureHtml);
+                const updatedHtml = editor.root.innerHTML;
+                setEditContent(updatedHtml);
+                setSelectedDoc((prev: any) => prev ? { ...prev, content: updatedHtml } : prev);
+                return;
+            } catch (e) {
+                console.error("Failed to insert signature into Quill editor, fallback to append:", e);
+            }
+        }
+        const updatedHtml = (editContent || '') + '\n' + signatureHtml;
+        setEditContent(updatedHtml);
+        setSelectedDoc((prev: any) => prev ? { ...prev, content: updatedHtml } : prev);
+    };
+
     const handleSaveDocument = async () => {
         if (!selectedDoc?._id) return;
         setIsSavingDoc(true);
+
+        let contentToSave = editContent;
+        if (quillRef.current) {
+            try {
+                contentToSave = quillRef.current.getEditor().root.innerHTML;
+                setEditContent(contentToSave);
+            } catch (e) {
+                // ignore
+            }
+        }
+
         try {
             const response = await api.put(`/documents/${selectedDoc._id}`, {
                 title: editTitle.trim() || selectedDoc.title,
-                content: editContent,
+                content: contentToSave,
                 status: editStatus
             });
             if (response.data.success) {
@@ -285,6 +320,15 @@ export default function MyDocuments() {
             ['clean']
         ]
     }), []);
+
+    const quillFormats = useMemo(() => [
+        'header',
+        'bold', 'italic', 'underline', 'strike',
+        'list', 'bullet', 'indent',
+        'align',
+        'color', 'background',
+        'link', 'image'
+    ], []);
 
     const handleReviewDocument = (doc: any) => {
         let plainText = "";
@@ -703,7 +747,16 @@ export default function MyDocuments() {
                                     type="button"
                                     onClick={() => {
                                         if (docModalMode === 'edit') {
-                                            setSelectedDoc((prev: any) => ({ ...prev, title: editTitle, content: editContent, status: editStatus }));
+                                            let currentHtml = editContent;
+                                            if (quillRef.current) {
+                                                try {
+                                                    currentHtml = quillRef.current.getEditor().root.innerHTML;
+                                                    setEditContent(currentHtml);
+                                                } catch (e) {
+                                                    // ignore
+                                                }
+                                            }
+                                            setSelectedDoc((prev: any) => ({ ...prev, title: editTitle, content: currentHtml, status: editStatus }));
                                         }
                                         setDocModalMode('review');
                                     }}
@@ -718,7 +771,15 @@ export default function MyDocuments() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setDocModalMode('edit')}
+                                    onClick={() => {
+                                        if (docModalMode === 'review') {
+                                            const currentDocContent = selectedDoc?.content || editContent || '';
+                                            const formatted = formatToLegalHtml(currentDocContent);
+                                            const contentToEdit = currentDocContent && /<\s*(p|div|h[1-6]|ul|ol)\b[^>]*>/i.test(currentDocContent) ? currentDocContent : formatted;
+                                            setEditContent(contentToEdit);
+                                        }
+                                        setDocModalMode('edit');
+                                    }}
                                     className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
                                         docModalMode === 'edit'
                                             ? 'bg-white text-primary shadow-sm font-bold'
@@ -752,62 +813,19 @@ export default function MyDocuments() {
                                     </Button>
                                 </>
                             ) : (
-                                <Button
-                                    size="sm"
-                                    className="gap-1.5 text-xs h-8 bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
-                                    onClick={handleSaveDocument}
-                                    disabled={isSavingDoc}
-                                >
-                                    {isSavingDoc ? (
-                                        <>
-                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save className="h-3.5 w-3.5" />
-                                            Save Changes
-                                        </>
-                                    )}
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Modal Body */}
-                    <div className="flex-1 overflow-y-auto bg-slate-100/70 p-4 sm:p-6">
-                        {docModalMode === 'review' ? (
-                            <div className="max-w-4xl mx-auto">
-                                <DocumentPreview content={selectedDoc?.content || editContent || ''} />
-                            </div>
-                        ) : (
-                            <div className="max-w-4xl mx-auto space-y-4">
-                                <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                                    <div className="px-4 py-2.5 bg-slate-50 border-b text-xs text-muted-foreground flex justify-between items-center flex-wrap gap-2">
-                                        <span className="font-medium text-gray-700">Legal Document Editor</span>
-                                        <span className="italic text-gray-500">Edit clauses, headings, and legal terms in place</span>
-                                    </div>
-                                    <div className="p-4 sm:p-6 min-h-[550px] bg-white">
-                                        <ReactQuill
-                                            theme="snow"
-                                            value={editContent}
-                                            onChange={setEditContent}
-                                            modules={quillModules}
-                                            className="font-serif text-slate-900 min-h-[500px]"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-2 pt-2">
+                                <div className="flex items-center gap-2">
                                     <Button
-                                        variant="outline"
+                                        type="button"
                                         size="sm"
-                                        onClick={() => setDocModalMode('review')}
+                                        className="gap-1.5 text-xs h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm"
+                                        onClick={() => setIsSignatureModalOpen(true)}
                                     >
-                                        Cancel / View Preview
+                                        <PenTool className="h-3.5 w-3.5" />
+                                        Add Digital Signature
                                     </Button>
                                     <Button
                                         size="sm"
-                                        className="gap-1.5 bg-primary hover:bg-primary/90 text-white font-semibold"
+                                        className="gap-1.5 text-xs h-8 bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
                                         onClick={handleSaveDocument}
                                         disabled={isSavingDoc}
                                     >
@@ -824,11 +842,111 @@ export default function MyDocuments() {
                                         )}
                                     </Button>
                                 </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Modal Body */}
+                    <div className="flex-1 overflow-y-auto bg-slate-100/70 p-4 sm:p-6">
+                        {docModalMode === 'review' ? (
+                            <div className="max-w-4xl mx-auto">
+                                <DocumentPreview content={selectedDoc?.content || editContent || ''} />
+                            </div>
+                        ) : (
+                            <div className="max-w-4xl mx-auto space-y-4">
+                                <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                                    <div className="px-4 py-2.5 bg-slate-50 border-b text-xs text-muted-foreground flex justify-between items-center flex-wrap gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-800">Legal Document Editor</span>
+                                            <span className="text-gray-300">|</span>
+                                            <span className="italic text-gray-500">Edit clauses, headings, and digital signatures</span>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setIsSignatureModalOpen(true)}
+                                            className="gap-1.5 text-xs h-7 text-indigo-700 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 font-semibold"
+                                        >
+                                            <PenTool className="h-3.5 w-3.5" />
+                                            Add Digital Signature
+                                        </Button>
+                                    </div>
+                                    <div className="p-4 sm:p-6 min-h-[550px] bg-white">
+                                        <ReactQuill
+                                            ref={quillRef}
+                                            theme="snow"
+                                            value={editContent}
+                                            onChange={setEditContent}
+                                            modules={quillModules}
+                                            formats={quillFormats}
+                                            className="font-serif text-slate-900 min-h-[500px]"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center gap-2 pt-2">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-1.5 text-xs text-indigo-700 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100 font-semibold"
+                                        onClick={() => setIsSignatureModalOpen(true)}
+                                    >
+                                        <PenTool className="h-3.5 w-3.5" />
+                                        Add Digital Signature
+                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                if (quillRef.current) {
+                                                    try {
+                                                        const currentHtml = quillRef.current.getEditor().root.innerHTML;
+                                                        setEditContent(currentHtml);
+                                                        setSelectedDoc((prev: any) => ({ ...prev, content: currentHtml }));
+                                                    } catch (e) {
+                                                        // ignore
+                                                    }
+                                                }
+                                                setDocModalMode('review');
+                                            }}
+                                        >
+                                            Cancel / View Preview
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="gap-1.5 bg-primary hover:bg-primary/90 text-white font-semibold"
+                                            onClick={handleSaveDocument}
+                                            disabled={isSavingDoc}
+                                        >
+                                            {isSavingDoc ? (
+                                                <>
+                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="h-3.5 w-3.5" />
+                                                    Save Changes
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Digital Signature Modal */}
+            <DigitalSignatureModal
+                isOpen={isSignatureModalOpen}
+                onClose={() => setIsSignatureModalOpen(false)}
+                onInsertSignature={handleInsertSignature}
+                defaultName={selectedDoc?.formData?.signatory_name || selectedDoc?.formData?.employer_name || selectedDoc?.formData?.client_name || ''}
+            />
 
             {/* Delete Confirmation Modal */}
             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>

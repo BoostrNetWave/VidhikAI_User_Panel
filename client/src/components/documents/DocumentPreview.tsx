@@ -8,18 +8,13 @@ export const PREVIEW_DESIGN = {
     container: "w-full bg-slate-100/70 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] py-12 px-4 min-h-[600px] flex justify-center",
 
     // The "Paper": A4 dimensions with professional drop shadow
-    paper: "bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] w-full max-w-[210mm] min-h-[297mm] p-[25.4mm] mx-auto border border-gray-100 rounded-sm",
+    paper: "bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] w-full max-w-[210mm] min-h-[297mm] p-[25.4mm] mx-auto border border-gray-100 rounded-sm legal-preview-paper",
 
     // Typography: Legal-grade serif settings
-    typography: "prose max-w-none font-['Lora',serif] text-slate-900",
+    typography: "font-['Lora',serif] text-slate-900",
 
     // Heading & Paragraph overrides
-    proseStyles: "prose-headings:text-black prose-headings:font-['Lora',serif] prose-headings:font-bold " +
-        "prose-h1:text-2xl prose-h1:mb-8 prose-h1:text-center prose-h1:uppercase prose-h1:tracking-[0.15em] " +
-        "prose-h2:text-lg prose-h2:mt-10 prose-h2:mb-4 prose-h2:uppercase prose-h2:tracking-wider prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-2 " +
-        "prose-h3:text-base prose-h3:mt-6 prose-h3:mb-3 " +
-        "prose-p:mb-5 prose-p:leading-[1.8] prose-p:text-justify text-[15px] " +
-        "prose-ul:ml-6 prose-ol:ml-6 prose-li:mb-2 prose-li:leading-relaxed"
+    proseStyles: ""
 };
 
 /**
@@ -30,10 +25,26 @@ export function formatToLegalHtml(raw: string): string {
         return '<p class="text-gray-400 italic text-center py-12">No document content available.</p>';
     }
 
-    // If it already has structural HTML tags (<p>, <div>, <h1>-<h6>, <ul>, <ol>, <table>), return as is
-    const hasHtmlTags = /<\s*(p|div|h[1-6]|ul|ol|table|article|section)\b[^>]*>/i.test(raw);
+    // Clean excessive consecutive empty lines while preserving deliberate spacing
+    let html = raw.replace(/(<p><br\s*[\/]?>\s*<\/p>\s*){3,}/gi, '<p><br></p>');
+
+    const hasHtmlTags = /<\s*(p|div|h[1-6]|ul|ol|table|article|section)\b[^>]*>/i.test(html);
     if (hasHtmlTags) {
-        return raw;
+        // Normalize any pseudo-headings created by rich text editors:
+        // E.g., <p class="ql-align-center"><strong>(TITLE)</strong></p> -> <h1>$1</h1>
+        html = html.replace(/<p\s+class="ql-align-center">\s*<strong>([^<]{3,80})<\/strong>\s*<\/p>/gi, '<h1 class="ql-align-center">$1</h1>');
+        
+        // E.g., <p><strong>(SECTION NAME)</strong></p> where it's a short heading -> <h2>$1</h2>
+        html = html.replace(/<p>\s*<strong>((?:[0-9]+\.\s*)?[A-Z][A-Za-z0-9\s,\-&]{2,60})<\/strong>\s*<\/p>/g, (match, headingText) => {
+            const trimmed = headingText.trim();
+            // If it doesn't end with a colon or period, treat as a section heading
+            if (!trimmed.endsWith(':') && !trimmed.endsWith('.')) {
+                return `<h2>${trimmed}</h2>`;
+            }
+            return match;
+        });
+
+        return html;
     }
 
     // Convert plain text or markdown to structured legal HTML

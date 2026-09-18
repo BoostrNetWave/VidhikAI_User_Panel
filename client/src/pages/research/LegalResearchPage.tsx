@@ -1322,26 +1322,6 @@ export default function LegalResearchPage() {
                         </div>
                         )}
 
-                    {/* Pro Plan Banner - Horizontal Version */}
-                    {!isSearching && (
-                        <div className="mt-10">
-                            <Card className="rounded-xl border border-border shadow-sm bg-primary p-10 text-primary-foreground relative overflow-hidden group">
-                                <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary-foreground/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-                                <div className="relative flex flex-col lg:flex-row items-center justify-between gap-10">
-                                    <div className="space-y-4 text-center lg:text-left">
-                                        <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground border-none font-semibold text-xs px-3 tracking-widest uppercase py-1">Premium Access</Badge>
-                                        <h4 className="text-3xl md:text-4xl font-bold leading-tight">Upgrade to Pro for Advanced <br className="hidden md:block"/>Case Law Analysis</h4>
-                                        <p className="text-primary-foreground/80 font-medium text-lg max-w-2xl">Get unlimited access to our full suite of premium legal tools, deep case analysis, and priority research clusters.</p>
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                                        <Button className="w-full sm:w-auto shrink-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-lg h-12 px-8 font-semibold text-base shadow-sm transition-all" onClick={() => navigate('/billing')}>
-                                            Upgrade Now
-                                        </Button>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-                    )}
                 </div>
             </div>
 

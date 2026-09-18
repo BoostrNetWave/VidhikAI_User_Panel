@@ -56,19 +56,93 @@ export const BuyCreditsModal = ({ isOpen, onClose, onSuccess }: BuyCreditsModalP
     const handlePurchase = async () => {
         setIsPurchasing(true);
         try {
-            const res = await api.post('/subscription/purchase-extra-credits', {
+            // 1. Ensure Razorpay checkout script is loaded
+            if (!(window as any).Razorpay) {
+                await new Promise((resolve) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                    script.async = true;
+                    script.onload = () => resolve(true);
+                    script.onerror = () => resolve(false);
+                    document.body.appendChild(script);
+                });
+            }
+
+            // 2. Create authoritative order on server
+            const orderRes = await api.post('/subscription/create-order', {
+                type: 'package',
                 packageId: activePkg.id
             });
-            if (res.data?.success) {
-                toast.success(`Successfully added ${addedCredits} Extra AI Credits!`, {
-                    description: `New total balance: ${res.data.data.totalCredits} Credits.`
-                });
-                onSuccess?.();
-                onClose();
+
+            if (!orderRes.data?.success) {
+                throw new Error(orderRes.data?.message || "Failed to initialize order.");
             }
+
+            const { order } = orderRes.data;
+
+            // 3. Open Razorpay Checkout modal
+            const options = {
+                key: order.keyId,
+                amount: order.amount,
+                currency: order.currency || "INR",
+                name: "Vidhik AI",
+                description: order.description,
+                order_id: order.id,
+                prefill: order.prefill,
+                theme: order.theme || { color: "#0f172a" },
+                modal: {
+                    ondismiss: () => {
+                        setIsPurchasing(false);
+                    }
+                },
+                handler: async (response: any) => {
+                    try {
+                        const verifyRes = await api.post('/subscription/verify-payment', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        });
+
+                        if (verifyRes.data?.success) {
+                            toast.success(`Successfully added ${addedCredits} Extra AI Credits!`, {
+                                description: `New total balance: ${verifyRes.data.data.totalCredits} Credits.`
+                            });
+
+                            // Sync localStorage
+                            const userStr = localStorage.getItem('user_profile_data');
+                            if (userStr && verifyRes.data.data.totalCredits !== undefined) {
+                                try {
+                                    const u = JSON.parse(userStr);
+                                    u.aiCredits = verifyRes.data.data.totalCredits;
+                                    localStorage.setItem('user_profile_data', JSON.stringify(u));
+                                    window.dispatchEvent(new Event('storage'));
+                                } catch (e) {
+                                    console.error("Local profile update error:", e);
+                                }
+                            }
+
+                            onSuccess?.();
+                            onClose();
+                        } else {
+                            toast.error(verifyRes.data?.message || "Payment verification failed.");
+                        }
+                    } catch (verifyErr: any) {
+                        toast.error(verifyErr.response?.data?.message || "Payment verification failed.");
+                    } finally {
+                        setIsPurchasing(false);
+                    }
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', (resp: any) => {
+                toast.error(resp.error?.description || "Payment failed.");
+                setIsPurchasing(false);
+            });
+            rzp.open();
+
         } catch (err: any) {
-            toast.error(err.response?.data?.message || "Failed to purchase extra credits. Please try again.");
-        } finally {
+            toast.error(err.response?.data?.message || err.message || "Failed to purchase extra credits. Please try again.");
             setIsPurchasing(false);
         }
     };

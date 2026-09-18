@@ -33,7 +33,11 @@ import {
     AlertTriangle,
     AlertCircle,
     Info,
-    CheckCircle
+    CheckCircle,
+    CheckCircle2,
+    Receipt,
+    CreditCard,
+    Lock
 } from "lucide-react";
 import {
     Accordion,
@@ -119,16 +123,23 @@ export default function BillingPlans() {
     const [extraPackages, setExtraPackages] = useState<any[]>([]);
     const [userSub, setUserSub] = useState<any>(null);
     const [stats, setStats] = useState<any>(null);
+    const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [activatingFree, setActivatingFree] = useState(false);
 
     const loadBillingData = async (manual: boolean = false) => {
         if (manual) setIsRefreshing(true);
         try {
-            const [plansRes, statsRes] = await Promise.all([
+            const [plansRes, statsRes, txRes] = await Promise.all([
                 api.get('/subscription/plans'),
-                api.get('/dashboard/stats')
+                api.get('/dashboard/stats'),
+                api.get('/subscription/transactions').catch(() => ({ data: { success: false, data: [] } }))
             ]);
+
+            if (txRes?.data?.success) {
+                setTransactions(txRes.data.data || []);
+            }
 
             let totalBal: number | undefined;
             let activePlan: string | undefined;
@@ -201,9 +212,31 @@ export default function BillingPlans() {
         year: 'numeric'
     });
 
-    const paymentMethods = [
-        { brand: "Visa", last4: "4242", expiry: "12/26", isDefault: true }
-    ];
+    const handleSelectPlan = async (tier: any) => {
+        if (tier.name.toLowerCase() === 'free') {
+            try {
+                setActivatingFree(true);
+                toast.loading("Activating Free Plan...", { id: 'activate-free' });
+                const res = await api.post('/subscription/create-order', {
+                    type: 'plan',
+                    planName: 'Free',
+                    billingCycle: 'monthly'
+                });
+                if (res.data?.success) {
+                    toast.success("Free plan activated successfully with 30 monthly AI credits!", { id: 'activate-free' });
+                    await loadBillingData();
+                } else {
+                    toast.error(res.data?.message || "Failed to activate Free plan", { id: 'activate-free' });
+                }
+            } catch (err: any) {
+                toast.error(err.response?.data?.message || "Error activating plan", { id: 'activate-free' });
+            } finally {
+                setActivatingFree(false);
+            }
+            return;
+        }
+        navigate('/billing/checkout', { state: { plan: tier, billingCycle } });
+    };
 
     const getIcon = (iconName: string) => {
         switch (iconName) {
@@ -438,18 +471,18 @@ export default function BillingPlans() {
                                                 <Button 
                                                     onClick={() => {
                                                         if (!isCurrent) {
-                                                            navigate('/billing/checkout', { state: { plan: tier, billingCycle } });
+                                                            handleSelectPlan(tier);
                                                         }
                                                     }}
                                                     variant={isCurrent ? "secondary" : "default"}
-                                                    disabled={isCurrent}
+                                                    disabled={isCurrent || activatingFree}
                                                     className={`w-full rounded-2xl py-6 font-bold text-sm transition-all ${
                                                         isCurrent 
-                                                            ? 'bg-secondary text-muted-foreground cursor-default' 
-                                                            : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
+                                                             ? 'bg-secondary text-muted-foreground cursor-default' 
+                                                             : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
                                                     }`}
                                                 >
-                                                    {isCurrent ? "Current Active Plan" : `Upgrade to ${tier.name}`}
+                                                    {isCurrent ? "Current Active Plan" : tier.name.toLowerCase() === 'free' ? "Activate Free Plan" : `Upgrade to ${tier.name}`}
                                                 </Button>
                                             </div>
                                         );
@@ -738,37 +771,142 @@ export default function BillingPlans() {
                                         <CreditUsageHistory />
                                     </div>
 
-                                    {/* Payment Methods */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-6">
-                                            <h3 className="text-xl font-bold text-foreground">Payment Methods</h3>
-                                            <Button 
-                                                onClick={() => toast.info("To add a new payment method, upgrade or purchase a credit package at checkout.")}
-                                                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-2 font-bold px-6"
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                                Add New Method
-                                            </Button>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {paymentMethods.map((method, idx) => (
-                                                <div key={idx} className={`bg-card rounded-3xl p-6 border ${method.isDefault ? 'border-primary shadow-sm' : 'border-border'} flex flex-col gap-6`}>
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="h-10 w-16 bg-secondary border border-border rounded-xl flex items-center justify-center">
-                                                                <span className="text-[10px] font-black italic text-muted-foreground">{method.brand}</span>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-bold text-foreground">{method.brand} ending in {method.last4}</p>
-                                                                <p className="text-xs text-muted-foreground">Expires {method.expiry}</p>
-                                                            </div>
+                                    {/* Razorpay Gateway Status & Transaction Receipts */}
+                                    <div className="space-y-8">
+                                        {/* Razorpay Secure Gateway Status Card */}
+                                        <div>
+                                            <h3 className="text-xl font-bold text-foreground mb-4">Payment Gateway</h3>
+                                            <div className="bg-card rounded-3xl p-6 border border-primary/20 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="h-12 w-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                                                        <ShieldCheck className="h-6 w-6" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <h4 className="text-base font-bold text-foreground">Razorpay Payment Gateway</h4>
+                                                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-bold text-[10px]">
+                                                                <CheckCircle2 className="h-3 w-3 mr-1" /> Active
+                                                            </Badge>
+                                                            <Badge variant="secondary" className="text-[10px] font-bold">
+                                                                Test Mode (rzp_test_...)
+                                                            </Badge>
                                                         </div>
-                                                        {method.isDefault && (
-                                                            <Badge variant="secondary" className="text-primary border-none text-[8px] font-black uppercase px-2">DEFAULT</Badge>
-                                                        )}
+                                                        <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+                                                            All payments are securely handled through Razorpay. Supported methods include UPI (Google Pay, PhonePe, Paytm), Credit & Debit Cards (Visa, MasterCard, RuPay), NetBanking (50+ Indian Banks), and Wallets.
+                                                        </p>
+                                                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                                                            {['UPI / QR', 'Cards (Visa, MC, RuPay)', 'NetBanking', 'Wallets'].map((method, idx) => (
+                                                                <span key={idx} className="text-[10px] bg-secondary px-2.5 py-1 rounded-lg text-muted-foreground font-medium border border-border">
+                                                                    {method}
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            ))}
+
+                                                <div className="shrink-0 flex md:flex-col items-end gap-2 w-full md:w-auto">
+                                                    <Button 
+                                                        onClick={() => setIsTopUpModalOpen(true)}
+                                                        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-2 font-bold text-xs"
+                                                    >
+                                                        <Coins className="h-3.5 w-3.5" />
+                                                        Add Credits via Razorpay
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Transaction & Payment History */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-foreground">Payment & Billing History</h3>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">Verified Razorpay transactions and plan activation records</p>
+                                                </div>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    onClick={() => loadBillingData(true)} 
+                                                    disabled={isRefreshing}
+                                                    className="rounded-xl text-xs gap-1.5"
+                                                >
+                                                    <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                                    Refresh
+                                                </Button>
+                                            </div>
+
+                                            {transactions.length === 0 ? (
+                                                <div className="bg-card rounded-3xl p-8 border border-border text-center">
+                                                    <div className="h-12 w-12 rounded-2xl bg-secondary mx-auto flex items-center justify-center text-muted-foreground mb-3">
+                                                        <Receipt className="h-6 w-6" />
+                                                    </div>
+                                                    <h4 className="text-sm font-bold text-foreground">No Transactions Recorded Yet</h4>
+                                                    <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                                                        When you purchase extra credits or upgrade your subscription with Razorpay, your receipts will appear here automatically.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm">
+                                                    <div className="overflow-x-auto">
+                                                        <table className="w-full text-left text-xs">
+                                                            <thead className="bg-secondary/60 text-muted-foreground border-b border-border uppercase text-[10px] font-bold tracking-wider">
+                                                                <tr>
+                                                                    <th className="py-3 px-4">Type / Description</th>
+                                                                    <th className="py-3 px-4">Amount</th>
+                                                                    <th className="py-3 px-4">Payment ID / Order ID</th>
+                                                                    <th className="py-3 px-4">Status</th>
+                                                                    <th className="py-3 px-4">Credits Added</th>
+                                                                    <th className="py-3 px-4 text-right">Date</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-border">
+                                                                {transactions.map((tx: any, idx: number) => (
+                                                                    <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                                                                        <td className="py-3.5 px-4">
+                                                                            <span className="font-bold text-foreground capitalize">
+                                                                                {tx.type === 'plan_subscription' ? `${tx.planName} Plan (${tx.billingCycle})` : 'Extra AI Credits'}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="py-3.5 px-4 font-bold text-foreground">
+                                                                            ₹{tx.amount?.toLocaleString() || 0}
+                                                                        </td>
+                                                                        <td className="py-3.5 px-4 font-mono text-[11px] text-muted-foreground">
+                                                                            <div>{tx.paymentId || tx.orderId}</div>
+                                                                            {tx.orderId && tx.paymentId && tx.orderId !== tx.paymentId && (
+                                                                                <div className="text-[10px] opacity-70">{tx.orderId}</div>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="py-3.5 px-4">
+                                                                            <Badge 
+                                                                                variant="outline" 
+                                                                                className={`text-[10px] font-bold uppercase ${
+                                                                                    tx.status === 'paid' 
+                                                                                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+                                                                                        : tx.status === 'failed' 
+                                                                                        ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' 
+                                                                                        : 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                                                                }`}
+                                                                            >
+                                                                                {tx.status}
+                                                                            </Badge>
+                                                                        </td>
+                                                                        <td className="py-3.5 px-4 font-semibold text-primary">
+                                                                            +{tx.creditsGranted || 0}
+                                                                        </td>
+                                                                        <td className="py-3.5 px-4 text-right text-muted-foreground whitespace-nowrap">
+                                                                            {new Date(tx.createdAt).toLocaleDateString('en-US', {
+                                                                                month: 'short',
+                                                                                day: 'numeric',
+                                                                                year: 'numeric'
+                                                                            })}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

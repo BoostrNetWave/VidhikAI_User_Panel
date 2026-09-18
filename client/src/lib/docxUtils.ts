@@ -1,4 +1,4 @@
-import { Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
+import { Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType, ImageRun } from 'docx';
 
 interface InheritedStyles {
     textAlign?: string;
@@ -100,11 +100,65 @@ export function processNode(node: Node, styles: InheritedStyles): Paragraph[] {
     const element = node as HTMLElement;
     const tagName = element.tagName.toUpperCase();
 
+    // Check Quill classes or inline style for alignment
+    let effectiveAlign = element.style.textAlign || styles.textAlign;
+    if (element.classList) {
+        if (element.classList.contains('ql-align-center') || element.classList.contains('align-center')) {
+            effectiveAlign = 'center';
+        } else if (element.classList.contains('ql-align-right') || element.classList.contains('align-right')) {
+            effectiveAlign = 'right';
+        } else if (element.classList.contains('ql-align-justify')) {
+            effectiveAlign = 'justify';
+        } else if (element.classList.contains('ql-align-left') || element.classList.contains('align-left')) {
+            effectiveAlign = 'left';
+        }
+    }
+
+    // Check indentation levels (ql-indent-1 through 8)
+    let indentLevel = 0;
+    if (element.classList) {
+        for (let i = 1; i <= 8; i++) {
+            if (element.classList.contains(`ql-indent-${i}`)) {
+                indentLevel = i;
+                break;
+            }
+        }
+    }
+
     const currentStyles: InheritedStyles = {
-        textAlign: element.style.textAlign || styles.textAlign,
+        textAlign: effectiveAlign,
         fontWeight: element.style.fontWeight || styles.fontWeight,
         fontSize: element.style.fontSize || styles.fontSize,
     };
+
+    if (tagName === 'IMG') {
+        const src = element.getAttribute('src') || '';
+        if (src.startsWith('data:image/')) {
+            try {
+                const base64Data = src.split(',')[1];
+                if (base64Data) {
+                    const binaryString = atob(base64Data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    return [new Paragraph({
+                        children: [new ImageRun({
+                            data: bytes,
+                            transformation: {
+                                width: 170,
+                                height: 50
+                            }
+                        })],
+                        alignment: getAlignment(effectiveAlign) || AlignmentType.LEFT
+                    })];
+                }
+            } catch (imgErr) {
+                console.warn('Failed to parse signature image for docx:', imgErr);
+            }
+        }
+        return [];
+    }
 
     if (tagName === 'TABLE') {
         const rows: TableRow[] = [];
@@ -162,10 +216,12 @@ export function processNode(node: Node, styles: InheritedStyles): Paragraph[] {
     } else if (['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER'].includes(tagName)) {
         return Array.from(element.childNodes).flatMap(n => processNode(n, currentStyles));
     } else if (tagName === 'P') {
+        const indentProps = indentLevel > 0 ? { left: indentLevel * 720 } : undefined;
         return [new Paragraph({
             children: parseChildren(element, currentStyles),
             spacing: { before: 120, after: 120, line: 360 }, // 1.5 line spacing
-            alignment: getAlignment(element.style.textAlign || styles.textAlign) || AlignmentType.JUSTIFIED
+            indent: indentProps,
+            alignment: getAlignment(effectiveAlign) || AlignmentType.JUSTIFIED
         })];
     } else if (tagName.startsWith('H')) {
         const level = parseInt(tagName.substring(1));
@@ -179,7 +235,7 @@ export function processNode(node: Node, styles: InheritedStyles): Paragraph[] {
             children: parseChildren(element, { ...currentStyles, fontWeight: 'bold' }),
             heading: headingLevel,
             spacing: { before: level === 1 ? 800 : 400, after: level === 1 ? 400 : 200 },
-            alignment: getAlignment(element.style.textAlign || styles.textAlign) || (level === 1 ? AlignmentType.CENTER : AlignmentType.LEFT)
+            alignment: getAlignment(effectiveAlign) || (level === 1 ? AlignmentType.CENTER : AlignmentType.LEFT)
         })];
     } else if (tagName === 'UL' || tagName === 'OL') {
         return Array.from(element.childNodes).flatMap(li => {
