@@ -12,44 +12,111 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # -------------------------------------------------------
+      # 1. Checkout source code
+      # -------------------------------------------------------
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      # -------------------------------------------------------
+      # 2. Setup Node.js
+      # -------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "npm"
 
+      # -------------------------------------------------------
+      # 3. Display versions for troubleshooting
+      # -------------------------------------------------------
+      - name: Check Node and NPM versions
+        run: |
+          echo "Node version:"
+          node --version
+
+          echo "NPM version:"
+          npm --version
+
+      # -------------------------------------------------------
+      # 4. Install dependencies
+      #
+      # IMPORTANT:
+      # npm ci is intentionally NOT used because package.json
+      # and package-lock.json are currently out of sync.
+      # npm install resolves the dependency tree.
+      # -------------------------------------------------------
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "Installing dependencies..."
+          npm install --no-audit --no-fund
 
+      # -------------------------------------------------------
+      # 5. Build application
+      # -------------------------------------------------------
       - name: Build application
-        run: npm run build
+        run: |
+          echo "Building Vidhik AI User Panel..."
+          npm run build
 
+      # -------------------------------------------------------
+      # 6. Verify build output
+      # -------------------------------------------------------
       - name: Verify build
         run: |
           echo "Checking build output..."
 
           if [ ! -d "dist" ]; then
             echo "ERROR: dist directory not found"
+            echo "Build did not generate expected output."
             exit 1
           fi
 
-          echo "Build completed successfully"
-          ls -la dist/
+          if [ ! -f "dist/index.html" ]; then
+            echo "ERROR: dist/index.html not found"
+            exit 1
+          fi
 
+          echo "Build completed successfully."
+          echo "Contents of dist:"
+          ls -lah dist/
+
+      # -------------------------------------------------------
+      # 7. Install SSH/rsync tools
+      # -------------------------------------------------------
       - name: Install SSH tools
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass rsync
 
+      # -------------------------------------------------------
+      # 8. Test server connectivity
+      # -------------------------------------------------------
+      - name: Test server connection
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          echo "Testing SSH connection..."
+
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=20 \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "echo 'SSH connection successful' && hostname"
+
+      # -------------------------------------------------------
+      # 9. Create backup of currently deployed dist
+      # -------------------------------------------------------
       - name: Backup current application
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
+          echo "Creating backup..."
+
           sshpass -e ssh \
             -o StrictHostKeyChecking=no \
             "${SERVER_USER}@${SERVER_HOST}" \
@@ -57,25 +124,50 @@ jobs:
              if [ -d /var/www/html/VidhikAI_User_Panel/dist ]; then \
                rm -rf /var/www/backups/VidhikAI_User_Panel-dist-previous && \
                cp -a /var/www/html/VidhikAI_User_Panel/dist \
-                 /var/www/backups/VidhikAI_User_Panel-dist-previous; \
+               /var/www/backups/VidhikAI_User_Panel-dist-previous && \
+               echo 'Backup completed successfully'; \
+             else \
+               echo 'No existing dist directory. Skipping backup.'; \
              fi"
 
+      # -------------------------------------------------------
+      # 10. Ensure deployment directory exists
+      # -------------------------------------------------------
+      - name: Prepare deployment directory
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "mkdir -p /var/www/html/VidhikAI_User_Panel/dist"
+
+      # -------------------------------------------------------
+      # 11. Deploy ONLY compiled frontend
+      # -------------------------------------------------------
       - name: Deploy application to Vultr
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
-          sshpass -e rsync -avz --delete \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='.env' \
-            --exclude='node_modules/' \
+          echo "Deploying compiled application..."
+
+          sshpass -e rsync \
+            -avz \
+            --delete \
             -e "ssh -o StrictHostKeyChecking=no" \
-            ./ \
-            "${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/"
+            dist/ \
+            "${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/dist/"
 
-      - name: Install server dependencies
+          echo "Application files transferred successfully."
+
+      # -------------------------------------------------------
+      # 12. Verify files on server
+      # -------------------------------------------------------
+      - name: Verify deployed files
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -84,48 +176,46 @@ jobs:
           sshpass -e ssh \
             -o StrictHostKeyChecking=no \
             "${SERVER_USER}@${SERVER_HOST}" \
-            "cd /var/www/html/VidhikAI_User_Panel && npm ci"
+            "echo 'Deployed files:' && \
+             ls -lah /var/www/html/VidhikAI_User_Panel/dist && \
+             test -f /var/www/html/VidhikAI_User_Panel/dist/index.html"
 
-      - name: Restart PM2 application
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-        run: |
-          sshpass -e ssh \
-            -o StrictHostKeyChecking=no \
-            "${SERVER_USER}@${SERVER_HOST}" \
-            "cd /var/www/html/VidhikAI_User_Panel && \
-             if pm2 describe vidhik-user-panel > /dev/null 2>&1; then \
-               pm2 restart vidhik-user-panel --update-env; \
-             else \
-               pm2 start npm --name vidhik-user-panel -- start; \
-             fi && \
-             pm2 save"
-
-      - name: Check PM2 status
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-        run: |
-          sshpass -e ssh \
-            -o StrictHostKeyChecking=no \
-            "${SERVER_USER}@${SERVER_HOST}" \
-            "pm2 status"
-
+      # -------------------------------------------------------
+      # 13. Test Nginx configuration
+      # -------------------------------------------------------
       - name: Test Nginx configuration
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
+          echo "Testing Nginx configuration..."
+
           sshpass -e ssh \
             -o StrictHostKeyChecking=no \
             "${SERVER_USER}@${SERVER_HOST}" \
             "sudo nginx -t"
 
+      # -------------------------------------------------------
+      # 14. Reload Nginx
+      # -------------------------------------------------------
       - name: Reload Nginx
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          echo "Reloading Nginx..."
+
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "sudo systemctl reload nginx"
+
+      # -------------------------------------------------------
+      # 15. Check Nginx service
+      # -------------------------------------------------------
+      - name: Check Nginx status
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -134,14 +224,19 @@ jobs:
           sshpass -e ssh \
             -o StrictHostKeyChecking=no \
             "${SERVER_USER}@${SERVER_HOST}" \
-            "sudo systemctl reload nginx"
+            "sudo systemctl is-active nginx"
 
+      # -------------------------------------------------------
+      # 16. Deployment completed
+      # -------------------------------------------------------
       - name: Deployment completed
         run: |
           echo "================================================"
           echo "Vidhik AI User Panel Deployment Successful"
           echo "================================================"
-          echo "Application: VidhikAI_User_Panel"
-          echo "PM2 Process: vidhik-user-panel"
-          echo "Deployment Path: /var/www/html/VidhikAI_User_Panel"
+          echo "Application : VidhikAI_User_Panel"
+          echo "Build       : SUCCESS"
+          echo "Deployment  : SUCCESS"
+          echo "Web Server  : NGINX"
+          echo "Path        : /var/www/html/VidhikAI_User_Panel/dist"
           echo "================================================"
