@@ -308,7 +308,7 @@ export default function ConsultationsPage() {
                                                     className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md shadow-sm"
                                                 >
                                                     <Video className="h-4 w-4" />
-                                                    Join Jitsi Call
+                                                    Join Video Room
                                                 </Button>
                                             )}
 
