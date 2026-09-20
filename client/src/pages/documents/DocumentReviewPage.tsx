@@ -181,7 +181,26 @@ export default function DocumentReviewPage() {
 
     // Select document from My Documents workspace to review
     const handleSelectWorkspaceDoc = (doc: any) => {
-        const cleanContent = doc.content ? doc.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+        let cleanContent = '';
+        if (doc.content) {
+            cleanContent = doc.content
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/<br\s*[\/]?>/gi, '\n')
+                .replace(/<\/(p|div|h[1-6]|li|tr|blockquote|section|article)>/gi, '\n\n')
+                .replace(/<hr\s*[\/]?>/gi, '\n---\n')
+                .replace(/<[^>]+>/g, '')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/\r\n/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        }
+
         const file = new File(
             [cleanContent || doc.content || ''],
             `${doc.title || 'Workspace_Document'}.txt`,
@@ -1334,232 +1353,384 @@ export default function DocumentReviewPage() {
                                         <div>
                                             {/* Dynamic Interactive Text Rendering */}
                                             {(() => {
-                                                let text = data.fullText;
-                                                const parts: React.ReactNode[] = [];
-                                                let lastIndex = 0;
-                                                const unmappedClauses: any[] = [];
+                                                // Helper to format unstructured legal text into clean, structured paragraphs and clauses
+                                                const formatLegalTextToParagraphs = (raw: string): string => {
+                                                    if (!raw) return '';
+                                                    let formatted = raw.trim();
+
+                                                    // If the document has few newlines, intelligently restore legal structure
+                                                    const newlineCount = (formatted.match(/\n/g) || []).length;
+                                                    if (newlineCount < 6) {
+                                                        // 1. Separate document title if at the start
+                                                        formatted = formatted.replace(/^((?:Memorandum of Association|Articles of Association|Non-Disclosure Agreement|Employment Agreement|Service Agreement|Consulting Agreement|Power of Attorney|Resolution|Contract|Agreement|Deed)[^\n.]{3,120}?)(\s+(?:\d+\.\s+[A-Z]|Clause\s+\d+|Article\s+\d+|WHEREAS|This\s+Agreement))/i, '$1\n\n$2');
+
+                                                        // 2. Insert newlines before numbered main clauses, e.g. " 1. Name Clause", " 2. Registered Office Clause"
+                                                        formatted = formatted.replace(/([^\n])\s+(\d+\.\s+[A-Z][a-zA-Z\s]{2,40}\b)/g, '$1\n\n$2');
+
+                                                        // 3. Insert newlines before sub-clauses, e.g. " A. Main Objects", " B. Matters Necessary"
+                                                        formatted = formatted.replace(/([^\n])\s+([A-Z]\.\s+[A-Z][a-zA-Z\s]{2,50}\b)/g, '$1\n\n$2');
+
+                                                        // 4. Insert newlines before common formal headings: Clause 1, Section 1, Article I, WHEREAS, etc.
+                                                        formatted = formatted.replace(/([^\n])\s+(\b(?:Clause|Section|Article)\s+[\dIVX]+[:\.]?)/gi, '$1\n\n$2');
+                                                        formatted = formatted.replace(/([^\n])\s+(\b(?:WHEREAS|NOW THEREFORE|IN WITNESS WHEREOF|SIGNED AND DELIVERED|SCHEDULE|ANNEXURE)\b)/g, '$1\n\n$2');
+
+                                                        // 5. Insert newlines before signatory or subscriber blocks
+                                                        formatted = formatted.replace(/([^\n])\s+(Witness to the above signatures:?|Total Shares Subscribed:?|By and Between:?|The following are the subscribers)/gi, '$1\n\n$2');
+
+                                                        // 6. Separate numbered subscriber entries, e.g. ".2.Priya Verma" or " 1.Rahul Sharma"
+                                                        formatted = formatted.replace(/([^\n])\s*(\d+\.[A-Z][a-zA-Z\s]+,)/g, '$1\n$2');
+                                                    }
+
+                                                    // Normalize excessive empty lines
+                                                    return formatted.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+                                                };
+
+                                                const normalizedText = formatLegalTextToParagraphs(data.fullText || '');
 
                                                 // Helper to escape regex special characters
                                                 const escapeRegExp = (string: string) => {
                                                     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                                 };
 
-                                                // Helper to create a whitespace-flexible regex from a string
-                                                const createFlexibleRegex = (string: string) => {
-                                                    const words = string.trim().split(/\s+/);
-                                                    const escapedWords = words.map(escapeRegExp);
-                                                    return new RegExp(escapedWords.join('\\s+'), 'i');
-                                                };
+                                                // Multi-tier fuzzy matcher to locate clause positions in text
+                                                interface MatchInterval {
+                                                    start: number;
+                                                    end: number;
+                                                    clause: any;
+                                                    clauseIndex: number;
+                                                }
 
-                                                // Sort highlights by their position in the text to avoid overlap issues
-                                                const sortedHighlights = [...(data.highlightedClauses || [])].sort((a, b) => {
-                                                    const regexA = createFlexibleRegex(a.text);
-                                                    const regexB = createFlexibleRegex(b.text);
-                                                    const matchA = text.match(regexA);
-                                                    const matchB = text.match(regexB);
-                                                    const indexA = matchA?.index ?? -1;
-                                                    const indexB = matchB?.index ?? -1;
-                                                    if (indexA === -1 && indexB === -1) return 0;
-                                                    if (indexA === -1) return 1;
-                                                    if (indexB === -1) return -1;
-                                                    return indexA - indexB;
-                                                });
+                                                const matchedIntervals: MatchInterval[] = [];
+                                                const unmappedClauses: any[] = [];
 
-                                                // Helper to format text professionally (detect headings, bold text, etc.)
-                                                const formatTextChunk = (content: string, keyPrefix: string) => {
-                                                    const lines = content.split('\n');
-                                                    return lines.map((line, i) => {
-                                                        const trimmed = line.trim();
-                                                        
-                                                        const isHeading = trimmed.length > 2 && trimmed.length < 80 && trimmed === trimmed.toUpperCase() && !/^\d+$/.test(trimmed);
-                                                        const isKeyValuePair = trimmed.includes(':') && trimmed.split(':')[0].length < 30;
+                                                (data.highlightedClauses || []).forEach((clause: any, idx: number) => {
+                                                    const target = (clause.text || '').trim();
+                                                    if (!target) return;
 
-                                                        let renderedLine: React.ReactNode = line;
-                                                        let lineClass = "";
+                                                    let matchStart = -1;
+                                                    let matchEnd = -1;
 
-                                                        if (isHeading) {
-                                                            lineClass = "block font-black text-gray-900 dark:text-white mt-8 mb-3 text-sm tracking-widest border-b border-border pb-1";
-                                                        } else if (isKeyValuePair) {
-                                                            const [key, ...rest] = line.split(':');
-                                                            renderedLine = <><span className="font-bold text-gray-800 dark:text-gray-100">{key}:</span>{rest.join(':')}</>;
-                                                            lineClass = "block mb-2";
-                                                        } else if (trimmed.length > 0) {
-                                                            lineClass = "block mb-3";
-                                                        }
-
-                                                        return (
-                                                            <React.Fragment key={`${keyPrefix}-line-${i}`}>
-                                                                {trimmed.length > 0 ? (
-                                                                    <span className={lineClass}>{renderedLine}</span>
-                                                                ) : (
-                                                                    <span className="block h-2"></span>
-                                                                )}
-                                                            </React.Fragment>
-                                                        );
-                                                    });
-                                                };
-
-                                                // Helper to render text with search highlights
-                                                const renderWithSearch = (content: string, keyPrefix: string) => {
-                                                    if (!searchQuery || searchQuery.length < 2) {
-                                                        return formatTextChunk(content, keyPrefix);
+                                                    // Tier 1: Exact substring match (case-insensitive)
+                                                    const lowerDoc = normalizedText.toLowerCase();
+                                                    const lowerTarget = target.toLowerCase();
+                                                    const exactPos = lowerDoc.indexOf(lowerTarget);
+                                                    if (exactPos !== -1) {
+                                                        matchStart = exactPos;
+                                                        matchEnd = exactPos + target.length;
                                                     }
 
-                                                    const regex = createFlexibleRegex(searchQuery);
-                                                    const subParts = content.split(new RegExp(`(${regex.source})`, 'gi'));
+                                                    // Tier 2: Flexible alphanumeric word-sequence matching (ignores punctuation & spacing differences)
+                                                    if (matchStart === -1) {
+                                                        const words = target.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(/\s+/).filter((w: string) => w.length >= 2);
+                                                        if (words.length >= 2) {
+                                                            try {
+                                                                const pattern = words.map(escapeRegExp).join('[^a-zA-Z0-9]+');
+                                                                const regex = new RegExp(pattern, 'i');
+                                                                const m = regex.exec(normalizedText);
+                                                                if (m) {
+                                                                    matchStart = m.index;
+                                                                    matchEnd = m.index + m[0].length;
+                                                                }
+                                                            } catch (e) {}
 
-                                                    const searchHighlighted = subParts.map((part, i) =>
-                                                        regex.test(part) ? (
-                                                            <mark key={`${keyPrefix}-search-${i}`} className="bg-primary/25 text-foreground rounded-sm px-0.5 font-bold shadow-sm">
-                                                                {part}
-                                                            </mark>
-                                                        ) : part
-                                                    );
-                                                    
-                                                    return <span>{searchHighlighted}</span>;
-                                                };
-
-                                                sortedHighlights.forEach((clause, idx) => {
-                                                    let startIndex = text.indexOf(clause.text, lastIndex);
-                                                    let matchLength = clause.text.length;
-                                                    
-                                                    if (startIndex === -1) {
-                                                        const regex = createFlexibleRegex(clause.text);
-                                                        const remainingText = text.substring(lastIndex);
-                                                        const match = remainingText.match(regex);
-                                                        
-                                                        if (match && match.index !== undefined) {
-                                                            startIndex = lastIndex + match.index;
-                                                            matchLength = match[0].length;
+                                                            // Tier 3: Leading phrase match (first 5-7 words)
+                                                            if (matchStart === -1 && words.length >= 5) {
+                                                                try {
+                                                                    const leadPattern = words.slice(0, 6).map(escapeRegExp).join('[^a-zA-Z0-9]+');
+                                                                    const regex = new RegExp(leadPattern, 'i');
+                                                                    const m = regex.exec(normalizedText);
+                                                                    if (m) {
+                                                                        matchStart = m.index;
+                                                                        matchEnd = Math.min(normalizedText.length, m.index + Math.max(m[0].length, target.length));
+                                                                    }
+                                                                } catch (e) {}
+                                                            }
                                                         }
                                                     }
-                                                    
-                                                    if (startIndex === -1) {
+
+                                                    if (matchStart !== -1) {
+                                                        matchedIntervals.push({
+                                                            start: matchStart,
+                                                            end: matchEnd,
+                                                            clause,
+                                                            clauseIndex: idx
+                                                        });
+                                                    } else {
                                                         unmappedClauses.push({ ...clause, idx });
-                                                        return;
                                                     }
-
-                                                    // Push preceding text
-                                                    parts.push(renderWithSearch(text.substring(lastIndex, startIndex), `pre-${idx}`));
-
-                                                    // Retrieve rich styling for this analysis type
-                                                    const theme = getHighlightTheme(clause.type);
-                                                    const isSelected = selectedClauseIndex === idx;
-
-                                                    parts.push(
-                                                        <span
-                                                            id={`highlight-clause-${idx}`}
-                                                            key={`mapped-${idx}`}
-                                                            className={`${theme.bg} ${theme.border} ${theme.text} px-2 py-1 rounded font-medium cursor-pointer transition-all duration-200 relative inline group/h mx-0.5 shadow-sm ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}`}
-                                                            onClick={() => setSelectedClauseIndex(idx)}
-                                                            onMouseEnter={() => setActiveHighlightIndex(idx)}
-                                                            onMouseLeave={() => setActiveHighlightIndex(null)}
-                                                        >
-                                                            {renderWithSearch(clause.text, `highlight-${idx}`)}
-
-                                                            {/* Inline Category Tag */}
-                                                            <span className={`inline-flex items-center ml-1 text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider ${theme.badgeBg} align-middle shadow-xs`}>
-                                                                {theme.tag}
-                                                            </span>
-
-                                                            {/* Floating Interactive Suggestion Box */}
-                                                            {activeHighlightIndex === idx && (
-                                                                <div 
-                                                                    className="absolute left-1/2 -top-3 -translate-x-1/2 -translate-y-full w-88 sm:w-96 p-0 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 text-sm normal-case animate-in fade-in zoom-in-95 duration-200 overflow-hidden pointer-events-auto cursor-default font-sans"
-                                                                    onMouseEnter={() => setActiveHighlightIndex(idx)}
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                >
-                                                                    {/* Header with Type & Index */}
-                                                                    <div className={`px-4 py-2.5 flex items-center justify-between ${theme.cardHeader} border-b border-border/70`}>
-                                                                        <div className="flex items-center gap-2 font-bold text-xs">
-                                                                            <span className={`w-2.5 h-2.5 rounded-full ${theme.dot}`} />
-                                                                            <span>{theme.label}</span>
-                                                                        </div>
-                                                                        <Badge className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 ${theme.badgeBg}`}>
-                                                                            Clause #{idx + 1}
-                                                                        </Badge>
-                                                                    </div>
-
-                                                                    {/* Body: Issue + Suggestion */}
-                                                                    <div className="p-4 space-y-3 text-left">
-                                                                        <div>
-                                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Issue Identified</p>
-                                                                            <p className="font-bold text-foreground text-xs leading-snug">
-                                                                                {clause.issue}
-                                                                            </p>
-                                                                            {clause.explanation && (
-                                                                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                                                                                    {clause.explanation}
-                                                                                </p>
-                                                                            )}
-                                                                        </div>
-
-                                                                        {/* AI Recommended Revision (What it should be) */}
-                                                                        {clause.suggestion && (
-                                                                            <div className="rounded-xl border border-emerald-300/80 bg-emerald-50/80 p-3 space-y-2">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                                                                                        <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                                                                                        What it should be (AI Suggested Revision)
-                                                                                    </span>
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant="ghost"
-                                                                                        className="h-6 px-2 text-[10px] font-bold text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100 rounded-md gap-1"
-                                                                                        onClick={() => handleCopySuggestion(clause.suggestion, idx)}
-                                                                                    >
-                                                                                        {copiedClauseIdx === idx ? (
-                                                                                            <>
-                                                                                                <CheckCheck className="h-3 w-3 text-emerald-600" />
-                                                                                                Copied
-                                                                                            </>
-                                                                                        ) : (
-                                                                                            <>
-                                                                                                <Copy className="h-3 w-3" />
-                                                                                                Copy Revision
-                                                                                            </>
-                                                                                        )}
-                                                                                    </Button>
-                                                                                </div>
-                                                                                <p className="text-xs font-semibold text-emerald-950 font-serif leading-relaxed italic bg-white/90 p-2.5 rounded-lg border border-emerald-100">
-                                                                                    "{clause.suggestion}"
-                                                                                </p>
-                                                                            </div>
-                                                                        )}
-
-                                                                        <div className="flex items-center justify-between pt-2 text-[11px] text-muted-foreground border-t border-border/50">
-                                                                            <span>Click line to pin in side panel</span>
-                                                                            <Button 
-                                                                                size="sm" 
-                                                                                variant="outline" 
-                                                                                className="h-6 px-2.5 text-[10px] font-bold text-primary border-primary/20 hover:bg-primary/5 rounded-lg"
-                                                                                onClick={() => setSelectedClauseIndex(idx)}
-                                                                            >
-                                                                                Inspect in Side Panel
-                                                                            </Button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Visual Indicator Pulse */}
-                                                            <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full animate-ping opacity-75 ${theme.ping}`}></span>
-                                                            <span className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${theme.dot}`}></span>
-                                                        </span>
-                                                    );
-
-                                                    lastIndex = startIndex + matchLength;
                                                 });
 
-                                                // Push remaining text
-                                                parts.push(renderWithSearch(text.substring(lastIndex), "post"));
+                                                // Sort matches by starting index and eliminate overlaps
+                                                matchedIntervals.sort((a, b) => a.start - b.start);
+                                                const resolvedIntervals: MatchInterval[] = [];
+                                                let currEnd = 0;
+                                                matchedIntervals.forEach((interval) => {
+                                                    if (interval.start >= currEnd) {
+                                                        resolvedIntervals.push(interval);
+                                                        currEnd = interval.end;
+                                                    }
+                                                });
 
+                                                // Split normalized text into segments (plain text and highlighted clauses)
+                                                type TextSegment = 
+                                                    | { type: 'text'; content: string }
+                                                    | { type: 'highlight'; content: string; clause: any; clauseIndex: number };
+
+                                                const segments: TextSegment[] = [];
+                                                let segCursor = 0;
+
+                                                resolvedIntervals.forEach((interval) => {
+                                                    if (interval.start > segCursor) {
+                                                        segments.push({
+                                                            type: 'text',
+                                                            content: normalizedText.substring(segCursor, interval.start)
+                                                        });
+                                                    }
+                                                    segments.push({
+                                                        type: 'highlight',
+                                                        content: normalizedText.substring(interval.start, interval.end),
+                                                        clause: interval.clause,
+                                                        clauseIndex: interval.clauseIndex
+                                                    });
+                                                    segCursor = interval.end;
+                                                });
+
+                                                if (segCursor < normalizedText.length) {
+                                                    segments.push({
+                                                        type: 'text',
+                                                        content: normalizedText.substring(segCursor)
+                                                    });
+                                                }
+
+                                                // Render text chunk with search query markings
+                                                const renderInlineText = (str: string, keyPrefix: string) => {
+                                                    if (!searchQuery || searchQuery.trim().length < 2) {
+                                                        return str;
+                                                    }
+                                                    try {
+                                                        const escaped = escapeRegExp(searchQuery.trim());
+                                                        const regex = new RegExp(`(${escaped})`, 'gi');
+                                                        const chunks = str.split(regex);
+                                                        return chunks.map((chunk, ci) => 
+                                                            regex.test(chunk) ? (
+                                                                <mark key={`${keyPrefix}-mark-${ci}`} className="bg-primary/25 text-foreground rounded px-0.5 font-bold shadow-xs">
+                                                                    {chunk}
+                                                                </mark>
+                                                            ) : chunk
+                                                        );
+                                                    } catch (e) {
+                                                        return str;
+                                                    }
+                                                };
+
+                                                // Group segments into logical paragraph blocks by double newline
+                                                interface ParagraphBlock {
+                                                    elements: React.ReactNode[];
+                                                    rawText: string;
+                                                }
+
+                                                const blocks: ParagraphBlock[] = [{ elements: [], rawText: '' }];
+
+                                                segments.forEach((seg, sIdx) => {
+                                                    if (seg.type === 'text') {
+                                                        const parts = seg.content.split(/\n\n+/);
+                                                        parts.forEach((part, pIdx) => {
+                                                            if (pIdx > 0) {
+                                                                blocks.push({ elements: [], rawText: '' });
+                                                            }
+                                                            if (part) {
+                                                                const currentBlock = blocks[blocks.length - 1];
+                                                                currentBlock.elements.push(
+                                                                    <React.Fragment key={`text-${sIdx}-${pIdx}`}>
+                                                                        {renderInlineText(part, `seg-${sIdx}-${pIdx}`)}
+                                                                    </React.Fragment>
+                                                                );
+                                                                currentBlock.rawText += part;
+                                                            }
+                                                        });
+                                                    } else {
+                                                        const currentBlock = blocks[blocks.length - 1];
+                                                        const theme = getHighlightTheme(seg.clause.type);
+                                                        const isSelected = selectedClauseIndex === seg.clauseIndex;
+                                                        const isNearTop = seg.clauseIndex === 0 || blocks.length <= 2;
+
+                                                        currentBlock.elements.push(
+                                                            <span
+                                                                id={`highlight-clause-${seg.clauseIndex}`}
+                                                                key={`highlight-${seg.clauseIndex}`}
+                                                                className={`${theme.bg} ${theme.border} ${theme.text} px-2 py-0.5 rounded font-medium cursor-pointer transition-all duration-200 relative inline group/h mx-0.5 shadow-xs ${isSelected ? 'ring-2 ring-primary ring-offset-1 font-bold' : ''}`}
+                                                                onClick={() => setSelectedClauseIndex(seg.clauseIndex)}
+                                                                onMouseEnter={() => setActiveHighlightIndex(seg.clauseIndex)}
+                                                                onMouseLeave={() => setActiveHighlightIndex(null)}
+                                                            >
+                                                                {renderInlineText(seg.content, `hl-${seg.clauseIndex}`)}
+
+                                                                {/* Category Pill Tag */}
+                                                                <span className={`inline-flex items-center ml-1 text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider ${theme.badgeBg} align-middle shadow-xs`}>
+                                                                    {theme.tag}
+                                                                </span>
+
+                                                                {/* Floating Interactive Suggestion Box */}
+                                                                {activeHighlightIndex === seg.clauseIndex && (
+                                                                    <div 
+                                                                        className={`absolute left-1/2 -translate-x-1/2 ${isNearTop ? 'top-full mt-2' : '-top-3 -translate-y-full'} w-88 sm:w-96 p-0 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 text-sm normal-case animate-in fade-in zoom-in-95 duration-200 overflow-hidden pointer-events-auto cursor-default font-sans`}
+                                                                        onMouseEnter={() => setActiveHighlightIndex(seg.clauseIndex)}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    >
+                                                                        {/* Header with Type & Index */}
+                                                                        <div className={`px-4 py-2.5 flex items-center justify-between ${theme.cardHeader} border-b border-border/70`}>
+                                                                            <div className="flex items-center gap-2 font-bold text-xs">
+                                                                                <span className={`w-2.5 h-2.5 rounded-full ${theme.dot}`} />
+                                                                                <span>{theme.label}</span>
+                                                                            </div>
+                                                                            <Badge className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 ${theme.badgeBg}`}>
+                                                                                Clause #{seg.clauseIndex + 1}
+                                                                            </Badge>
+                                                                        </div>
+
+                                                                        {/* Body: Issue + Suggestion */}
+                                                                        <div className="p-4 space-y-3 text-left">
+                                                                            <div>
+                                                                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Issue Identified</p>
+                                                                                <p className="font-bold text-foreground text-xs leading-snug">
+                                                                                    {seg.clause.issue}
+                                                                                </p>
+                                                                                {seg.clause.explanation && (
+                                                                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                                                                        {seg.clause.explanation}
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* AI Recommended Revision (What it should be) */}
+                                                                            {seg.clause.suggestion && (
+                                                                                <div className="rounded-xl border border-emerald-300/80 bg-emerald-50/80 p-3 space-y-2">
+                                                                                    <div className="flex items-center justify-between">
+                                                                                        <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                                                                                            <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                                                                                            What it should be (AI Suggested Revision)
+                                                                                        </span>
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="ghost"
+                                                                                            className="h-6 px-2 text-[10px] font-bold text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100 rounded-md gap-1"
+                                                                                            onClick={() => handleCopySuggestion(seg.clause.suggestion, seg.clauseIndex)}
+                                                                                        >
+                                                                                            {copiedClauseIdx === seg.clauseIndex ? (
+                                                                                                <>
+                                                                                                    <CheckCheck className="h-3 w-3 text-emerald-600" />
+                                                                                                    Copied
+                                                                                                </>
+                                                                                            ) : (
+                                                                                                <>
+                                                                                                    <Copy className="h-3 w-3" />
+                                                                                                    Copy Revision
+                                                                                                </>
+                                                                                            )}
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                    <p className="text-xs font-semibold text-emerald-950 font-serif leading-relaxed italic bg-white/90 p-2.5 rounded-lg border border-emerald-100">
+                                                                                        "{seg.clause.suggestion}"
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+
+                                                                            <div className="flex items-center justify-between pt-2 text-[11px] text-muted-foreground border-t border-border/50">
+                                                                                <span>Click line to pin in side panel</span>
+                                                                                <Button 
+                                                                                    size="sm" 
+                                                                                    variant="outline" 
+                                                                                    className="h-6 px-2.5 text-[10px] font-bold text-primary border-primary/20 hover:bg-primary/5 rounded-lg"
+                                                                                    onClick={() => setSelectedClauseIndex(seg.clauseIndex)}
+                                                                                >
+                                                                                    Inspect in Side Panel
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Visual Indicator Pulse */}
+                                                                <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full animate-ping opacity-75 ${theme.ping}`}></span>
+                                                                <span className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${theme.dot}`}></span>
+                                                            </span>
+                                                        );
+                                                        currentBlock.rawText += seg.content;
+                                                    }
+                                                });
+
+                                                // Render the styled legal document page
                                                 return (
                                                     <div className="space-y-8 pb-10">
-                                                        <div className="bg-background p-8 md:p-14 shadow-md border border-border rounded-xl relative text-justify min-h-[297mm]">
-                                                            {parts}
+                                                        {/* Authentic White A4 Legal Paper */}
+                                                        <div className="bg-white shadow-[0_12px_45px_-10px_rgba(0,0,0,0.14)] border border-slate-200/90 rounded-xl p-8 sm:p-14 md:p-16 min-h-[297mm] text-slate-900 font-serif relative">
+                                                            {blocks.filter(b => b.elements.length > 0).map((block, bIdx) => {
+                                                                const trimmedRaw = block.rawText.trim();
+                                                                
+                                                                // 1. Detect Document Title
+                                                                const isDocTitle = bIdx === 0 && (
+                                                                    trimmedRaw.length < 120 && (
+                                                                        /memorandum|articles of association|agreement|contract|resolution|power of attorney|deed/i.test(trimmedRaw) ||
+                                                                        trimmedRaw === trimmedRaw.toUpperCase()
+                                                                    )
+                                                                );
+
+                                                                if (isDocTitle) {
+                                                                    return (
+                                                                        <div key={`block-${bIdx}`} className="text-center pb-6 mb-8 border-b-2 border-slate-300">
+                                                                            <h1 className="text-xl sm:text-2xl font-black text-slate-950 uppercase tracking-wider font-serif">
+                                                                                {block.elements}
+                                                                            </h1>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                // 2. Detect Main Clause Heading (e.g. "1. Name Clause", "Clause 2: ...")
+                                                                const isClauseHeading = /^(?:\d+\.\s+[A-Z]|Clause\s+\d+|Article\s+[\dIVX]+|Section\s+\d+)/i.test(trimmedRaw);
+                                                                if (isClauseHeading) {
+                                                                    return (
+                                                                        <div key={`block-${bIdx}`} className="mt-7 mb-4">
+                                                                            <div className="text-justify leading-[1.8] text-slate-800 text-[15px]">
+                                                                                {block.elements}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                // 3. Detect Sub-clause (e.g. "A. Main Objects", "B. Matters Necessary")
+                                                                const isSubClause = /^[A-Z]\.\s+[A-Z]/.test(trimmedRaw);
+                                                                if (isSubClause) {
+                                                                    return (
+                                                                        <div key={`block-${bIdx}`} className="pl-4 ml-1 my-3.5 border-l-2 border-slate-300">
+                                                                            <div className="text-justify leading-[1.8] text-slate-800 text-[14.5px]">
+                                                                                {block.elements}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                // 4. Detect Witness / Signatory Block
+                                                                const isSignatory = /witness to the above|subscribers to the memorandum|total shares subscribed|in witness whereof/i.test(trimmedRaw);
+                                                                if (isSignatory) {
+                                                                    return (
+                                                                        <div key={`block-${bIdx}`} className="mt-8 pt-4 border-t border-slate-200/80 bg-slate-50/60 p-4 rounded-xl">
+                                                                            <div className="text-sm text-slate-700 leading-relaxed">
+                                                                                {block.elements}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                // 5. Default Standard Legal Paragraph
+                                                                return (
+                                                                    <div key={`block-${bIdx}`} className="mb-4 text-justify leading-[1.8] text-slate-800 text-[15px]">
+                                                                        {block.elements}
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
-                                                        
+
+                                                        {/* Unmapped clauses if any */}
                                                         {unmappedClauses.length > 0 && (
                                                             <div className="mt-8 space-y-4">
                                                                 <div className="flex items-center gap-3">
@@ -1568,7 +1739,7 @@ export default function DocumentReviewPage() {
                                                                     </div>
                                                                     <div>
                                                                         <h3 className="text-base font-bold text-foreground">Additional Identified Clauses</h3>
-                                                                        <p className="text-xs text-muted-foreground">The AI identified these clauses, but they were modified or re-formatted in the original document.</p>
+                                                                        <p className="text-xs text-muted-foreground">The AI identified these clauses, but they were modified or formatted differently in the source text.</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
