@@ -1052,8 +1052,8 @@ export default function DocumentReviewPage() {
             switch (type?.toUpperCase()) {
                 case 'CRITICAL':
                     return {
-                        bg: 'bg-rose-100/95 hover:bg-rose-200/90 text-rose-950',
-                        border: 'border-b-2 border-rose-500 border-l-4 border-l-rose-600',
+                        bg: 'bg-rose-100/90 hover:bg-rose-200/90 text-rose-950',
+                        border: 'border-b-2 border-rose-600',
                         badgeBg: 'bg-rose-600 text-white',
                         dot: 'bg-rose-500',
                         ping: 'bg-rose-400',
@@ -1063,8 +1063,8 @@ export default function DocumentReviewPage() {
                     };
                 case 'UNFAVORABLE':
                     return {
-                        bg: 'bg-amber-100/95 hover:bg-amber-200/90 text-amber-950',
-                        border: 'border-b-2 border-amber-500 border-l-4 border-l-amber-600',
+                        bg: 'bg-amber-100/90 hover:bg-amber-200/90 text-amber-950',
+                        border: 'border-b-2 border-amber-600',
                         badgeBg: 'bg-amber-600 text-white',
                         dot: 'bg-amber-500',
                         ping: 'bg-amber-400',
@@ -1074,8 +1074,8 @@ export default function DocumentReviewPage() {
                     };
                 case 'POSITIVE':
                     return {
-                        bg: 'bg-emerald-100/95 hover:bg-emerald-200/90 text-emerald-950',
-                        border: 'border-b-2 border-emerald-500 border-l-4 border-l-emerald-600',
+                        bg: 'bg-emerald-100/90 hover:bg-emerald-200/90 text-emerald-950',
+                        border: 'border-b-2 border-emerald-600',
                         badgeBg: 'bg-emerald-600 text-white',
                         dot: 'bg-emerald-500',
                         ping: 'bg-emerald-400',
@@ -1085,8 +1085,8 @@ export default function DocumentReviewPage() {
                     };
                 default:
                     return {
-                        bg: 'bg-indigo-100/95 hover:bg-indigo-200/90 text-indigo-950',
-                        border: 'border-b-2 border-indigo-400 border-l-4 border-l-indigo-500',
+                        bg: 'bg-indigo-100/90 hover:bg-indigo-200/90 text-indigo-950',
+                        border: 'border-b-2 border-indigo-500',
                         badgeBg: 'bg-indigo-600 text-white',
                         dot: 'bg-indigo-500',
                         ping: 'bg-indigo-400',
@@ -1356,33 +1356,96 @@ export default function DocumentReviewPage() {
                                                 // Helper to format unstructured legal text into clean, structured paragraphs and clauses
                                                 const formatLegalTextToParagraphs = (raw: string): string => {
                                                     if (!raw) return '';
-                                                    let formatted = raw.trim();
+                                                    let formatted = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-                                                    // If the document has few newlines, intelligently restore legal structure
-                                                    const newlineCount = (formatted.match(/\n/g) || []).length;
-                                                    if (newlineCount < 6) {
-                                                        // 1. Separate document title if at the start
-                                                        formatted = formatted.replace(/^((?:Memorandum of Association|Articles of Association|Non-Disclosure Agreement|Employment Agreement|Service Agreement|Consulting Agreement|Power of Attorney|Resolution|Contract|Agreement|Deed)[^\n.]{3,120}?)(\s+(?:\d+\.\s+[A-Z]|Clause\s+\d+|Article\s+\d+|WHEREAS|This\s+Agreement))/i, '$1\n\n$2');
+                                                    // 1. Separate common document titles at the beginning if glued to subsequent content
+                                                    formatted = formatted.replace(
+                                                        /^((?:MEMORANDUM OF ASSOCIATION|ARTICLES OF ASSOCIATION|NON-DISCLOSURE AGREEMENT|EMPLOYMENT AGREEMENT|SERVICE AGREEMENT|MASTER SERVICES AGREEMENT|CONSULTING AGREEMENT|POWER OF ATTORNEY|RESOLUTION|CONTRACT|AGREEMENT|DEED)[^\n.]{3,160}?)(\s+(?:A Sample|THE COMPANIES ACT|\d+\.\s+[A-Z]|[IVXLCDM]+\.\s+[A-Z]|Clause\s+\d+|Article\s+\d+|WHEREAS|THIS AGREEMENT))/i,
+                                                        '$1\n\n$2'
+                                                    );
 
-                                                        // 2. Insert newlines before numbered main clauses, e.g. " 1. Name Clause", " 2. Registered Office Clause"
-                                                        formatted = formatted.replace(/([^\n])\s+(\d+\.\s+[A-Z][a-zA-Z\s]{2,40}\b)/g, '$1\n\n$2');
+                                                    // 2. Separate sample / demonstration subtitles, e.g. "A Sample / Illustrative MOA for Demonstration Purposes"
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(A Sample\s*(?:\/|\-)?\s*Illustrative[^\n.]{0,100}?(?:Purposes|Demonstration)?)\b/gi,
+                                                        '$1\n\n$2\n\n'
+                                                    );
 
-                                                        // 3. Insert newlines before sub-clauses, e.g. " A. Main Objects", " B. Matters Necessary"
-                                                        formatted = formatted.replace(/([^\n])\s+([A-Z]\.\s+[A-Z][a-zA-Z\s]{2,50}\b)/g, '$1\n\n$2');
+                                                    // 3. Separate statutory references, e.g. "THE COMPANIES ACT, 2013", "(COMPANY LIMITED BY SHARES)", "TABLE A"
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(THE COMPANIES ACT[^\n,.]*(?:,\s*\d{4})?)/gi,
+                                                        '$1\n\n$2\n\n'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(\((?:COMPANY LIMITED BY SHARES|A PRIVATE COMPANY LIMITED BY SHARES)\))/gi,
+                                                        '$1\n\n$2\n\n'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(\b(?:TABLE [A-Z]|SCHEDULE [IVX\d]+)\b)/gi,
+                                                        '$1\n\n$2\n\n'
+                                                    );
 
-                                                        // 4. Insert newlines before common formal headings: Clause 1, Section 1, Article I, WHEREAS, etc.
-                                                        formatted = formatted.replace(/([^\n])\s+(\b(?:Clause|Section|Article)\s+[\dIVX]+[:\.]?)/gi, '$1\n\n$2');
-                                                        formatted = formatted.replace(/([^\n])\s+(\b(?:WHEREAS|NOW THEREFORE|IN WITNESS WHEREOF|SIGNED AND DELIVERED|SCHEDULE|ANNEXURE)\b)/g, '$1\n\n$2');
+                                                    // 4. Separate Roman numeral main clauses, e.g. "I. NAME CLAUSE", "II. REGISTERED OFFICE CLAUSE", "III. OBJECTS CLAUSE"
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+([IVXLCDM]+\.\s+[A-Z\s]{3,50}\b)/g,
+                                                        '$1\n\n$2'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /(\b[IVXLCDM]+\.\s+[A-Z\s]{3,40}(?:CLAUSE|Clause)?)\s+([A-Z][a-z])/g,
+                                                        '$1\n\n$2'
+                                                    );
 
-                                                        // 5. Insert newlines before signatory or subscriber blocks
-                                                        formatted = formatted.replace(/([^\n])\s+(Witness to the above signatures:?|Total Shares Subscribed:?|By and Between:?|The following are the subscribers)/gi, '$1\n\n$2');
+                                                    // 5. Separate Arabic numeral main clauses, e.g. " 1. Name Clause", " 2. Registered Office Clause"
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(\d+\.\s+[A-Z][a-zA-Z\s]{2,40}\b)/g,
+                                                        '$1\n\n$2'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /(\b\d+\.\s+[A-Z\s]{3,40}(?:CLAUSE|Clause)?)\s+([A-Z][a-z])/g,
+                                                        '$1\n\n$2'
+                                                    );
 
-                                                        // 6. Separate numbered subscriber entries, e.g. ".2.Priya Verma" or " 1.Rahul Sharma"
-                                                        formatted = formatted.replace(/([^\n])\s*(\d+\.[A-Z][a-zA-Z\s]+,)/g, '$1\n$2');
-                                                    }
+                                                    // 6. Separate sub-clauses, e.g. "A. Main Objects", "B. Matters Necessary for Furtherance of the Objects"
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+([A-Z]\.\s+[A-Z][a-zA-Z\s]{2,60}\b)/g,
+                                                        '$1\n\n$2'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /(\b[A-Z]\.\s+[A-Z][a-zA-Z\s]{2,50})\s+(\d+\.\s+|[A-Z][a-z])/g,
+                                                        '$1\n\n$2'
+                                                    );
 
-                                                    // Normalize excessive empty lines
-                                                    return formatted.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+                                                    // 7. Separate numbered list items inside clauses, e.g. " 1. To carry on...", " 2. To undertake...", " 3. To provide..."
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(\d+\.\s+(?:To\b|[A-Z]))/g,
+                                                        '$1\n\n$2'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(\([a-z0-9]+\)\s+[A-Z])/g,
+                                                        '$1\n\n$2'
+                                                    );
+
+                                                    // 8. Separate formal standard headings: Clause 1, Section 1, Article I, WHEREAS, NOW THEREFORE, etc.
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(\b(?:Clause|Section|Article)\s+(?:[\dIVX]+)[:\.]?\s*[A-Z\s]{0,40})/gi,
+                                                        '$1\n\n$2'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(\b(?:WHEREAS|NOW THEREFORE|NOW IT IS HEREBY AGREED|IN WITNESS WHEREOF|SIGNED AND DELIVERED|SCHEDULE|ANNEXURE)\b)/g,
+                                                        '$1\n\n$2'
+                                                    );
+
+                                                    // 9. Separate signatory or subscriber blocks
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s+(We,\s*the\s*several\s*persons|Witness to the above signatures:?|Total Shares Subscribed:?|By and Between:?|The following are the subscribers)/gi,
+                                                        '$1\n\n$2'
+                                                    );
+                                                    formatted = formatted.replace(
+                                                        /([^\n])\s*(\d+\.\s*[A-Z][a-zA-Z\s]+,)/g,
+                                                        '$1\n$2'
+                                                    );
+
+                                                    // 10. Normalize excessive newlines
+                                                    return formatted.replace(/\n{3,}/g, '\n\n').trim();
                                                 };
 
                                                 const normalizedText = formatLegalTextToParagraphs(data.fullText || '');
@@ -1565,8 +1628,9 @@ export default function DocumentReviewPage() {
                                                             >
                                                                 {renderInlineText(seg.content, `hl-${seg.clauseIndex}`)}
 
-                                                                {/* Category Pill Tag */}
-                                                                <span className={`inline-flex items-center ml-1 text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider ${theme.badgeBg} align-middle shadow-xs`}>
+                                                                {/* Category Pill Tag with inline pulse indicator */}
+                                                                <span className={`inline-flex items-center gap-1 ml-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${theme.badgeBg} align-middle shadow-xs whitespace-nowrap select-none`}>
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
                                                                     {theme.tag}
                                                                 </span>
 
@@ -1649,10 +1713,6 @@ export default function DocumentReviewPage() {
                                                                         </div>
                                                                     </div>
                                                                 )}
-
-                                                                {/* Visual Indicator Pulse */}
-                                                                <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full animate-ping opacity-75 ${theme.ping}`}></span>
-                                                                <span className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${theme.dot}`}></span>
                                                             </span>
                                                         );
                                                         currentBlock.rawText += seg.content;
@@ -1669,7 +1729,7 @@ export default function DocumentReviewPage() {
                                                                 
                                                                 // 1. Detect Document Title
                                                                 const isDocTitle = bIdx === 0 && (
-                                                                    trimmedRaw.length < 120 && (
+                                                                    trimmedRaw.length < 160 && (
                                                                         /memorandum|articles of association|agreement|contract|resolution|power of attorney|deed/i.test(trimmedRaw) ||
                                                                         trimmedRaw === trimmedRaw.toUpperCase()
                                                                     )
@@ -1677,53 +1737,90 @@ export default function DocumentReviewPage() {
 
                                                                 if (isDocTitle) {
                                                                     return (
-                                                                        <div key={`block-${bIdx}`} className="text-center pb-6 mb-8 border-b-2 border-slate-300">
-                                                                            <h1 className="text-xl sm:text-2xl font-black text-slate-950 uppercase tracking-wider font-serif">
+                                                                        <div key={`block-${bIdx}`} className="text-center pb-6 mb-7 border-b-2 border-slate-900/80">
+                                                                            <h1 className="text-xl sm:text-2xl md:text-[25px] font-black text-slate-950 uppercase tracking-widest font-serif leading-snug">
                                                                                 {block.elements}
                                                                             </h1>
                                                                         </div>
                                                                     );
                                                                 }
 
-                                                                // 2. Detect Main Clause Heading (e.g. "1. Name Clause", "Clause 2: ...")
-                                                                const isClauseHeading = /^(?:\d+\.\s+[A-Z]|Clause\s+\d+|Article\s+[\dIVX]+|Section\s+\d+)/i.test(trimmedRaw);
+                                                                // 2. Detect Preamble / Subtitle / Statutory Act Banner
+                                                                const isPreambleBanner = (
+                                                                    /^(?:A Sample|THE COMPANIES ACT|COMPANY LIMITED BY|TABLE [A-Z]|SCHEDULE [IVX\d]|UNDER THE|INCORPORATED UNDER|FORM NO\.)/i.test(trimmedRaw) ||
+                                                                    (bIdx <= 3 && trimmedRaw.length < 120 && (
+                                                                        /act,\s*\d{4}|illustrative|demonstration\s*purposes|sample\s*moa|sample\s*aoa/i.test(trimmedRaw)
+                                                                    ))
+                                                                );
+
+                                                                if (isPreambleBanner) {
+                                                                    return (
+                                                                        <div key={`block-${bIdx}`} className="text-center my-3.5">
+                                                                            <div className="inline-block px-4 py-1.5 rounded-lg bg-slate-100/90 border border-slate-200/90 text-xs sm:text-sm font-semibold text-slate-700 tracking-wider uppercase font-serif shadow-xs">
+                                                                                {block.elements}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                // 3. Detect Main Clause Heading (e.g. "I. NAME CLAUSE", "1. DEFINITIONS", "Clause 2: ...")
+                                                                const isClauseHeading = (
+                                                                    /^(?:[IVXLCDM]+\.\s+[A-Z\s]{2,50}|(?:\d+\.|Clause\s+\d+|Article\s+[\dIVX]+|Section\s+\d+)[:\.]?\s*[A-Z\s]{2,50})$/i.test(trimmedRaw) ||
+                                                                    (/^(?:[IVXLCDM]+\.\s+[A-Z]|\d+\.\s+[A-Z]|Clause\s+\d+|Article\s+[\dIVX]+|Section\s+\d+)/i.test(trimmedRaw) && trimmedRaw.length < 65)
+                                                                );
+
                                                                 if (isClauseHeading) {
                                                                     return (
-                                                                        <div key={`block-${bIdx}`} className="mt-7 mb-4">
-                                                                            <div className="text-justify leading-[1.8] text-slate-800 text-[15px]">
-                                                                                {block.elements}
+                                                                        <div key={`block-${bIdx}`} className="mt-8 mb-3.5 pt-3 border-t border-slate-200/90 first:border-0 first:pt-0">
+                                                                            <div className="flex items-center gap-2.5">
+                                                                                <span className="w-1.5 h-5 bg-primary rounded-full inline-block shrink-0" />
+                                                                                <h2 className="text-base sm:text-[17px] font-bold text-slate-950 font-serif uppercase tracking-wider">
+                                                                                    {block.elements}
+                                                                                </h2>
                                                                             </div>
                                                                         </div>
                                                                     );
                                                                 }
 
-                                                                // 3. Detect Sub-clause (e.g. "A. Main Objects", "B. Matters Necessary")
-                                                                const isSubClause = /^[A-Z]\.\s+[A-Z]/.test(trimmedRaw);
+                                                                // 4. Detect Sub-clause Heading (e.g. "A. Main Objects", "(A) Main Objects", "B. Matters Necessary...")
+                                                                const isSubClause = (
+                                                                    /^(?:[A-Z]\.|\([A-Z]\))\s+[A-Z][a-zA-Z\s]{2,80}:?$/i.test(trimmedRaw) ||
+                                                                    (/^(?:[A-Z]\.|\([A-Z]\))\s+[A-Z]/.test(trimmedRaw) && trimmedRaw.length < 75)
+                                                                );
+
                                                                 if (isSubClause) {
                                                                     return (
-                                                                        <div key={`block-${bIdx}`} className="pl-4 ml-1 my-3.5 border-l-2 border-slate-300">
-                                                                            <div className="text-justify leading-[1.8] text-slate-800 text-[14.5px]">
+                                                                        <div key={`block-${bIdx}`} className="mt-5 mb-2.5 pl-3.5 border-l-2 border-primary/50 py-0.5">
+                                                                            <h3 className="text-sm sm:text-base font-semibold text-slate-900 font-serif italic">
                                                                                 {block.elements}
-                                                                            </div>
+                                                                            </h3>
                                                                         </div>
                                                                     );
                                                                 }
 
-                                                                // 4. Detect Witness / Signatory Block
-                                                                const isSignatory = /witness to the above|subscribers to the memorandum|total shares subscribed|in witness whereof/i.test(trimmedRaw);
+                                                                // 5. Detect Numbered List Item (e.g. "1. To carry on...", "2. To undertake...", "(a) ...")
+                                                                const isNumberedItem = /^(?:\d+\.|\([a-z0-9]+\))\s+/i.test(trimmedRaw);
+                                                                if (isNumberedItem) {
+                                                                    return (
+                                                                        <div key={`block-${bIdx}`} className="my-2.5 pl-7 -indent-7 text-left leading-[1.85] text-slate-800 text-[14.5px] sm:text-[15px] font-serif transition-colors">
+                                                                            {block.elements}
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                // 6. Detect Witness / Signatory Block
+                                                                const isSignatory = /witness to the above|subscribers to the memorandum|total shares subscribed|in witness whereof|signed and delivered|we,\s*the\s*several\s*persons/i.test(trimmedRaw);
                                                                 if (isSignatory) {
                                                                     return (
-                                                                        <div key={`block-${bIdx}`} className="mt-8 pt-4 border-t border-slate-200/80 bg-slate-50/60 p-4 rounded-xl">
-                                                                            <div className="text-sm text-slate-700 leading-relaxed">
-                                                                                {block.elements}
-                                                                            </div>
+                                                                        <div key={`block-${bIdx}`} className="mt-8 pt-5 border-t-2 border-slate-300 bg-slate-50/70 p-5 rounded-xl text-sm text-slate-800 leading-relaxed font-serif">
+                                                                            {block.elements}
                                                                         </div>
                                                                     );
                                                                 }
 
-                                                                // 5. Default Standard Legal Paragraph
+                                                                // 7. Default Standard Legal Paragraph
                                                                 return (
-                                                                    <div key={`block-${bIdx}`} className="mb-4 text-justify leading-[1.8] text-slate-800 text-[15px]">
+                                                                    <div key={`block-${bIdx}`} className="mb-4 text-left leading-[1.85] text-slate-800 text-[14.5px] sm:text-[15px] font-serif">
                                                                         {block.elements}
                                                                     </div>
                                                                 );
