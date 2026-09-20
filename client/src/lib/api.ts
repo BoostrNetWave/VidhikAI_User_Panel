@@ -4,9 +4,7 @@ import { toast } from 'sonner';
 
 const api = axios.create({
     baseURL: '/api',
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    timeout: 180000, // 3-minute timeout for AI processing
 });
 
 // Add a request interceptor
@@ -30,6 +28,11 @@ api.interceptors.request.use(
         // If uploading FormData, delete Content-Type so browser/axios attaches multipart boundary
         if (config.data instanceof FormData) {
             delete config.headers['Content-Type'];
+            delete config.headers['content-type'];
+            if (config.headers?.delete) {
+                config.headers.delete('Content-Type');
+                config.headers.delete('content-type');
+            }
         }
 
         return config;

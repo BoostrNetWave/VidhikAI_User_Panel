@@ -312,6 +312,9 @@ export default function DocumentReviewPage() {
             setSelectedFile(file);
             startAnalysis(file);
         }
+        if (e.target) {
+            e.target.value = '';
+        }
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -337,6 +340,7 @@ export default function DocumentReviewPage() {
     const startAnalysis = async (file: File) => {
         setState('PROCESSING');
         setProgress(0);
+        setAnalysisError(null);
         const currentSteps = getAnalysisSteps(isDeepScanEnabled);
         setLogs(currentSteps.map(step => ({ msg: step, status: 'pending' })));
 
@@ -350,7 +354,9 @@ export default function DocumentReviewPage() {
             formData.append('userId', userId);
             formData.append('isDeepScanEnabled', String(isDeepScanEnabled));
 
-            const response = await api.post('/documents/review', formData);
+            const response = await api.post('/documents/review', formData, {
+                timeout: 180000
+            });
 
             if (response.data.success) {
                 setAnalysisData(response.data.data);
@@ -365,18 +371,9 @@ export default function DocumentReviewPage() {
             }
         } catch (error: any) {
             console.error('Analysis failed:', error);
-            if (error.response?.status === 403 && error.response?.data?.error === 'limit_reached') {
-                toast.error('Subscription limit reached', {
-                    description: error.response.data.message || 'You have reached the monthly contract review limit for your plan.',
-                    action: {
-                        label: 'Upgrade Plan',
-                        onClick: () => window.location.href = '/user/billing'
-                    }
-                });
-                handleResetReview();
-            } else if (error.response?.status === 403 && error.response?.data?.error === 'INSUFFICIENT_CREDITS') {
-                toast.error('Insufficient Credits', {
-                    description: error.response?.data?.message || 'You do not have enough credits to complete this document review.',
+            if (error.response?.status === 403 && (error.response?.data?.error === 'limit_reached' || error.response?.data?.error === 'INSUFFICIENT_CREDITS')) {
+                toast.error(error.response?.data?.error === 'limit_reached' ? 'Subscription limit reached' : 'Insufficient Credits', {
+                    description: error.response.data.message || 'You do not have enough credits to complete this document review.',
                     action: {
                         label: 'Upgrade Plan',
                         onClick: () => window.location.href = '/user/billing'
@@ -384,7 +381,12 @@ export default function DocumentReviewPage() {
                 });
                 handleResetReview();
             } else {
-                const errorMessage = error.response?.data?.message || "AI Analysis failed. Please verify the document and try again.";
+                const errorMessage = 
+                    error.response?.data?.message || 
+                    error.response?.data?.error || 
+                    (error.code === 'ECONNABORTED' ? 'Document analysis timed out. Please try again with a smaller document.' : error.message) || 
+                    "AI Analysis failed. Please verify the document and try again.";
+                
                 toast.error(error.response?.data?.error || "Analysis Failed", {
                     description: errorMessage
                 });

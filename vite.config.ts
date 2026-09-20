@@ -24,12 +24,16 @@ export default defineConfig({
                 target: 'http://127.0.0.1:5003',
                 changeOrigin: true,
                 secure: false,
+                timeout: 180000,
+                proxyTimeout: 180000,
                 rewrite: (path) => path.replace(/^\/user\/api/, '/api'),
             },
             '/api': {
                 target: 'http://127.0.0.1:5003',
                 changeOrigin: true,
                 secure: false,
+                timeout: 180000,
+                proxyTimeout: 180000,
             },
             '/lawyer/uploads': {
                 target: 'http://127.0.0.1:5003',
