@@ -21,6 +21,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import {
+    UpiLogo,
+    GPayLogo,
+    PhonePeLogo,
+    PaytmLogo,
+    VisaLogo,
+    MastercardLogo,
+    RuPayLogo,
+    SbiLogo,
+    HdfcLogo,
+    IciciLogo,
+    AxisLogo,
+    CredLogo,
+    MobiKwikLogo,
+    AmazonPayLogo,
+    RazorpayLogo
+} from '@/components/billing/PaymentLogos';
 
 // Helper to load Razorpay Checkout Script dynamically
 const loadRazorpayScript = (): Promise<boolean> => {
@@ -255,12 +272,15 @@ export default function BillingCheckout() {
                     <div className="lg:col-span-7 space-y-6">
                         <Card className="rounded-3xl border-gray-200/80 bg-white shadow-xl shadow-gray-200/40 overflow-hidden">
                             <CardContent className="p-8 space-y-6">
-                                <div className="flex items-center justify-between border-b pb-4">
+                                <div className="flex items-center justify-between border-b pb-4 flex-wrap gap-2">
                                     <div>
                                         <h2 className="text-base font-bold text-gray-900">Payment Gateway</h2>
-                                        <p className="text-xs text-muted-foreground mt-0.5">Exclusive partner: Razorpay</p>
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <span className="text-xs text-muted-foreground">Exclusive partner:</span>
+                                            <RazorpayLogo className="h-4.5 w-auto" />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-full text-xs border border-blue-200">
+                                    <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-full text-xs border border-blue-200 shadow-xs">
                                         <ShieldCheck className="h-4 w-4 text-blue-600" />
                                         <span>Verified Gateway</span>
                                     </div>
@@ -280,140 +300,76 @@ export default function BillingCheckout() {
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Select Payment Gateway
-                                            </label>
-                                            <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-1.5">
-                                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                                Razorpay Live
-                                            </span>
-                                        </div>
-
-                                        {/* 1. Razorpay Gateway (ACTIVE & SELECTED) */}
-                                        <div className="relative rounded-2xl border-2 border-primary bg-primary/[0.02] p-4.5 transition-all shadow-sm">
-                                            <div className="flex items-start gap-3.5">
-                                                <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-primary bg-primary text-white shrink-0">
-                                                    <Check className="h-3 w-3 stroke-[3]" />
-                                                </div>
-                                                <div className="space-y-1.5 flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap justify-between">
-                                                        <div className="flex items-center gap-2 flex-wrap">
-                                                            <span className="text-sm font-black text-gray-900">Razorpay Payment Gateway</span>
-                                                            <Badge className="bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.2">
-                                                                Active / Enabled
-                                                            </Badge>
-                                                            <Badge variant="outline" className="text-[9px] text-primary border-primary/30 font-semibold">
-                                                                Recommended
-                                                            </Badge>
-                                                        </div>
-                                                        <Badge variant="outline" className="text-[10px] bg-white text-emerald-700 border-emerald-300 font-semibold">
-                                                            Zero Convenience Fee
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                        Instant, zero-convenience-fee checkout supporting all domestic and international payment modes.
-                                                    </p>
-                                                    
-                                                    {/* Supported Modes Sub-Grid */}
-                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-                                                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/90 flex flex-col items-center justify-center text-center gap-1 shadow-2xs">
-                                                            <Smartphone className="h-4 w-4 text-indigo-600" />
-                                                            <span className="text-[11px] font-bold text-gray-800">UPI Instant</span>
-                                                            <span className="text-[9px] text-muted-foreground">GPay, PhonePe, Paytm</span>
-                                                        </div>
-                                                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/90 flex flex-col items-center justify-center text-center gap-1 shadow-2xs">
-                                                            <CreditCard className="h-4 w-4 text-blue-600" />
-                                                            <span className="text-[11px] font-bold text-gray-800">Cards</span>
-                                                            <span className="text-[9px] text-muted-foreground">Visa, MC, RuPay</span>
-                                                        </div>
-                                                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/90 flex flex-col items-center justify-center text-center gap-1 shadow-2xs">
-                                                            <Globe className="h-4 w-4 text-teal-600" />
-                                                            <span className="text-[11px] font-bold text-gray-800">NetBanking</span>
-                                                            <span className="text-[9px] text-muted-foreground">50+ Banks</span>
-                                                        </div>
-                                                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/90 flex flex-col items-center justify-center text-center gap-1 shadow-2xs">
-                                                            <Coins className="h-4 w-4 text-amber-600" />
-                                                            <span className="text-[11px] font-bold text-gray-800">Wallets &amp; EMI</span>
-                                                            <span className="text-[9px] text-muted-foreground">Cred, Mobikwik</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* OTHER PAYMENT METHODS - MARKED AS "COMING SOON" */}
-                                        <div className="space-y-2 pt-1">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                                Other Payment Methods &amp; Gateways:
-                                            </p>
-
-                                            {/* 2. Stripe Global */}
-                                            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/60 p-3 flex items-center justify-between gap-3 opacity-70 cursor-not-allowed select-none">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="h-3.5 w-3.5 rounded-full border border-gray-300 bg-gray-200 shrink-0" />
-                                                    <div>
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-xs font-bold text-gray-700">Stripe Global</span>
-                                                            <span className="text-[10px] text-muted-foreground">(International Cards / USD / EUR)</span>
-                                                        </div>
-                                                        <p className="text-[10px] text-muted-foreground">Cross-border multi-currency payments</p>
-                                                    </div>
-                                                </div>
-                                                <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[9px] font-bold px-2 py-0.5 shrink-0">
-                                                    Coming Soon
+                                        {/* Razorpay Gateway Supported Methods Card */}
+                                        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-5 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">All Payment Modes Supported:</span>
+                                                <Badge variant="outline" className="text-[10px] bg-white text-emerald-700 border-emerald-300 font-semibold shadow-xs">
+                                                    Zero Convenience Fee
                                                 </Badge>
                                             </div>
 
-                                            {/* 3. Cashfree Payments */}
-                                            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/60 p-3 flex items-center justify-between gap-3 opacity-70 cursor-not-allowed select-none">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="h-3.5 w-3.5 rounded-full border border-gray-300 bg-gray-200 shrink-0" />
-                                                    <div>
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-xs font-bold text-gray-700">Cashfree Payments</span>
-                                                            <span className="text-[10px] text-muted-foreground">(UPI AutoPay &amp; QR)</span>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                                {/* 1. UPI Instant */}
+                                                <div className="bg-white p-3.5 rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-sm transition-all flex flex-col items-center justify-between text-center gap-2">
+                                                    <div className="h-7 flex items-center justify-center">
+                                                        <UpiLogo className="h-5.5 w-auto" />
+                                                    </div>
+                                                    <div className="w-full">
+                                                        <span className="text-[11px] font-bold text-gray-800 block">UPI Instant</span>
+                                                        <div className="flex items-center justify-center gap-1.5 mt-1">
+                                                            <GPayLogo className="h-3 w-auto" />
+                                                            <PhonePeLogo className="h-3.5 w-3.5" />
+                                                            <PaytmLogo className="h-2.5 w-auto" />
                                                         </div>
-                                                        <p className="text-[10px] text-muted-foreground">Recurring auto-debit and QR payments</p>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[9px] font-bold px-2 py-0.5 shrink-0">
-                                                    Coming Soon
-                                                </Badge>
-                                            </div>
 
-                                            {/* 4. PayU India */}
-                                            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/60 p-3 flex items-center justify-between gap-3 opacity-70 cursor-not-allowed select-none">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="h-3.5 w-3.5 rounded-full border border-gray-300 bg-gray-200 shrink-0" />
-                                                    <div>
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-xs font-bold text-gray-700">PayU India</span>
-                                                            <span className="text-[10px] text-muted-foreground">(Multi-bank Gateway)</span>
+                                                {/* 2. Cards (Visa, Mastercard, RuPay) */}
+                                                <div className="bg-white p-3.5 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all flex flex-col items-center justify-between text-center gap-2">
+                                                    <div className="h-7 flex items-center justify-center gap-1.5">
+                                                        <VisaLogo className="h-3.5 w-auto" />
+                                                        <MastercardLogo className="h-4.5 w-auto" />
+                                                    </div>
+                                                    <div className="w-full">
+                                                        <span className="text-[11px] font-bold text-gray-800 block">Cards</span>
+                                                        <div className="flex items-center justify-center gap-1 mt-1">
+                                                            <RuPayLogo className="h-3 w-auto" />
+                                                            <span className="text-[9px] font-bold text-gray-500">• All Cards</span>
                                                         </div>
-                                                        <p className="text-[10px] text-muted-foreground">Alternative banking gateway</p>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[9px] font-bold px-2 py-0.5 shrink-0">
-                                                    Coming Soon
-                                                </Badge>
-                                            </div>
 
-                                            {/* 5. Corporate Wire Transfer / NEFT */}
-                                            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/60 p-3 flex items-center justify-between gap-3 opacity-70 cursor-not-allowed select-none">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="h-3.5 w-3.5 rounded-full border border-gray-300 bg-gray-200 shrink-0" />
-                                                    <div>
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-xs font-bold text-gray-700">Direct Bank Wire / NEFT</span>
-                                                            <span className="text-[10px] text-muted-foreground">(B2B Invoicing)</span>
-                                                        </div>
-                                                        <p className="text-[10px] text-muted-foreground">Offline corporate transfer and GST invoice</p>
+                                                {/* 3. NetBanking */}
+                                                <div className="bg-white p-3.5 rounded-xl border border-gray-200 hover:border-teal-300 hover:shadow-sm transition-all flex flex-col items-center justify-between text-center gap-2">
+                                                    <div className="h-7 flex items-center justify-center gap-1">
+                                                        <HdfcLogo className="h-4 w-4" />
+                                                        <SbiLogo className="h-4 w-4" />
+                                                        <IciciLogo className="h-4 w-4" />
+                                                        <AxisLogo className="h-4 w-4" />
+                                                    </div>
+                                                    <div className="w-full">
+                                                        <span className="text-[11px] font-bold text-gray-800 block">NetBanking</span>
+                                                        <span className="text-[9px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200/80 mt-1 inline-block">
+                                                            50+ Banks
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[9px] font-bold px-2 py-0.5 shrink-0">
-                                                    Coming Soon
-                                                </Badge>
+
+                                                {/* 4. Wallets & EMI */}
+                                                <div className="bg-white p-3.5 rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-sm transition-all flex flex-col items-center justify-between text-center gap-2">
+                                                    <div className="h-7 flex items-center justify-center gap-1.5">
+                                                        <CredLogo className="h-4 w-4" />
+                                                        <MobiKwikLogo className="h-4 w-4" />
+                                                        <AmazonPayLogo className="h-3 w-auto" />
+                                                    </div>
+                                                    <div className="w-full">
+                                                        <span className="text-[11px] font-bold text-gray-800 block">Wallets &amp; EMI</span>
+                                                        <span className="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80 mt-1 inline-block">
+                                                            Cred, Mobikwik
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
