@@ -870,15 +870,7 @@ export default function DocumentReviewPage() {
                                 </div>
                             </div>
 
-                            <div className="p-6 bg-secondary/30 border-t border-border space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-xs font-semibold text-muted-foreground">
-                                        <span>PROCESSING POWER</span>
-                                        <span className="text-primary">Cloud AI Infrastructure</span>
-                                    </div>
-                                    <Progress value={75} className="h-1" />
-                                </div>
-                            </div>
+
                         </CardContent>
                     </Card>
                 </div>
