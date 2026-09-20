@@ -180,13 +180,13 @@ const seedData = [
     {
         key: 'LAWYER_PRICING_PLANS',
         value: [
-            { name: "Free", priceMonthly: 0, priceYearly: 0, desc: "Basic lawyer profile", features: ["Up to 5 active cases", "2 blog posts per week", "15% platform commission"], gradient: "from-slate-500 to-slate-600", popular: false, iconName: "Zap", cta: "Current Active Plan", disabled: true, current: true, limits: { activeCases: 5, blogsPerWeek: 2, commissionPercent: 15 } },
-            { name: "Standard", priceMonthly: 1999, priceYearly: 19990, desc: "Standard level for practitioners", features: ["Up to 15 active cases", "5 blog posts per week", "10% platform commission"], gradient: "from-accent to-purple-500", popular: true, iconName: "Crown", cta: "Upgrade to Standard", disabled: false, limits: { activeCases: 15, blogsPerWeek: 5, commissionPercent: 10 } },
-            { name: "Premium", priceMonthly: 4999, priceYearly: 49990, desc: "Professional firm features", features: ["Up to 50 active cases", "10 blog posts per week", "7% platform commission"], gradient: "from-indigo-500 to-blue-600", popular: false, iconName: "Building2", cta: "Upgrade to Premium", disabled: false, limits: { activeCases: 50, blogsPerWeek: 10, commissionPercent: 7 } },
-            { name: "Enterprise", priceMonthly: "Custom", priceYearly: "Custom", desc: "For large legal associations", features: ["Unlimited active cases", "Unlimited blog posts", "5% platform commission"], gradient: "from-slate-900 to-slate-800", popular: false, iconName: "Shield", cta: "Contact Sales", disabled: false, limits: { activeCases: 999999, blogsPerWeek: 999999, commissionPercent: 5 } }
+            { name: "Free", priceMonthly: 0, priceYearly: 0, desc: "Free Chamber Tier with Full Unlimited Access", features: ["Unlimited active cases", "Unlimited blog posts", "Full Chamber Management", "15% platform commission"], gradient: "from-slate-500 to-slate-600", popular: false, iconName: "Zap", cta: "Current Active Plan", disabled: false, current: true, limits: { activeCases: 999999, blogsPerWeek: 999999, commissionPercent: 15 } },
+            { name: "Standard", priceMonthly: 1999, priceYearly: 19990, desc: "Standard level for practitioners", features: ["Unlimited active cases", "Unlimited blog posts", "Priority Client Matching", "10% platform commission"], gradient: "from-accent to-purple-500", popular: true, iconName: "Crown", cta: "Upgrade to Standard", disabled: false, limits: { activeCases: 999999, blogsPerWeek: 999999, commissionPercent: 10 } },
+            { name: "Premium", priceMonthly: 4999, priceYearly: 49990, desc: "Professional firm features", features: ["Unlimited active cases", "Unlimited blog posts", "Featured Chamber Badge", "7% platform commission"], gradient: "from-indigo-500 to-blue-600", popular: false, iconName: "Building2", cta: "Upgrade to Premium", disabled: false, limits: { activeCases: 999999, blogsPerWeek: 999999, commissionPercent: 7 } },
+            { name: "Enterprise", priceMonthly: "Custom", priceYearly: "Custom", desc: "For large legal associations", features: ["Unlimited active cases", "Unlimited blog posts", "Dedicated Account Support", "5% platform commission"], gradient: "from-slate-900 to-slate-800", popular: false, iconName: "Shield", cta: "Contact Sales", disabled: false, limits: { activeCases: 999999, blogsPerWeek: 999999, commissionPercent: 5 } }
         ],
         category: 'lawyer_panel',
-        description: 'JSON array of subscription plans displayed in the Lawyer Panel (prices in INR)'
+        description: 'JSON array of subscription plans displayed in the Lawyer Panel (Unrestricted limits active)'
     },
     {
         key: 'USER_DOC_GENERATOR_TITLE',

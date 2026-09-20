@@ -272,6 +272,11 @@ export function AdminUsers({
                     <div>
                       <h4 className="text-sm font-semibold">Current Plan</h4>
                       <p className="text-2xl font-semibold mt-1 capitalize text-primary">{selectedUser.subscription || 'Free'}</p>
+                      {selectedUser.role === 'lawyer' && (
+                        <div className="mt-2 p-2.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                          ✓ Unlimited Chamber Access Active: This lawyer has no active case capacity limits or blog posting caps.
+                        </div>
+                      )}
                     </div>
                     
                     <div className="pt-4 border-t border-border space-y-3">

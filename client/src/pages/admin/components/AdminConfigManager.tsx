@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Save } from 'lucide-react';
+import { Save, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminConfigManagerProps {
@@ -125,6 +125,26 @@ export function AdminConfigManager({ configs = [], editingJsonConfig = {}, setEd
 
           {activeTab === 'lawyer' && (
             <div className="space-y-6 animate-in fade-in-50 duration-300">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2 flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                  Lawyer Subscription & Chamber Quotas
+                </h3>
+                <div className="p-4 border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-md space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm font-semibold text-foreground">Unlimited Lawyer Access Active</span>
+                    </div>
+                    <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-2.5 py-0.5 rounded-full">
+                      NO LIMITS ENFORCED
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Subscription limits for lawyers are fully bypassed. All registered lawyers have unrestricted active case capacity, unlimited weekly blog publishing, and full chamber functionality across all plans.
+                  </p>
+                </div>
+              </div>
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">Lawyer Appointments</h3>
                 {renderToggle('Enable Lawyer Booking', 'Allow clients to book lawyers', 'USER_LAWYER_BOOKING_ACTIVE')}

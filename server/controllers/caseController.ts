@@ -68,10 +68,10 @@ export const hireLawyer = async (req: any, res: Response): Promise<void> => {
             return;
         }
 
-        // Check lawyer's active cases limit
+        // Subscription limits are disabled: lawyers enjoy unlimited case capacity
         const lawyerPlanName = lawyerUser.subscription || 'Free';
         const plansConfig = await SystemConfig.findOne({ key: 'LAWYER_PRICING_PLANS' });
-        let activeCasesLimit = 5;
+        let activeCasesLimit = 999999;
         if (plansConfig && Array.isArray(plansConfig.value)) {
             const plan = plansConfig.value.find(
                 (p: any) => p.name.toLowerCase() === lawyerPlanName.toLowerCase()
@@ -80,16 +80,7 @@ export const hireLawyer = async (req: any, res: Response): Promise<void> => {
                 activeCasesLimit = Number(plan.limits.activeCases);
             }
         }
-
-        const activeCasesCount = await Case.countDocuments({
-            lawyer: lawyerId,
-            status: { $in: ['active', 'pending_lawyer', 'pending_payment'] }
-        });
-
-        if (activeCasesCount >= activeCasesLimit) {
-            res.status(403).json({ message: 'This lawyer has reached the active case capacity limit for their current subscription plan.' });
-            return;
-        }
+        // Unlimited mode: no limit block enforced for lawyers
 
         const newCase = await Case.create({
             title,
@@ -125,10 +116,10 @@ export const bookLawyer = async (req: any, res: Response): Promise<void> => {
             return;
         }
 
-        // Check lawyer's active cases limit
+        // Subscription limits are disabled: lawyers enjoy unlimited case capacity
         const lawyerPlanName = lawyerUser.subscription || 'Free';
         const plansConfig = await SystemConfig.findOne({ key: 'LAWYER_PRICING_PLANS' });
-        let activeCasesLimit = 5;
+        let activeCasesLimit = 999999;
         if (plansConfig && Array.isArray(plansConfig.value)) {
             const plan = plansConfig.value.find(
                 (p: any) => p.name.toLowerCase() === lawyerPlanName.toLowerCase()
@@ -137,16 +128,7 @@ export const bookLawyer = async (req: any, res: Response): Promise<void> => {
                 activeCasesLimit = Number(plan.limits.activeCases);
             }
         }
-
-        const activeCasesCount = await Case.countDocuments({
-            lawyer: lawyerId,
-            status: { $in: ['active', 'pending_lawyer', 'pending_payment'] }
-        });
-
-        if (activeCasesCount >= activeCasesLimit) {
-            res.status(403).json({ message: 'This lawyer has reached the active case capacity limit for their current subscription plan.' });
-            return;
-        }
+        // Unlimited mode: no limit block enforced for lawyers
 
         const roomName = `vidhik-meet-${Math.random().toString(36).substring(2, 10)}-${Date.now().toString(36)}`;
         const meetingLink = `https://jitsi.hamburg.ccc.de/${roomName}`;
