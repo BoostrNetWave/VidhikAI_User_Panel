@@ -100,6 +100,11 @@ class LLMService {
             client = new OpenAI({ apiKey: dynamicApiKey });
         }
 
+        if (!client && process.env.OPENAI_API_KEY) {
+            client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+            this.openaiClient = client;
+        }
+
         if (!client) {
             throw new Error('OpenAI client not configured');
         }

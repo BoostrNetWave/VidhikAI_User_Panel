@@ -350,11 +350,7 @@ export default function DocumentReviewPage() {
             formData.append('userId', userId);
             formData.append('isDeepScanEnabled', String(isDeepScanEnabled));
 
-            const response = await api.post('/documents/review', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const response = await api.post('/documents/review', formData);
 
             if (response.data.success) {
                 setAnalysisData(response.data.data);
