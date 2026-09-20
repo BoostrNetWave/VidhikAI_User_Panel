@@ -18,7 +18,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { Logo } from "@/components/brand/Logo";
+import logo from "@/assets/logo.png";
 
 const signUpSchema = z.object({
     fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -98,9 +98,8 @@ export default function SignUp() {
                 />
 
                 <div className="relative z-10 text-white max-w-md">
-                    <Link to="/" className="inline-flex items-center gap-2 mb-10 transition-transform duration-300 hover:scale-105">
-                        <Scale className="h-8 w-8 text-primary/80" />
-                        <span className="font-display text-2xl font-bold tracking-tight">Vidhik <span className="text-primary/80">AI</span></span>
+                    <Link to="/" className="inline-flex items-center mb-10 transition-transform duration-300 hover:scale-105 bg-white px-4 py-2 rounded-2xl shadow-sm border border-white/20">
+                        <img src={logo} alt="Vidhik AI" className="h-8 w-auto object-contain" />
                     </Link>
                     
                     <h2 className="font-display text-4xl font-extrabold mb-6 leading-tight">
@@ -153,11 +152,8 @@ export default function SignUp() {
                 <div className="w-full max-w-md">
                     {/* Small Logo for mobile view */}
                     <div className="text-center mb-8 lg:hidden">
-                        <Link to="/" className="inline-flex items-center gap-2">
-                            <Scale className="h-7 w-7 text-primary" />
-                            <span className="font-display text-xl font-bold tracking-tight text-slate-900">
-                                Vidhik <span className="text-primary">AI</span>
-                            </span>
+                        <Link to="/" className="inline-flex items-center">
+                            <img src={logo} alt="Vidhik AI" className="h-9 w-auto object-contain" />
                         </Link>
                     </div>
 
