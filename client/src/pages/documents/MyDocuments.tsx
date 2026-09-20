@@ -38,7 +38,8 @@ import {
     FileEdit,
     Save,
     CheckCircle2,
-    PenTool
+    PenTool,
+    ShieldCheck
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { parseHtmlToDocx } from '@/lib/docxUtils';
@@ -256,8 +257,8 @@ export default function MyDocuments() {
         handleOpenDocument(doc, 'review');
     };
 
-    const handleInsertSignature = (signatureHtml: string) => {
-        if (quillRef.current) {
+    const handleInsertSignature = async (signatureHtml: string) => {
+        if (quillRef.current && docModalMode === 'edit') {
             try {
                 const editor = quillRef.current.getEditor();
                 const range = editor.getSelection();
@@ -266,14 +267,31 @@ export default function MyDocuments() {
                 const updatedHtml = editor.root.innerHTML;
                 setEditContent(updatedHtml);
                 setSelectedDoc((prev: any) => prev ? { ...prev, content: updatedHtml } : prev);
+                toast.success("Digital signature inserted into document!");
                 return;
             } catch (e) {
                 console.error("Failed to insert signature into Quill editor, fallback to append:", e);
             }
         }
-        const updatedHtml = (editContent || '') + '\n' + signatureHtml;
+        const currentContent = selectedDoc?.content || editContent || '';
+        const updatedHtml = (currentContent ? currentContent + '\n' : '') + signatureHtml;
         setEditContent(updatedHtml);
         setSelectedDoc((prev: any) => prev ? { ...prev, content: updatedHtml } : prev);
+
+        // Auto-save to backend so the signed document is immediately persisted
+        if (selectedDoc?._id) {
+            try {
+                await api.put(`/documents/${selectedDoc._id}`, {
+                    title: editTitle.trim() || selectedDoc.title,
+                    content: updatedHtml,
+                    status: selectedDoc.status || 'final'
+                });
+                fetchDocuments();
+                toast.success("Digital signature saved to document!");
+            } catch (err) {
+                console.error("Auto-save signature failed:", err);
+            }
+        }
     };
 
     const handleSaveDocument = async () => {
@@ -514,9 +532,17 @@ export default function MyDocuments() {
                                                     <span className="text-foreground font-semibold truncate group-hover:text-primary transition-colors text-sm">
                                                         {doc.title}
                                                     </span>
-                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                                        {doc.documentType}
-                                                    </span>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                            {doc.documentType}
+                                                        </span>
+                                                        {doc.content && (doc.content.includes('vidhik-signature-block') || doc.content.includes('sig-badge') || doc.content.includes('Digitally Signed')) && (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                                                <ShieldCheck className="h-3 w-3 text-emerald-600" />
+                                                                Signed
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -554,6 +580,18 @@ export default function MyDocuments() {
                                                             className="hover:text-primary hover:bg-primary/10"
                                                         >
                                                             <FileEdit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            title="Add Digital Signature"
+                                                            onClick={() => {
+                                                                handleOpenDocument(doc, 'review');
+                                                                setIsSignatureModalOpen(true);
+                                                            }}
+                                                            className="hover:text-indigo-600 hover:bg-indigo-50 text-indigo-500"
+                                                        >
+                                                            <PenTool className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
@@ -731,6 +769,12 @@ export default function MyDocuments() {
                                         <Badge variant="outline" className={`border-none capitalize font-medium text-xs ${getStatusColor(selectedDoc?.status)}`}>
                                             {selectedDoc?.status || 'Draft'}
                                         </Badge>
+                                        {(selectedDoc?.content && (selectedDoc.content.includes('vidhik-signature-block') || selectedDoc.content.includes('sig-badge') || selectedDoc.content.includes('Digitally Signed'))) && (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                                                Digitally Signed
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                                 <span className="text-xs text-muted-foreground mt-0.5">
@@ -793,6 +837,15 @@ export default function MyDocuments() {
 
                             {docModalMode === 'review' ? (
                                 <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1.5 text-xs text-indigo-700 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 font-semibold h-8"
+                                        onClick={() => setIsSignatureModalOpen(true)}
+                                    >
+                                        <PenTool className="h-3.5 w-3.5" />
+                                        Add Digital Signature
+                                    </Button>
                                     <Button
                                         variant="outline"
                                         size="sm"

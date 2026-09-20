@@ -23,6 +23,140 @@ const extractTextFromPDF = async (buffer: Buffer): Promise<string> => {
 };
 
 /**
+ * Universal text extractor supporting PDF, DOCX, DOC, RTF, HTML, TXT, MD, ODT, CSV
+ */
+export const extractTextFromDocument = async (file: { originalname: string; mimetype?: string; buffer: Buffer }): Promise<string> => {
+    const filename = file.originalname || '';
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const mime = (file.mimetype || '').toLowerCase();
+
+    console.log(`[Text Extractor] Processing file: ${filename} (ext: .${ext}, mime: ${mime})`);
+
+    // 1. PDF
+    if (ext === 'pdf' || mime === 'application/pdf' || mime.includes('pdf')) {
+        try {
+            return await extractTextFromPDF(file.buffer);
+        } catch (pdfErr) {
+            console.warn('[Text Extractor] PDFParse failed, trying raw string fallback:', pdfErr);
+        }
+    }
+
+    // 2. DOCX (Modern Word)
+    if (ext === 'docx' || mime.includes('wordprocessingml') || mime.includes('officedocument.wordprocessingml')) {
+        try {
+            const result = await mammoth.extractRawText({ buffer: file.buffer });
+            if (result.value && result.value.trim().length > 0) {
+                return result.value;
+            }
+        } catch (docxErr) {
+            console.warn('[Text Extractor] Mammoth DOCX parsing failed:', docxErr);
+        }
+    }
+
+    // 3. DOC (Legacy Word format)
+    if (ext === 'doc' || mime === 'application/msword') {
+        try {
+            // Many files with .doc extension are actually .docx
+            const result = await mammoth.extractRawText({ buffer: file.buffer });
+            if (result.value && result.value.trim().length > 0) {
+                return result.value;
+            }
+        } catch {
+            // Binary fallback for legacy DOC
+        }
+
+        // Clean text extractor from binary .doc streams
+        const raw = file.buffer.toString('binary');
+        const chunks: string[] = [];
+        const regex = /[\x20-\x7E\r\n\t]{4,}/g;
+        let match;
+        while ((match = regex.exec(raw)) !== null) {
+            const str = match[0].trim();
+            if (str.length > 5 && !str.startsWith('Microsoft Word') && !str.startsWith('Normal.dot') && !str.includes('CompObj')) {
+                chunks.push(str);
+            }
+        }
+        if (chunks.length > 0) {
+            return chunks.join('\n');
+        }
+    }
+
+    // 4. RTF (Rich Text Format)
+    if (ext === 'rtf' || mime.includes('rtf')) {
+        const rtfString = file.buffer.toString('utf8');
+        return rtfString
+            .replace(/\\fonttbl[\s\S]*?\{[\s\S]*?\}/g, '')
+            .replace(/\\colortbl[\s\S]*?\{[\s\S]*?\}/g, '')
+            .replace(/\\stylesheet[\s\S]*?\{[\s\S]*?\}/g, '')
+            .replace(/\\info[\s\S]*?\{[\s\S]*?\}/g, '')
+            .replace(/\\[a-zA-Z]+(-?\d+)? ?/g, ' ')
+            .replace(/[\{\}]/g, '')
+            .replace(/\\'[0-9a-fA-F]{2}/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // 5. HTML / HTM
+    if (ext === 'html' || ext === 'htm' || mime.includes('html')) {
+        const html = file.buffer.toString('utf8');
+        return html
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<\/p>|<\/div>|<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/\r/g, '')
+            .replace(/\n\s*\n/g, '\n\n')
+            .trim();
+    }
+
+    // 6. ODT (OpenDocument Text)
+    if (ext === 'odt' || mime.includes('opendocument.text')) {
+        try {
+            const result = await mammoth.extractRawText({ buffer: file.buffer });
+            if (result.value && result.value.trim().length > 0) {
+                return result.value;
+            }
+        } catch {}
+        const raw = file.buffer.toString('utf8');
+        const text = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (text.length > 50) return text;
+    }
+
+    // 7. General Plain Text, Markdown, CSV, TSV
+    try {
+        const text = file.buffer.toString('utf8');
+        const nonPrintableCount = (text.slice(0, 1000).match(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g) || []).length;
+        if (nonPrintableCount < 20) {
+            return text;
+        }
+    } catch {}
+
+    // Fallback: try mammoth in case it is an unflagged docx
+    try {
+        const result = await mammoth.extractRawText({ buffer: file.buffer });
+        if (result.value && result.value.trim().length > 0) {
+            return result.value;
+        }
+    } catch {}
+
+    // Fallback: try PDF in case it is an unflagged PDF
+    try {
+        const pdfText = await extractTextFromPDF(file.buffer);
+        if (pdfText && pdfText.trim().length > 0) {
+            return pdfText;
+        }
+    } catch {}
+
+    return file.buffer.toString('utf8');
+};
+
+/**
  * Get all available document types
  */
 export const getDocumentTypes = async (_req: Request, res: Response) => {
@@ -178,8 +312,9 @@ export const generateDocument = async (req: Request, res: Response) => {
 export const saveDocument = async (req: Request, res: Response) => {
     try {
         const { userId, title, documentType, content, formData } = req.body;
+        const effectiveUserId = (req as any).user?._id || userId;
 
-        if (!userId || !title || !documentType || !content) {
+        if (!effectiveUserId || !title || !documentType || !content) {
             return res.status(400).json({
                 error: 'Missing required fields',
                 message: 'userId, title, documentType, and content are required'
@@ -187,7 +322,7 @@ export const saveDocument = async (req: Request, res: Response) => {
         }
 
         const newDocument = new Document({
-            userId,
+            userId: effectiveUserId,
             title,
             documentType,
             content,
@@ -461,29 +596,30 @@ export const reviewDocument = async (req: Request, res: Response) => {
 
         console.log(`[Document Controller] Extracting text from ${filename} (${file.mimetype}). Deep Scan: ${deepScan}`);
 
-        if (file.mimetype === 'application/pdf') {
-            extractedText = await extractTextFromPDF(file.buffer);
-        } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            const result = await mammoth.extractRawText({ buffer: file.buffer });
-            extractedText = result.value;
-        } else {
-            // Fallback to text reading for other types (e.g., .txt)
-            extractedText = file.buffer.toString('utf8');
+        try {
+            extractedText = await extractTextFromDocument(file);
+        } catch (extractErr: any) {
+            console.error('[Document Controller] Text extraction error:', extractErr);
+            return res.status(400).json({
+                error: 'Extraction failed',
+                message: `Failed to extract text from document (${extractErr.message || 'unsupported or corrupted file'}).`
+            });
         }
 
         if (!extractedText || extractedText.trim().length === 0) {
             return res.status(400).json({
                 error: 'Extraction failed',
-                message: 'Could not extract text from document. Please ensure it is not an empty file or a scanned image.'
+                message: 'Could not extract readable text from document. Please ensure it is not an empty file or an un-OCR scanned image.'
             });
         }
 
         // Check if the extracted text is suspiciously short (e.g., just "-- 1 of 1 --" from a scanned PDF)
         const cleanText = extractedText.replace(/\s+/g, '').trim();
-        if (file.mimetype === 'application/pdf' && cleanText.length < 50) {
+        const ext = filename.split('.').pop()?.toLowerCase() || '';
+        if ((ext === 'pdf' || file.mimetype === 'application/pdf') && cleanText.length < 50) {
             return res.status(400).json({
                 error: 'Image-based PDF detected',
-                message: 'This PDF appears to be a scanned image or generated without a text layer. The AI requires text-based documents (like DOCX) or text-selectable PDFs to perform analysis.'
+                message: 'This PDF appears to be a scanned image or generated without a text layer. The AI requires text-based documents (like DOCX, PDF, RTF, TXT, HTML) to perform analysis.'
             });
         }
 
@@ -575,20 +711,20 @@ export const uploadDocument = async (req: Request, res: Response) => {
 
         console.log(`[Document Upload] Extracting text from ${filename} (${file.mimetype}) for user: ${userId}`);
 
-        if (file.mimetype === 'application/pdf') {
-            extractedText = await extractTextFromPDF(file.buffer);
-        } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            const result = await mammoth.extractRawText({ buffer: file.buffer });
-            extractedText = result.value;
-        } else {
-            // Fallback to text reading for other types (e.g., .txt)
-            extractedText = file.buffer.toString('utf8');
+        try {
+            extractedText = await extractTextFromDocument(file);
+        } catch (extractErr: any) {
+            console.error('[Document Upload] Text extraction error:', extractErr);
+            return res.status(400).json({
+                error: 'Extraction failed',
+                message: `Failed to extract text from document (${extractErr.message || 'unsupported or corrupted file'}).`
+            });
         }
 
         if (!extractedText || extractedText.trim().length === 0) {
             return res.status(400).json({
                 error: 'Extraction failed',
-                message: 'Could not extract text from document. Please ensure it is not empty.'
+                message: 'Could not extract readable text from document. Please ensure it is not empty.'
             });
         }
 

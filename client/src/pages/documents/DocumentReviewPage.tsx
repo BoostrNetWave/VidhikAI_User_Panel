@@ -21,7 +21,19 @@ import {
     FileEdit,
     ArrowRight,
     ArrowLeft,
-    ShieldCheck
+    ShieldCheck,
+    FolderOpen,
+    BookmarkCheck,
+    Copy,
+    CheckCheck,
+    FileSearch,
+    Sliders,
+    ChevronDown,
+    ChevronUp,
+    AlertCircle,
+    Save,
+    ExternalLink,
+    RefreshCw
 } from 'lucide-react';
 import { PREVIEW_DESIGN } from '@/components/documents/DocumentPreview';
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -31,11 +43,19 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription
+} from "@/components/ui/dialog";
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
-type ReviewState = 'UPLOAD' | 'PROCESSING' | 'COMPLETED';
+type ReviewState = 'UPLOAD' | 'PROCESSING' | 'COMPLETED' | 'ERROR';
 
 export default function DocumentReviewPage() {
     const { id } = useParams<{ id: string }>();
@@ -46,9 +66,12 @@ export default function DocumentReviewPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [sourceDocument, setSourceDocument] = useState<any>(null);
     const [analysisData, setAnalysisData] = useState<any>(null);
+    const [analysisError, setAnalysisError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [isDeepScanEnabled] = useState(false);
     const [activeHighlightIndex, setActiveHighlightIndex] = useState<number | null>(null);
+    const [selectedClauseIndex, setSelectedClauseIndex] = useState<number | null>(null);
+    const [copiedClauseIdx, setCopiedClauseIdx] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -56,6 +79,14 @@ export default function DocumentReviewPage() {
     const [logs, setLogs] = useState<{ msg: string, status: 'pending' | 'loading' | 'done' }[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Workspace Documents Integration State
+    const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
+    const [workspaceDocs, setWorkspaceDocs] = useState<any[]>([]);
+    const [isFetchingWorkspaceDocs, setIsFetchingWorkspaceDocs] = useState(false);
+    const [workspaceSearch, setWorkspaceSearch] = useState("");
+    const [isSavingToWorkspace, setIsSavingToWorkspace] = useState(false);
+    const [isSavedToWorkspace, setIsSavedToWorkspace] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -126,6 +157,125 @@ export default function DocumentReviewPage() {
         }
     }, [id, navigate, location.state]);
 
+    // Fetch user workspace documents on mount
+    const fetchWorkspaceDocuments = async () => {
+        try {
+            setIsFetchingWorkspaceDocs(true);
+            const user = JSON.parse(localStorage.getItem('user_profile_data') || '{}');
+            const userId = user._id || user.id;
+            if (!userId) return;
+            const res = await api.get(`/documents/user/${userId}`);
+            if (res.data.success) {
+                setWorkspaceDocs(res.data.data || []);
+            }
+        } catch (e) {
+            console.error("Failed to fetch workspace documents:", e);
+        } finally {
+            setIsFetchingWorkspaceDocs(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchWorkspaceDocuments();
+    }, []);
+
+    // Select document from My Documents workspace to review
+    const handleSelectWorkspaceDoc = (doc: any) => {
+        const cleanContent = doc.content ? doc.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+        const file = new File(
+            [cleanContent || doc.content || ''],
+            `${doc.title || 'Workspace_Document'}.txt`,
+            { type: 'text/plain' }
+        );
+        setSourceDocument(doc);
+        setSelectedFile(file);
+        setIsWorkspaceModalOpen(false);
+        startAnalysis(file);
+    };
+
+    // Save analyzed report directly to My Documents workspace
+    const handleSaveToWorkspace = async () => {
+        if (!analysisData) return;
+        try {
+            setIsSavingToWorkspace(true);
+            const user = JSON.parse(localStorage.getItem('user_profile_data') || '{}');
+            const userId = user._id || user.id;
+
+            const docTitle = `Review - ${selectedFile?.name?.replace(/\.[^/.]+$/, "") || sourceDocument?.title || 'Legal Document'}`;
+            
+            const formattedContent = `
+                <h2>${docTitle}</h2>
+                <p><strong>Compliance Score:</strong> ${analysisData.complianceScore || 0}% | <strong>Risk Level:</strong> ${analysisData.riskLevel || 'N/A'}</p>
+                <p><strong>Category:</strong> ${analysisData.documentCategory || 'Legal Document'}</p>
+                <p><strong>Audit Summary:</strong> ${analysisData.summary || ''}</p>
+                <hr />
+                <h3>Audited Document Content</h3>
+                ${(analysisData.fullText || '').split('\n').map((line: string) => `<p>${line}</p>`).join('')}
+            `;
+
+            const response = await api.post('/documents/save', {
+                userId,
+                title: docTitle,
+                documentType: 'reviewed-contract',
+                content: formattedContent,
+                formData: {
+                    reviewAnalysis: analysisData,
+                    reviewedAt: new Date().toISOString(),
+                    originalFileName: selectedFile?.name || sourceDocument?.title
+                }
+            });
+
+            if (response.data.success) {
+                toast.success("Document Analysis saved to My Documents!", {
+                    description: `"${docTitle}" is now available in your workspace.`,
+                    action: {
+                        label: "View in Workspace",
+                        onClick: () => navigate('/documents/workspace')
+                    }
+                });
+                setIsSavedToWorkspace(true);
+                fetchWorkspaceDocuments();
+            }
+        } catch (err: any) {
+            console.error("Save to workspace failed:", err);
+            toast.error("Failed to save to My Documents", {
+                description: err.response?.data?.message || err.message
+            });
+        } finally {
+            setIsSavingToWorkspace(false);
+        }
+    };
+
+    // Copy suggestion to clipboard
+    const handleCopySuggestion = async (text: string, idx: number) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedClauseIdx(idx);
+            toast.success("Suggested clause copied to clipboard!");
+            setTimeout(() => setCopiedClauseIdx(null), 2000);
+        } catch (e) {
+            toast.error("Failed to copy to clipboard");
+        }
+    };
+
+    // Navigate between highlighted clauses
+    const handleNavigateClause = (direction: 'next' | 'prev', totalCount: number) => {
+        if (totalCount === 0) return;
+        let nextIdx = 0;
+        if (selectedClauseIndex !== null) {
+            if (direction === 'next') {
+                nextIdx = (selectedClauseIndex + 1) % totalCount;
+            } else {
+                nextIdx = (selectedClauseIndex - 1 + totalCount) % totalCount;
+            }
+        }
+        setSelectedClauseIndex(nextIdx);
+        const element = document.getElementById(`highlight-clause-${nextIdx}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
     // Simulated Log Steps
     const getAnalysisSteps = (deepScan: boolean) => [
         "Document Ingested Successfully",
@@ -192,12 +342,11 @@ export default function DocumentReviewPage() {
                 try {
                     sessionStorage.setItem('vidhik_active_review_data', JSON.stringify(response.data.data));
                 } catch (e) {}
-                // Simulate progress finishing
                 setProgress(100);
                 setTimeout(() => {
                     setViewMode('DETAILED');
                     setState('COMPLETED');
-                }, 800);
+                }, 500);
             }
         } catch (error: any) {
             console.error('Analysis failed:', error);
@@ -210,19 +359,23 @@ export default function DocumentReviewPage() {
                     }
                 });
                 handleResetReview();
+            } else if (error.response?.status === 403 && error.response?.data?.error === 'INSUFFICIENT_CREDITS') {
+                toast.error('Insufficient Credits', {
+                    description: error.response?.data?.message || 'You do not have enough credits to complete this document review.',
+                    action: {
+                        label: 'Upgrade Plan',
+                        onClick: () => window.location.href = '/user/billing'
+                    }
+                });
+                handleResetReview();
             } else {
-                const errorMessage = error.response?.data?.message || "AI Analysis failed. Showing simulated results.";
+                const errorMessage = error.response?.data?.message || "AI Analysis failed. Please verify the document and try again.";
                 toast.error(error.response?.data?.error || "Analysis Failed", {
                     description: errorMessage
                 });
-                // Fallback to dummy data if API fails
                 setAnalysisData(null);
-
-                // Allow manual entry into COMPLETED state for demo purposes even on failure
-                setTimeout(() => {
-                    setViewMode('DETAILED');
-                    setState('COMPLETED');
-                }, 1000);
+                setAnalysisError(errorMessage);
+                setState('ERROR');
             }
         }
     };
@@ -235,21 +388,24 @@ export default function DocumentReviewPage() {
         setSourceDocument(null);
         setSelectedFile(null);
         setAnalysisData(null);
+        setAnalysisError(null);
+        setProgress(0);
         setState('UPLOAD');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     useEffect(() => {
         if (state === 'PROCESSING') {
             const interval = setInterval(() => {
                 setProgress(prev => {
-                    if (prev >= 100) {
-                        clearInterval(interval);
-                        setTimeout(() => setState('COMPLETED'), 1000);
-                        return 100;
+                    if (prev >= 92) {
+                        return 92; // Wait at 92% until server response finishes
                     }
                     return prev + 1;
                 });
-            }, 80);
+            }, 100);
 
             return () => clearInterval(interval);
         }
@@ -325,6 +481,7 @@ export default function DocumentReviewPage() {
                 {state === 'UPLOAD' && renderUploadView()}
                 {state === 'PROCESSING' && renderProcessingView()}
                 {state === 'COMPLETED' && renderCompletedView()}
+                {state === 'ERROR' && renderErrorView()}
             </div>
         </DashboardLayout>
     );
@@ -345,54 +502,136 @@ export default function DocumentReviewPage() {
                             className="hidden"
                             ref={fileInputRef}
                             onChange={handleFileChange}
-                            accept=".pdf,.docx"
+                            accept=".pdf,.docx,.doc,.txt,.rtf,.odt,.html,.htm,.md"
                         />
                         <div
-                            className={`border-2 border-dashed rounded-xl p-20 flex flex-col items-center justify-center space-y-6 transition-all cursor-pointer group ${isDragging ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-border-strong hover:bg-secondary/50'}`}
+                            className={`border-2 border-dashed rounded-xl p-16 md:p-20 flex flex-col items-center justify-center space-y-6 transition-all cursor-pointer group ${isDragging ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-border-strong hover:bg-secondary/50'}`}
                             onClick={() => fileInputRef.current?.click()}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
                         >
-                            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
                                 <Upload className="h-8 w-8" />
                             </div>
                             <div className="text-center space-y-2">
                                 <h3 className="text-xl font-semibold text-foreground">Drag and drop your files here</h3>
-                                <p className="text-muted-foreground max-w-sm">Upload legal agreements, NDAs, or service contracts for deep analysis.</p>
+                                <p className="text-muted-foreground max-w-sm text-sm">Upload contracts, agreements, or legal documents. Supports PDF, DOCX, DOC, TXT, RTF, ODT, HTML & MD (Max 25MB).</p>
                             </div>
-                            <Button
-                                size="lg"
-                                className="h-12 px-8 rounded-lg gap-2 font-semibold"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    fileInputRef.current?.click();
-                                }}
-                            >
-                                <FileText className="h-5 w-5" />
-                                Browse Files
-                            </Button>
+                            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                <Button
+                                    size="lg"
+                                    className="h-12 px-7 rounded-xl gap-2 font-semibold shadow-sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        fileInputRef.current?.click();
+                                    }}
+                                >
+                                    <FileText className="h-4 w-4" />
+                                    Browse Computer Files
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="h-12 px-7 rounded-xl gap-2 font-semibold border-primary/30 text-primary hover:bg-primary/5 hover:border-primary shadow-xs"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsWorkspaceModalOpen(true);
+                                        fetchWorkspaceDocuments();
+                                    }}
+                                >
+                                    <FolderOpen className="h-4 w-4 text-primary" />
+                                    Choose from My Documents
+                                </Button>
+                            </div>
                         </div>
 
                     </div>
 
-                    {/* How it Works Sidebar */}
+                    {/* Sidebar: Workspace Documents Quick Access & How it Works */}
                     <div className="space-y-6">
-                        <Card className="rounded-xl border border-border shadow-sm bg-card overflow-hidden h-full">
+                        {/* Workspace Documents Quick Access Card */}
+                        <Card className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-secondary/30 shadow-sm overflow-hidden">
+                            <CardHeader className="bg-primary/5 border-b border-primary/10 py-3.5 px-5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-foreground font-bold text-sm">
+                                        <FolderOpen className="h-4 w-4 text-primary" />
+                                        <span>My Documents Workspace</span>
+                                    </div>
+                                    <Badge variant="secondary" className="text-[10px] font-bold">
+                                        {workspaceDocs.length} Docs
+                                    </Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-5 space-y-3.5">
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Instantly review legal documents and contracts already saved or generated in your workspace.
+                                </p>
+
+                                {isFetchingWorkspaceDocs ? (
+                                    <div className="py-6 text-center">
+                                        <Loader2 className="h-5 w-5 text-primary animate-spin mx-auto" />
+                                    </div>
+                                ) : workspaceDocs.length === 0 ? (
+                                    <div className="p-4 bg-secondary/30 rounded-xl text-center space-y-1 border border-border">
+                                        <p className="text-xs font-semibold text-muted-foreground">No documents in workspace yet</p>
+                                        <p className="text-[10px] text-muted-foreground">Generated contracts will be saved here automatically.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {workspaceDocs.slice(0, 3).map((doc) => (
+                                            <div 
+                                                key={doc._id}
+                                                onClick={() => handleSelectWorkspaceDoc(doc)}
+                                                className="p-3 rounded-xl border border-border/70 hover:border-primary/50 hover:bg-background transition-all flex items-center justify-between gap-2 cursor-pointer group"
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                                                        {doc.title || 'Untitled Document'}
+                                                    </p>
+                                                    <span className="text-[10px] text-muted-foreground capitalize">
+                                                        {doc.documentType || 'document'}
+                                                    </span>
+                                                </div>
+                                                <Button size="sm" variant="ghost" className="h-7 px-2.5 text-[11px] font-semibold text-primary group-hover:bg-primary group-hover:text-white rounded-lg gap-1 shrink-0">
+                                                    <Sparkles className="h-3 w-3" />
+                                                    Review
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <Button
+                                    variant="outline"
+                                    className="w-full h-10 rounded-xl text-xs font-bold border-primary/20 text-primary hover:bg-primary/5 gap-1.5"
+                                    onClick={() => {
+                                        setIsWorkspaceModalOpen(true);
+                                        fetchWorkspaceDocuments();
+                                    }}
+                                >
+                                    <Search className="h-3.5 w-3.5" />
+                                    Browse All Workspace Documents
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        {/* How it Works Card */}
+                        <Card className="rounded-xl border border-border shadow-sm bg-card overflow-hidden">
                             <CardHeader className="bg-secondary/30 border-b border-border pb-4">
                                 <div className="flex items-center gap-2 text-foreground">
                                     <Info className="h-5 w-5" />
                                     <CardTitle className="text-base font-semibold">How it works</CardTitle>
                                 </div>
                             </CardHeader>
-                            <CardContent className="pt-6 space-y-8">
+                            <CardContent className="pt-6 space-y-6">
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 shrink-0 bg-secondary rounded-lg flex items-center justify-center text-primary">
                                         <Search className="h-5 w-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="font-semibold text-foreground">Risk Scanning</h4>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">AI identifies hidden liabilities, unfavorable termination clauses, and unusual payment terms.</p>
+                                        <h4 className="font-semibold text-foreground text-sm">Risk & Gap Scanning</h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">Identifies hidden liabilities, unfavorable clauses, and missing standard protections.</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
@@ -400,8 +639,8 @@ export default function DocumentReviewPage() {
                                         <Shield className="h-5 w-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="font-semibold text-foreground">Compliance Check</h4>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">Matches your document against regional legal standards and internal company policies.</p>
+                                        <h4 className="font-semibold text-foreground text-sm">Compliance Check</h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">Matches your document against regional legal standards and statutory provisions.</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
@@ -409,21 +648,103 @@ export default function DocumentReviewPage() {
                                         <Sparkles className="h-5 w-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="font-semibold text-foreground">Clause Optimization</h4>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">Suggests industry-standard language to make contracts more balanced and clear.</p>
+                                        <h4 className="font-semibold text-foreground text-sm">Clause Optimization</h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">Provides legal-grade suggestion wording to rewrite unfair clauses directly.</p>
                                     </div>
                                 </div>
-
-                                <Separator className="my-6 opacity-50" />
-
-                                <p className="text-xs text-muted-foreground italic leading-snug">
-                                    Step 1 of 3: Document Ingestion. Your data is encrypted and processed according to SOC2 standards.
-                                </p>
                             </CardContent>
                         </Card>
                     </div>
                 </div>
+
+                {/* Workspace Document Selector Modal */}
+                {renderWorkspaceModal()}
             </div>
+        );
+    }
+
+    function renderWorkspaceModal() {
+        const filteredDocs = workspaceDocs.filter(doc => {
+            const q = workspaceSearch.toLowerCase();
+            return (doc.title || '').toLowerCase().includes(q) || (doc.documentType || '').toLowerCase().includes(q);
+        });
+
+        return (
+            <Dialog open={isWorkspaceModalOpen} onOpenChange={setIsWorkspaceModalOpen}>
+                <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6 rounded-2xl bg-card border-border">
+                    <DialogHeader className="space-y-1.5 pb-3 border-b border-border">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                <FolderOpen className="h-4 w-4" />
+                            </div>
+                            <DialogTitle className="text-xl font-bold text-foreground">Select from My Documents Workspace</DialogTitle>
+                        </div>
+                        <DialogDescription className="text-xs text-muted-foreground">
+                            Select any contract or document saved in your workspace to run instant AI review & risk analysis.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="relative my-3">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search workspace documents by title or type..."
+                            value={workspaceSearch}
+                            onChange={(e) => setWorkspaceSearch(e.target.value)}
+                            className="pl-10 h-11 rounded-xl bg-background border-border text-sm"
+                        />
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 max-h-[420px] scrollbar-thin">
+                        {isFetchingWorkspaceDocs ? (
+                            <div className="py-16 text-center space-y-3">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                                <p className="text-xs text-muted-foreground">Loading your workspace documents...</p>
+                            </div>
+                        ) : filteredDocs.length === 0 ? (
+                            <div className="py-14 text-center space-y-3 bg-secondary/30 rounded-2xl border border-dashed border-border p-6">
+                                <FileSearch className="h-8 w-8 text-muted-foreground mx-auto" />
+                                <p className="text-sm font-semibold text-foreground">No documents found</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {workspaceSearch ? `No workspace documents match "${workspaceSearch}"` : "You don't have any documents saved in your workspace yet."}
+                                </p>
+                            </div>
+                        ) : (
+                            filteredDocs.map((doc) => (
+                                <div
+                                    key={doc._id}
+                                    onClick={() => handleSelectWorkspaceDoc(doc)}
+                                    className="p-4 rounded-xl border border-border/80 bg-background hover:border-primary/50 hover:bg-secondary/40 transition-all flex items-center justify-between gap-4 cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                                            <FileText className="h-5 w-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                                                {doc.title || 'Untitled Document'}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="outline" className="text-[10px] px-2 py-0 h-4 capitalize font-semibold border-primary/20 text-primary bg-primary/5">
+                                                    {doc.documentType || 'document'}
+                                                </Badge>
+                                                {doc.updatedAt && (
+                                                    <span className="text-[11px] text-muted-foreground">
+                                                        Updated {new Date(doc.updatedAt).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Button size="sm" className="h-8 px-3 rounded-lg text-xs font-bold gap-1.5 shrink-0">
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        Review This
+                                    </Button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         );
     }
 
@@ -556,25 +877,26 @@ export default function DocumentReviewPage() {
     }
 
     function renderCompletedView() {
-        const data = analysisData || {
-            summary: "This agreement contains highly restrictive covenants. The Non-Compete period (5 years) is significantly above industry standard (1-2 years) and likely unenforceable in several jurisdictions.",
-            userReview: "Hi there! I've carefully reviewed your document. The biggest red flag is the 5-year non-compete clause, which is quite aggressive for this type of role. I recommend negotiating this down to 1 year to protect your future career moves. Overall, your intellectual property rights are well-protected, but let's tighten up that termination notice to give you more security.",
-            complianceScore: 85,
-            riskLevel: "High",
-            suggestedAmendmentsCount: 4,
-            standardClausesCount: 12,
-            findings: [
-                { type: 'warning', title: 'Non-Compete Restrictions', description: 'The 5-year restriction is considered "unreasonable" and overbroad, which may invalidate the entire clause.', suggestion: 'Reduce duration to 12 months and limit geographic scope to 50 miles of Company HQ to increase enforceability.' },
-                { type: 'warning', title: 'Termination Notice Period', description: 'The 2-day termination for convenience clause is identified as a high-risk operational outlier. Industry standard is 30 days.', suggestion: 'Change notice period to at least 30 days for both parties.' },
-                { type: 'positive', title: 'Intellectual Property', description: 'Strong IP protection for the consultant found in Exhibit A.', suggestion: '' },
-                { type: 'info', title: 'Liability Cap', description: 'Liability is capped at the total amount of fees paid.', suggestion: '' }
-            ],
-            highlightedClauses: [
-                { text: "five (5) years following termination", type: 'CRITICAL', issue: 'Unreasonable non-compete duration.', suggestion: '12 months', explanation: 'Most jurisdictions find non-compete periods over 2 years unenforceable for general employees.' },
-                { text: "at any time without cause upon providing two (2) days written notice", type: 'UNFAVORABLE', issue: 'Extremely short notice period.', suggestion: '30 days written notice', explanation: 'A 2-day notice period is highly irregular and offers zero stability for the consultant.' }
-            ],
-            fullText: `SERVICE AGREEMENT\n\nThis SERVICE AGREEMENT (the "Agreement") is entered into as of January 15, 2024, by and between Global Tech Solutions Inc. (the "Client") and John Doe (the "Consultant").\n\n1. PROVISION OF SERVICES\nThe Consultant shall provide the Client with the services set forth in Exhibit A attached hereto (the "Services") in accordance with the terms and conditions of this Agreement. The Consultant shall perform the Services in a professional and workmanlike manner.\n\n2. NON-COMPETE RESTRICTIONS\nDuring the term of employment and for a period of five (5) years following termination of employment for any reason, the Consultant shall not engage in any competitive business within the geographic region.\n\n3. TERMINATION\nThe Client may terminate this Agreement at any time without cause upon providing two (2) days written notice.`
-        };
+        if (!analysisData) {
+            return (
+                <div className="flex flex-col items-center justify-center max-w-xl mx-auto py-20 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                        <AlertTriangle className="h-8 w-8" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900">No Review Data Available</h2>
+                    <p className="text-gray-500">Please upload a document to perform analysis.</p>
+                    <Button onClick={handleResetReview} className="mt-4">
+                        Upload Document
+                    </Button>
+                </div>
+            );
+        }
+
+        if (analysisData.isLegalDocument === false) {
+            return renderNonLegalView();
+        }
+
+        const data = analysisData;
 
         if (viewMode === 'SUMMARY') {
             return (
@@ -706,30 +1028,113 @@ export default function DocumentReviewPage() {
             );
         }
 
+        // Color themes for different types of legal clause analysis
+        const getHighlightTheme = (type?: string) => {
+            switch (type?.toUpperCase()) {
+                case 'CRITICAL':
+                    return {
+                        bg: 'bg-rose-100/95 hover:bg-rose-200/90 text-rose-950',
+                        border: 'border-b-2 border-rose-500 border-l-4 border-l-rose-600',
+                        badgeBg: 'bg-rose-600 text-white',
+                        dot: 'bg-rose-500',
+                        ping: 'bg-rose-400',
+                        label: 'Critical Risk & Liability',
+                        cardHeader: 'bg-rose-50 text-rose-900',
+                        tag: 'High Risk'
+                    };
+                case 'UNFAVORABLE':
+                    return {
+                        bg: 'bg-amber-100/95 hover:bg-amber-200/90 text-amber-950',
+                        border: 'border-b-2 border-amber-500 border-l-4 border-l-amber-600',
+                        badgeBg: 'bg-amber-600 text-white',
+                        dot: 'bg-amber-500',
+                        ping: 'bg-amber-400',
+                        label: 'Unfavorable / Ambiguous Clause',
+                        cardHeader: 'bg-amber-50 text-amber-900',
+                        tag: 'Unfavorable'
+                    };
+                case 'POSITIVE':
+                    return {
+                        bg: 'bg-emerald-100/95 hover:bg-emerald-200/90 text-emerald-950',
+                        border: 'border-b-2 border-emerald-500 border-l-4 border-l-emerald-600',
+                        badgeBg: 'bg-emerald-600 text-white',
+                        dot: 'bg-emerald-500',
+                        ping: 'bg-emerald-400',
+                        label: 'Balanced Standard Protection',
+                        cardHeader: 'bg-emerald-50 text-emerald-900',
+                        tag: 'Balanced'
+                    };
+                default:
+                    return {
+                        bg: 'bg-indigo-100/95 hover:bg-indigo-200/90 text-indigo-950',
+                        border: 'border-b-2 border-indigo-400 border-l-4 border-l-indigo-500',
+                        badgeBg: 'bg-indigo-600 text-white',
+                        dot: 'bg-indigo-500',
+                        ping: 'bg-indigo-400',
+                        label: 'Standard Clause Notice',
+                        cardHeader: 'bg-indigo-50 text-indigo-900',
+                        tag: 'Notice'
+                    };
+            }
+        };
+
+        const totalClauses = data.highlightedClauses?.length || 0;
+        const missingPct = data.missingDataPercentage !== undefined 
+            ? data.missingDataPercentage 
+            : Math.max(10, Math.min(35, 100 - (data.complianceScore || 80)));
+
         return (
             <div className="space-y-8 animate-in mt-6 fade-in slide-in-from-bottom-5 duration-700">
                 {/* Results Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div className="space-y-2">
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100" onClick={() => {
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-secondary" onClick={() => {
                                 if (id) navigate('/documents/review');
                                 else setViewMode('SUMMARY');
                             }}>
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
-                            <h2 className="text-3xl font-black tracking-tight text-gray-900">{id ? "Shared Document Review" : "Document Review"}</h2>
+                            <div>
+                                <h2 className="text-3xl font-black tracking-tight text-foreground">{id ? "Shared Document Review" : "Document Review & Clause Audit"}</h2>
+                                <p className="text-xs text-muted-foreground mt-0.5">Interactive line-by-line legal analysis with AI suggestions and gap detection.</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {/* Save Directly to My Documents Workspace */}
+                        <Button
+                            variant="outline"
+                            className="rounded-xl h-11 border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary gap-2 font-bold px-5 shadow-sm transition-all"
+                            onClick={handleSaveToWorkspace}
+                            disabled={isSavingToWorkspace}
+                        >
+                            {isSavingToWorkspace ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Saving to Workspace...
+                                </>
+                            ) : isSavedToWorkspace ? (
+                                <>
+                                    <CheckCheck className="h-4 w-4 text-emerald-600" />
+                                    Saved in My Documents
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="h-4 w-4" />
+                                    Save to My Documents
+                                </>
+                            )}
+                        </Button>
+
                         {!id && (
-                            <Button variant="outline" className="rounded-xl h-11 border-gray-200 gap-2 font-bold px-6 shadow-sm hover:bg-gray-50" onClick={handleShare}>
+                            <Button variant="outline" className="rounded-xl h-11 border-border gap-2 font-bold px-5 shadow-sm hover:bg-secondary" onClick={handleShare}>
                                 <Share2 className="h-4 w-4" />
                                 Share Report
                             </Button>
                         )}
-                        <Button className="rounded-xl h-11 bg-gray-900 text-white font-bold gap-2 px-6 shadow-sm hover:bg-black transition-colors" onClick={() => setIsFullscreen(!isFullscreen)}>
+                        <Button className="rounded-xl h-11 bg-foreground text-background font-bold gap-2 px-5 shadow-sm hover:bg-foreground/90 transition-colors" onClick={() => setIsFullscreen(!isFullscreen)}>
                             <Maximize2 className="h-4 w-4" />
                             {isFullscreen ? 'Exit Focus Mode' : 'Focus Mode'}
                         </Button>
@@ -755,10 +1160,22 @@ export default function DocumentReviewPage() {
                             <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => {
+                                    setIsWorkspaceModalOpen(true);
+                                    fetchWorkspaceDocuments();
+                                }}
+                                className="text-xs text-primary border-primary/20 hover:bg-primary/5 h-8 rounded-lg gap-1.5"
+                            >
+                                <FolderOpen className="h-3.5 w-3.5" />
+                                Switch Workspace Doc
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={handleResetReview}
                                 className="text-xs text-muted-foreground hover:text-foreground h-8 rounded-lg"
                             >
-                                Review Different Document
+                                Upload New File
                             </Button>
                             <Button
                                 variant="default"
@@ -767,332 +1184,894 @@ export default function DocumentReviewPage() {
                                 className="text-xs gap-1.5 h-8 font-semibold rounded-lg"
                             >
                                 <ChevronLeft className="h-3.5 w-3.5" />
-                                Back to My Documents
+                                My Documents
                             </Button>
                         </div>
                     </div>
                 )}
 
-                <div className="flex flex-col gap-10 items-start">
-                    {/* Top Section: Document Preview (Full Width) */}
-                    <Card className={`w-full rounded-[2.5rem] border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] bg-white overflow-hidden flex flex-col transition-all duration-500 ${isFullscreen ? 'fixed inset-4 z-[100]' : 'min-h-[900px]'}`}>
-                        <CardHeader className="bg-gray-50/50 border-b p-6 flex flex-row items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-secondary/80 rounded-xl flex items-center justify-center text-primary">
-                                    <FileText className="h-6 w-6" />
-                                </div>
-                                <CardTitle className="text-base font-bold">{selectedFile?.name || (sourceDocument ? `${sourceDocument.title}.txt` : "Service_Agreement_v2.pdf")}</CardTitle>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {isSearchVisible && (
-                                    <div className="relative animate-in slide-in-from-right-4 duration-300">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search in document..."
-                                            className="h-8 w-48 pl-8 pr-8 rounded-lg border border-gray-200 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            autoFocus
-                                        />
-                                        {searchQuery && (
-                                            <button
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
-                                                onClick={() => setSearchQuery("")}
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </button>
-                                        )}
+                {/* 2-Column Review Layout: Left (Document Viewer) & Right (Review Side Panel) */}
+                <div className={`grid grid-cols-1 ${isFullscreen ? '' : 'lg:grid-cols-12'} gap-8 items-start w-full`}>
+                    {/* Left Column: Interactive Document Viewer */}
+                    <div className={isFullscreen ? 'w-full' : 'lg:col-span-8 space-y-6 w-full'}>
+                        <Card className={`w-full rounded-2xl md:rounded-[2rem] border border-border shadow-md bg-card overflow-hidden flex flex-col transition-all duration-300 ${isFullscreen ? 'fixed inset-4 z-[100] bg-background' : 'min-h-[850px]'}`}>
+                            <CardHeader className="bg-secondary/40 border-b border-border p-5 flex flex-row items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                                        <FileText className="h-5 w-5" />
                                     </div>
-                                )}
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={`rounded-lg transition-colors ${isSearchVisible ? 'text-primary bg-secondary' : 'text-gray-400 hover:text-primary'}`}
-                                    onClick={() => {
-                                        setIsSearchVisible(!isSearchVisible);
-                                        if (isSearchVisible) setSearchQuery("");
-                                    }}
-                                >
-                                    <Search className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={`rounded-lg transition-colors ${isFullscreen ? 'text-primary bg-secondary' : 'text-gray-400 hover:text-primary'}`}
-                                    onClick={() => setIsFullscreen(!isFullscreen)}
-                                >
-                                    {isFullscreen ? <X className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-12 flex-1 scrollbar-thin overflow-y-auto relative">
-                            {/* Search Results Indicator */}
-                            {searchQuery && data.fullText && (
-                                <div className="absolute top-4 right-8 z-20 px-3 py-1 bg-secondary text-foreground rounded-full text-[10px] font-bold border border-border animate-in fade-in slide-in-from-top-2">
-                                    {(() => {
-                                        try {
-                                            const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                            const count = (data.fullText.match(new RegExp(escapedQuery, 'gi')) || []).length;
-                                            return `${count} match${count !== 1 ? 'es' : ''} found`;
-                                        } catch (e) {
-                                            return "0 matches found";
-                                        }
-                                    })()}
-                                </div>
-                            )}
-
-                            <div className={`max-w-[210mm] mx-auto space-y-8 font-serif text-gray-800 leading-relaxed ${isFullscreen ? 'text-lg' : 'text-base'}`}>
-                                {data.fullText ? (
                                     <div>
-                                        {/* Dynamic Interactive Text Rendering */}
+                                        <CardTitle className="text-sm md:text-base font-bold text-foreground truncate max-w-xs md:max-w-md">
+                                            {selectedFile?.name || (sourceDocument ? `${sourceDocument.title}.txt` : "Legal_Agreement.pdf")}
+                                        </CardTitle>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-[11px] text-muted-foreground">
+                                                {totalClauses} highlighted {totalClauses === 1 ? 'clause' : 'clauses'}
+                                            </span>
+                                            <span className="text-muted-foreground">•</span>
+                                            <span className="text-[11px] text-emerald-600 font-semibold">
+                                                Interactive AI Suggestions Enabled
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {/* Clause Navigator Buttons */}
+                                    {totalClauses > 0 && (
+                                        <div className="flex items-center bg-secondary/80 rounded-xl p-1 border border-border mr-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground"
+                                                onClick={() => handleNavigateClause('prev', totalClauses)}
+                                                title="Previous Flagged Clause"
+                                            >
+                                                <ChevronLeft className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <span className="text-[11px] font-bold px-2 text-foreground">
+                                                {selectedClauseIndex !== null ? `${selectedClauseIndex + 1}/${totalClauses}` : `0/${totalClauses}`}
+                                            </span>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground"
+                                                onClick={() => handleNavigateClause('next', totalClauses)}
+                                                title="Next Flagged Clause"
+                                            >
+                                                <ChevronRight className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {isSearchVisible && (
+                                        <div className="relative animate-in slide-in-from-right-4 duration-300">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search in document..."
+                                                className="h-8 w-44 pl-8 pr-8 rounded-lg border border-border bg-background text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                autoFocus
+                                            />
+                                            {searchQuery && (
+                                                <button
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => setSearchQuery("")}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={`rounded-lg h-8 w-8 transition-colors ${isSearchVisible ? 'text-primary bg-secondary' : 'text-muted-foreground hover:text-foreground'}`}
+                                        onClick={() => {
+                                            setIsSearchVisible(!isSearchVisible);
+                                            if (isSearchVisible) setSearchQuery("");
+                                        }}
+                                    >
+                                        <Search className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={`rounded-lg h-8 w-8 transition-colors ${isFullscreen ? 'text-primary bg-secondary' : 'text-muted-foreground hover:text-foreground'}`}
+                                        onClick={() => setIsFullscreen(!isFullscreen)}
+                                    >
+                                        {isFullscreen ? <X className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                            </CardHeader>
+
+                            {/* Clause Color Legend Bar */}
+                            <div className="bg-secondary/20 border-b border-border/60 px-6 py-2.5 flex items-center justify-between flex-wrap gap-3 text-[11px]">
+                                <div className="flex items-center gap-4 flex-wrap">
+                                    <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Clause Legend:</span>
+                                    <span className="flex items-center gap-1.5 font-semibold text-rose-800">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                                        Critical Risk
+                                    </span>
+                                    <span className="flex items-center gap-1.5 font-semibold text-amber-800">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                                        Unfavorable
+                                    </span>
+                                    <span className="flex items-center gap-1.5 font-semibold text-emerald-800">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                        Balanced
+                                    </span>
+                                    <span className="flex items-center gap-1.5 font-semibold text-indigo-800">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                                        Standard / Info
+                                    </span>
+                                </div>
+                                <span className="text-muted-foreground italic text-[10px]">
+                                    Hover or click any highlighted line for AI suggestions
+                                </span>
+                            </div>
+
+                            <CardContent className="p-6 md:p-10 flex-1 scrollbar-thin overflow-y-auto relative">
+                                {/* Search Results Indicator */}
+                                {searchQuery && data.fullText && (
+                                    <div className="absolute top-4 right-8 z-20 px-3 py-1 bg-secondary text-foreground rounded-full text-[10px] font-bold border border-border animate-in fade-in slide-in-from-top-2">
                                         {(() => {
-                                            let text = data.fullText;
-                                            const parts: React.ReactNode[] = [];
-                                            let lastIndex = 0;
-                                            const unmappedClauses: any[] = [];
-
-                                            // Helper to escape regex special characters
-                                            const escapeRegExp = (string: string) => {
-                                                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                            };
-
-                                            // Helper to create a whitespace-flexible regex from a string
-                                            const createFlexibleRegex = (string: string) => {
-                                                const words = string.trim().split(/\s+/);
-                                                const escapedWords = words.map(escapeRegExp);
-                                                return new RegExp(escapedWords.join('\\s+'), 'i');
-                                            };
-
-                                            // Sort highlights by their position in the text to avoid overlap issues
-                                            const sortedHighlights = [...(data.highlightedClauses || [])].sort((a, b) => {
-                                                const regexA = createFlexibleRegex(a.text);
-                                                const regexB = createFlexibleRegex(b.text);
-                                                const matchA = text.match(regexA);
-                                                const matchB = text.match(regexB);
-                                                const indexA = matchA?.index ?? -1;
-                                                const indexB = matchB?.index ?? -1;
-                                                if (indexA === -1 && indexB === -1) return 0;
-                                                if (indexA === -1) return 1;
-                                                if (indexB === -1) return -1;
-                                                return indexA - indexB;
-                                            });
-
-                                            // Helper to format text professionally (detect headings, bold text, etc.)
-                                            const formatTextChunk = (content: string, keyPrefix: string) => {
-                                                // Split by newlines to process line by line for professional structuring
-                                                const lines = content.split('\n');
-                                                return lines.map((line, i) => {
-                                                    const trimmed = line.trim();
-                                                    
-                                                    // Detect if line is likely a heading (ALL CAPS, short, not just numbers)
-                                                    const isHeading = trimmed.length > 2 && trimmed.length < 80 && trimmed === trimmed.toUpperCase() && !/^\d+$/.test(trimmed);
-                                                    
-                                                    // Detect if line is a key-value pair (e.g., "Company Name: Vidhik AI")
-                                                    const isKeyValuePair = trimmed.includes(':') && trimmed.split(':')[0].length < 30;
-
-                                                    let renderedLine: React.ReactNode = line;
-                                                    let lineClass = "";
-
-                                                    if (isHeading) {
-                                                        lineClass = "block font-black text-gray-900 mt-8 mb-3 text-sm tracking-widest border-b border-gray-200 pb-1";
-                                                    } else if (isKeyValuePair) {
-                                                        const [key, ...rest] = line.split(':');
-                                                        renderedLine = <><span className="font-bold text-gray-800">{key}:</span>{rest.join(':')}</>;
-                                                        lineClass = "block mb-2";
-                                                    } else if (trimmed.length > 0) {
-                                                        lineClass = "block mb-3";
-                                                    }
-
-                                                    return (
-                                                        <React.Fragment key={`${keyPrefix}-line-${i}`}>
-                                                            {trimmed.length > 0 ? (
-                                                                <span className={lineClass}>{renderedLine}</span>
-                                                            ) : (
-                                                                <span className="block h-2"></span> // Reduced height for blank lines
-                                                            )}
-                                                        </React.Fragment>
-                                                    );
-                                                });
-                                            };
-
-                                            // Helper to render text with search highlights AND professional formatting
-                                            const renderWithSearch = (content: string, keyPrefix: string) => {
-                                                if (!searchQuery || searchQuery.length < 2) {
-                                                    return formatTextChunk(content, keyPrefix);
-                                                }
-
-                                                const regex = createFlexibleRegex(searchQuery);
-                                                const subParts = content.split(new RegExp(`(${regex.source})`, 'gi'));
-
-                                                const searchHighlighted = subParts.map((part, i) =>
-                                                    regex.test(part) ? (
-                                                        <mark key={`${keyPrefix}-search-${i}`} className="bg-primary/20 text-foreground rounded-sm px-0.5 font-bold shadow-sm">
-                                                            {part}
-                                                        </mark>
-                                                    ) : part
-                                                );
-                                                
-                                                // We return a simple span here because mixing professional line formatting 
-                                                // with deep search highlighting is complex. Search view is more raw.
-                                                return <span>{searchHighlighted}</span>;
-                                            };
-
-                                            sortedHighlights.forEach((clause, idx) => {
-                                                // Try exact match first
-                                                let startIndex = text.indexOf(clause.text, lastIndex);
-                                                let matchLength = clause.text.length;
-                                                
-                                                // If exact match fails, try whitespace-flexible match
-                                                if (startIndex === -1) {
-                                                    const regex = createFlexibleRegex(clause.text);
-                                                    const remainingText = text.substring(lastIndex);
-                                                    const match = remainingText.match(regex);
-                                                    
-                                                    if (match && match.index !== undefined) {
-                                                        startIndex = lastIndex + match.index;
-                                                        matchLength = match[0].length;
-                                                    }
-                                                }
-                                                
-                                                // If still no match, push to unmapped
-                                                if (startIndex === -1) {
-                                                    unmappedClauses.push({ ...clause, idx });
-                                                    return;
-                                                }
-
-                                                // Push text before the highlight with search
-                                                parts.push(renderWithSearch(text.substring(lastIndex, startIndex), `pre-${idx}`));
-
-                                                // Push the interactive highlight
-                                                const colorClass =
-                                                    clause.type === 'CRITICAL' ? 'bg-red-100/80 border-b-2 border-red-500 text-red-900' :
-                                                        clause.type === 'UNFAVORABLE' ? 'bg-orange-100/80 border-b-2 border-orange-500 text-orange-900' :
-                                                            clause.type === 'POSITIVE' ? 'bg-green-100/80 border-b-2 border-green-500 text-green-900' :
-                                                                'bg-secondary border-b-2 border-violet-400 text-foreground';
-
-                                                parts.push(
-                                                    <span
-                                                        key={`mapped-${idx}`}
-                                                        className={`${colorClass} px-1.5 py-0.5 rounded-sm font-bold cursor-help transition-all duration-200 relative group/h`}
-                                                        onMouseEnter={() => setActiveHighlightIndex(idx)}
-                                                        onMouseLeave={() => setActiveHighlightIndex(null)}
-                                                    >
-                                                        {renderWithSearch(clause.text, `highlight-${idx}`)}
-
-                                                        {/* Floating Explanation Point */}
-                                                        {activeHighlightIndex === idx && (
-                                                            <div className="absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full w-80 p-5 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 text-sm normal-case animate-in fade-in zoom-in-95 duration-200 pointer-events-none">
-                                                                <div className="flex items-center gap-2 mb-3 font-black uppercase tracking-widest text-[11px]">
-                                                                    {clause.type === 'CRITICAL' ? <AlertTriangle className="h-4 w-4 text-red-500" /> : <Sparkles className="h-4 w-4 text-primary" />}
-                                                                    <span className={clause.type === 'CRITICAL' ? 'text-red-600' : 'text-primary'}>AI Analysis</span>
-                                                                </div>
-                                                                <p className="font-bold text-gray-900 mb-2 leading-relaxed">
-                                                                    {clause.issue}
-                                                                </p>
-                                                                <p className="text-gray-600 font-medium leading-relaxed">
-                                                                    {clause.explanation || "This clause has been flagged for review based on standard legal practices."}
-                                                                </p>
-                                                                {clause.suggestion && (
-                                                                    <div className="mt-4 pt-4 border-t border-gray-100 bg-secondary/30 -mx-5 -mb-5 p-5 rounded-b-2xl">
-                                                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">Suggested Revision</p>
-                                                                        <p className="text-primary font-bold italic leading-relaxed">"{clause.suggestion}"</p>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Visual Indicator Pulse */}
-                                                        <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full animate-ping ${clause.type === 'CRITICAL' ? 'bg-red-400' : 'bg-violet-400'}`}></span>
-                                                        <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full ${clause.type === 'CRITICAL' ? 'bg-red-500' : 'bg-primary/90'}`}></span>
-                                                    </span>
-                                                );
-
-                                                lastIndex = startIndex + matchLength;
-                                            });
-
-                                            // Push remaining text with search
-                                            parts.push(renderWithSearch(text.substring(lastIndex), "post"));
-
-                                            return (
-                                                <div className="space-y-12 pb-16">
-                                                    <div className="bg-white p-12 md:p-20 shadow-xl border border-gray-200 relative text-justify min-h-[297mm]">
-                                                        {parts}
-                                                    </div>
-                                                    
-                                                    {unmappedClauses.length > 0 && (
-                                                        <div className="mt-12 space-y-6">
-                                                            <div className="flex items-center gap-3 mb-6">
-                                                                <div className="h-10 w-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600">
-                                                                    <ShieldAlert className="h-5 w-5" />
-                                                                </div>
-                                                                <div>
-                                                                    <h3 className="text-xl font-bold text-gray-900">Additional Identified Clauses</h3>
-                                                                    <p className="text-sm text-gray-500">The AI identified these clauses, but they were modified or re-formatted in the original document.</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                                {unmappedClauses.map((clause, idx) => (
-                                                                    <div key={`unmapped-${idx}`} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                                                                        <div className="flex items-start justify-between gap-4">
-                                                                            <Badge className={clause.type === 'CRITICAL' ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary'}>
-                                                                                {clause.type}
-                                                                            </Badge>
-                                                                        </div>
-                                                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 font-mono text-sm text-gray-700 italic">
-                                                                            "{clause.text}"
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="font-bold text-gray-900 mb-1">{clause.issue}</p>
-                                                                            <p className="text-sm text-gray-600 leading-relaxed">{clause.explanation}</p>
-                                                                        </div>
-                                                                        {clause.suggestion && (
-                                                                            <div className="bg-secondary/30 p-4 rounded-xl border border-primary/10">
-                                                                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Suggested Revision</p>
-                                                                                <p className="text-sm text-primary font-bold">"{clause.suggestion}"</p>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
+                                            try {
+                                                const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                                const count = (data.fullText.match(new RegExp(escapedQuery, 'gi')) || []).length;
+                                                return `${count} match${count !== 1 ? 'es' : ''} found`;
+                                            } catch (e) {
+                                                return "0 matches found";
+                                            }
                                         })()}
                                     </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center p-20 text-center space-y-4">
-                                        <Loader2 className="h-10 w-10 text-violet-200 animate-spin" />
-                                        <p className="text-gray-400 font-medium">Rendering document intelligence...</p>
-                                    </div>
                                 )}
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* Bottom Panel: Analysis Metrics / Final Action */}
-                    <div className="w-full flex flex-col items-center justify-center p-12 bg-secondary/40 rounded-[3rem] border-2 border-dashed border-primary/20/50 transition-all hover:bg-secondary/60 mb-10">
-                        <div className="text-center space-y-6 w-full max-w-2xl">
-                            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-sm mb-8 animate-pulse">
-                                <Check className="h-12 w-12 text-white stroke-[4]" />
-                            </div>
-                            <h3 className="text-3xl font-black text-gray-900 tracking-tight">Audit Successfully Completed</h3>
-                            <p className="text-gray-500 text-lg font-medium leading-relaxed">
-                                Every line of your document has been meticulously audited by our AI.
-                                Review the flagged points in the preview above, then proceed to the executive dashboard for the final report.
-                            </p>
+                                <div className={`max-w-[210mm] mx-auto space-y-8 font-serif text-gray-800 dark:text-gray-200 leading-relaxed ${isFullscreen ? 'text-lg' : 'text-base'}`}>
+                                    {data.fullText ? (
+                                        <div>
+                                            {/* Dynamic Interactive Text Rendering */}
+                                            {(() => {
+                                                let text = data.fullText;
+                                                const parts: React.ReactNode[] = [];
+                                                let lastIndex = 0;
+                                                const unmappedClauses: any[] = [];
 
-                            {/* Final Stats Button - THE FINAL DESTINATION */}
-                            <div className="pt-10">
-                                <Button className="w-full max-w-md h-20 bg-primary hover:bg-primary rounded-[2rem] text-2xl font-black gap-4 shadow-[0_20px_50px_rgba(37,99,235,0.4)] transition-all hover:scale-[1.02] active:scale-95 group" onClick={() => setViewMode('SUMMARY')}>
-                                    Finish Audit & View Dashboard
-                                    <ArrowRight className="h-7 w-7 group-hover:translate-x-2 transition-transform" />
-                                </Button>
-                                <p className="mt-6 text-sm font-bold text-primary/60 uppercase tracking-widest">Securely processed via SOC2 Encryption</p>
+                                                // Helper to escape regex special characters
+                                                const escapeRegExp = (string: string) => {
+                                                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                                };
+
+                                                // Helper to create a whitespace-flexible regex from a string
+                                                const createFlexibleRegex = (string: string) => {
+                                                    const words = string.trim().split(/\s+/);
+                                                    const escapedWords = words.map(escapeRegExp);
+                                                    return new RegExp(escapedWords.join('\\s+'), 'i');
+                                                };
+
+                                                // Sort highlights by their position in the text to avoid overlap issues
+                                                const sortedHighlights = [...(data.highlightedClauses || [])].sort((a, b) => {
+                                                    const regexA = createFlexibleRegex(a.text);
+                                                    const regexB = createFlexibleRegex(b.text);
+                                                    const matchA = text.match(regexA);
+                                                    const matchB = text.match(regexB);
+                                                    const indexA = matchA?.index ?? -1;
+                                                    const indexB = matchB?.index ?? -1;
+                                                    if (indexA === -1 && indexB === -1) return 0;
+                                                    if (indexA === -1) return 1;
+                                                    if (indexB === -1) return -1;
+                                                    return indexA - indexB;
+                                                });
+
+                                                // Helper to format text professionally (detect headings, bold text, etc.)
+                                                const formatTextChunk = (content: string, keyPrefix: string) => {
+                                                    const lines = content.split('\n');
+                                                    return lines.map((line, i) => {
+                                                        const trimmed = line.trim();
+                                                        
+                                                        const isHeading = trimmed.length > 2 && trimmed.length < 80 && trimmed === trimmed.toUpperCase() && !/^\d+$/.test(trimmed);
+                                                        const isKeyValuePair = trimmed.includes(':') && trimmed.split(':')[0].length < 30;
+
+                                                        let renderedLine: React.ReactNode = line;
+                                                        let lineClass = "";
+
+                                                        if (isHeading) {
+                                                            lineClass = "block font-black text-gray-900 dark:text-white mt-8 mb-3 text-sm tracking-widest border-b border-border pb-1";
+                                                        } else if (isKeyValuePair) {
+                                                            const [key, ...rest] = line.split(':');
+                                                            renderedLine = <><span className="font-bold text-gray-800 dark:text-gray-100">{key}:</span>{rest.join(':')}</>;
+                                                            lineClass = "block mb-2";
+                                                        } else if (trimmed.length > 0) {
+                                                            lineClass = "block mb-3";
+                                                        }
+
+                                                        return (
+                                                            <React.Fragment key={`${keyPrefix}-line-${i}`}>
+                                                                {trimmed.length > 0 ? (
+                                                                    <span className={lineClass}>{renderedLine}</span>
+                                                                ) : (
+                                                                    <span className="block h-2"></span>
+                                                                )}
+                                                            </React.Fragment>
+                                                        );
+                                                    });
+                                                };
+
+                                                // Helper to render text with search highlights
+                                                const renderWithSearch = (content: string, keyPrefix: string) => {
+                                                    if (!searchQuery || searchQuery.length < 2) {
+                                                        return formatTextChunk(content, keyPrefix);
+                                                    }
+
+                                                    const regex = createFlexibleRegex(searchQuery);
+                                                    const subParts = content.split(new RegExp(`(${regex.source})`, 'gi'));
+
+                                                    const searchHighlighted = subParts.map((part, i) =>
+                                                        regex.test(part) ? (
+                                                            <mark key={`${keyPrefix}-search-${i}`} className="bg-primary/25 text-foreground rounded-sm px-0.5 font-bold shadow-sm">
+                                                                {part}
+                                                            </mark>
+                                                        ) : part
+                                                    );
+                                                    
+                                                    return <span>{searchHighlighted}</span>;
+                                                };
+
+                                                sortedHighlights.forEach((clause, idx) => {
+                                                    let startIndex = text.indexOf(clause.text, lastIndex);
+                                                    let matchLength = clause.text.length;
+                                                    
+                                                    if (startIndex === -1) {
+                                                        const regex = createFlexibleRegex(clause.text);
+                                                        const remainingText = text.substring(lastIndex);
+                                                        const match = remainingText.match(regex);
+                                                        
+                                                        if (match && match.index !== undefined) {
+                                                            startIndex = lastIndex + match.index;
+                                                            matchLength = match[0].length;
+                                                        }
+                                                    }
+                                                    
+                                                    if (startIndex === -1) {
+                                                        unmappedClauses.push({ ...clause, idx });
+                                                        return;
+                                                    }
+
+                                                    // Push preceding text
+                                                    parts.push(renderWithSearch(text.substring(lastIndex, startIndex), `pre-${idx}`));
+
+                                                    // Retrieve rich styling for this analysis type
+                                                    const theme = getHighlightTheme(clause.type);
+                                                    const isSelected = selectedClauseIndex === idx;
+
+                                                    parts.push(
+                                                        <span
+                                                            id={`highlight-clause-${idx}`}
+                                                            key={`mapped-${idx}`}
+                                                            className={`${theme.bg} ${theme.border} ${theme.text} px-2 py-1 rounded font-medium cursor-pointer transition-all duration-200 relative inline group/h mx-0.5 shadow-sm ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                                                            onClick={() => setSelectedClauseIndex(idx)}
+                                                            onMouseEnter={() => setActiveHighlightIndex(idx)}
+                                                            onMouseLeave={() => setActiveHighlightIndex(null)}
+                                                        >
+                                                            {renderWithSearch(clause.text, `highlight-${idx}`)}
+
+                                                            {/* Inline Category Tag */}
+                                                            <span className={`inline-flex items-center ml-1 text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider ${theme.badgeBg} align-middle shadow-xs`}>
+                                                                {theme.tag}
+                                                            </span>
+
+                                                            {/* Floating Interactive Suggestion Box */}
+                                                            {activeHighlightIndex === idx && (
+                                                                <div 
+                                                                    className="absolute left-1/2 -top-3 -translate-x-1/2 -translate-y-full w-88 sm:w-96 p-0 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 text-sm normal-case animate-in fade-in zoom-in-95 duration-200 overflow-hidden pointer-events-auto cursor-default font-sans"
+                                                                    onMouseEnter={() => setActiveHighlightIndex(idx)}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    {/* Header with Type & Index */}
+                                                                    <div className={`px-4 py-2.5 flex items-center justify-between ${theme.cardHeader} border-b border-border/70`}>
+                                                                        <div className="flex items-center gap-2 font-bold text-xs">
+                                                                            <span className={`w-2.5 h-2.5 rounded-full ${theme.dot}`} />
+                                                                            <span>{theme.label}</span>
+                                                                        </div>
+                                                                        <Badge className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 ${theme.badgeBg}`}>
+                                                                            Clause #{idx + 1}
+                                                                        </Badge>
+                                                                    </div>
+
+                                                                    {/* Body: Issue + Suggestion */}
+                                                                    <div className="p-4 space-y-3 text-left">
+                                                                        <div>
+                                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Issue Identified</p>
+                                                                            <p className="font-bold text-foreground text-xs leading-snug">
+                                                                                {clause.issue}
+                                                                            </p>
+                                                                            {clause.explanation && (
+                                                                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                                                                    {clause.explanation}
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {/* AI Recommended Revision (What it should be) */}
+                                                                        {clause.suggestion && (
+                                                                            <div className="rounded-xl border border-emerald-300/80 bg-emerald-50/80 p-3 space-y-2">
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                                                                                        <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                                                                                        What it should be (AI Suggested Revision)
+                                                                                    </span>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="ghost"
+                                                                                        className="h-6 px-2 text-[10px] font-bold text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100 rounded-md gap-1"
+                                                                                        onClick={() => handleCopySuggestion(clause.suggestion, idx)}
+                                                                                    >
+                                                                                        {copiedClauseIdx === idx ? (
+                                                                                            <>
+                                                                                                <CheckCheck className="h-3 w-3 text-emerald-600" />
+                                                                                                Copied
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            <>
+                                                                                                <Copy className="h-3 w-3" />
+                                                                                                Copy Revision
+                                                                                            </>
+                                                                                        )}
+                                                                                    </Button>
+                                                                                </div>
+                                                                                <p className="text-xs font-semibold text-emerald-950 font-serif leading-relaxed italic bg-white/90 p-2.5 rounded-lg border border-emerald-100">
+                                                                                    "{clause.suggestion}"
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+
+                                                                        <div className="flex items-center justify-between pt-2 text-[11px] text-muted-foreground border-t border-border/50">
+                                                                            <span>Click line to pin in side panel</span>
+                                                                            <Button 
+                                                                                size="sm" 
+                                                                                variant="outline" 
+                                                                                className="h-6 px-2.5 text-[10px] font-bold text-primary border-primary/20 hover:bg-primary/5 rounded-lg"
+                                                                                onClick={() => setSelectedClauseIndex(idx)}
+                                                                            >
+                                                                                Inspect in Side Panel
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Visual Indicator Pulse */}
+                                                            <span className={`absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full animate-ping opacity-75 ${theme.ping}`}></span>
+                                                            <span className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${theme.dot}`}></span>
+                                                        </span>
+                                                    );
+
+                                                    lastIndex = startIndex + matchLength;
+                                                });
+
+                                                // Push remaining text
+                                                parts.push(renderWithSearch(text.substring(lastIndex), "post"));
+
+                                                return (
+                                                    <div className="space-y-8 pb-10">
+                                                        <div className="bg-background p-8 md:p-14 shadow-md border border-border rounded-xl relative text-justify min-h-[297mm]">
+                                                            {parts}
+                                                        </div>
+                                                        
+                                                        {unmappedClauses.length > 0 && (
+                                                            <div className="mt-8 space-y-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-9 w-9 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center">
+                                                                        <ShieldAlert className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h3 className="text-base font-bold text-foreground">Additional Identified Clauses</h3>
+                                                                        <p className="text-xs text-muted-foreground">The AI identified these clauses, but they were modified or re-formatted in the original document.</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    {unmappedClauses.map((clause, idx) => {
+                                                                        const uTheme = getHighlightTheme(clause.type);
+                                                                        return (
+                                                                            <div key={`unmapped-${idx}`} className="bg-card p-5 rounded-2xl border border-border shadow-sm space-y-3">
+                                                                                <div className="flex items-start justify-between gap-4">
+                                                                                    <Badge className={uTheme.badgeBg}>
+                                                                                        {clause.type}
+                                                                                    </Badge>
+                                                                                </div>
+                                                                                <div className="bg-secondary/40 p-3 rounded-xl border border-border font-mono text-xs text-muted-foreground italic">
+                                                                                    "{clause.text}"
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="font-bold text-foreground text-xs">{clause.issue}</p>
+                                                                                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{clause.explanation}</p>
+                                                                                </div>
+                                                                                {clause.suggestion && (
+                                                                                    <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 space-y-1.5">
+                                                                                        <div className="flex items-center justify-between">
+                                                                                            <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Suggested Revision</p>
+                                                                                            <Button
+                                                                                                size="sm"
+                                                                                                variant="ghost"
+                                                                                                className="h-5 px-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100"
+                                                                                                onClick={() => handleCopySuggestion(clause.suggestion, 500 + idx)}
+                                                                                            >
+                                                                                                {copiedClauseIdx === (500 + idx) ? <CheckCheck className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                        <p className="text-xs text-emerald-950 font-serif leading-relaxed italic">"{clause.suggestion}"</p>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-20 text-center space-y-4">
+                                            <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                                            <p className="text-muted-foreground font-medium text-sm">Rendering document intelligence...</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Bottom Completion Banner */}
+                        <div className="w-full flex flex-col items-center justify-center p-8 bg-secondary/30 rounded-2xl border border-dashed border-border transition-all">
+                            <div className="text-center space-y-4 w-full max-w-xl">
+                                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mx-auto shadow-md">
+                                    <Check className="h-7 w-7 text-white stroke-[3]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-foreground">Audit Successfully Completed</h3>
+                                    <p className="text-muted-foreground text-xs leading-relaxed mt-1">
+                                        Every line has been verified for risks, statutory compliance, and omission gaps.
+                                    </p>
+                                </div>
+
+                                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                                    <Button
+                                        className="w-full sm:w-auto h-11 px-6 rounded-xl font-bold bg-primary hover:bg-primary text-sm gap-2 shadow-sm"
+                                        onClick={() => setViewMode('SUMMARY')}
+                                    >
+                                        View Executive Dashboard
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full sm:w-auto h-11 px-5 rounded-xl font-bold text-xs gap-2"
+                                        onClick={handleSaveToWorkspace}
+                                        disabled={isSavingToWorkspace}
+                                    >
+                                        <Save className="h-4 w-4" />
+                                        Save to My Documents
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Right Column: Review Side Panel Dashboard */}
+                    {!isFullscreen && (
+                        <div className="lg:col-span-4 space-y-6 sticky top-6">
+                            {/* 1. Save Directly to Workspace Card */}
+                            <Card className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background p-5 shadow-sm space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                            <Save className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">My Documents Section</h4>
+                                            <p className="text-sm font-bold text-foreground">Save Analysis to Workspace</p>
+                                        </div>
+                                    </div>
+                                    {isSavedToWorkspace && (
+                                        <Badge className="bg-emerald-600 text-white text-[10px] font-bold gap-1 px-2 py-0.5">
+                                            <Check className="h-3 w-3" />
+                                            Saved
+                                        </Badge>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Instantly sync this reviewed document, risk flags, and AI suggestions directly to your <strong className="text-foreground">My Documents</strong> workspace.
+                                </p>
+                                <div className="flex items-center gap-2 pt-1">
+                                    <Button
+                                        onClick={handleSaveToWorkspace}
+                                        disabled={isSavingToWorkspace}
+                                        className="flex-1 h-10 rounded-xl font-bold text-xs gap-2 shadow-sm"
+                                    >
+                                        {isSavingToWorkspace ? (
+                                            <>
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : isSavedToWorkspace ? (
+                                            <>
+                                                <CheckCheck className="h-3.5 w-3.5" />
+                                                Saved in My Documents
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="h-3.5 w-3.5" />
+                                                Save to My Documents
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-10 w-10 rounded-xl border-border hover:bg-secondary shrink-0"
+                                        onClick={() => {
+                                            setIsWorkspaceModalOpen(true);
+                                            fetchWorkspaceDocuments();
+                                        }}
+                                        title="Browse or upload from workspace"
+                                    >
+                                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                </div>
+                            </Card>
+
+                            {/* 2. AI Misses & Gap Analysis Dashboard Card */}
+                            <Card className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                                <CardHeader className="p-5 pb-3 border-b border-border bg-secondary/30">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                                                <AlertCircle className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-sm font-bold text-foreground">AI Misses & Gap Analysis</CardTitle>
+                                                <p className="text-[11px] text-muted-foreground">Omitted standard protections</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] font-bold border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/40">
+                                            {data.missingClauses?.length || data.missingClausesCount || 0} Omissions
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-5 space-y-4">
+                                    {/* Percentage Missing Gauge */}
+                                    <div className="p-4 rounded-xl bg-secondary/40 border border-border/80 space-y-2">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-foreground">Missing Protections / Data</span>
+                                            <span className="font-black text-amber-600 text-sm">{missingPct}%</span>
+                                        </div>
+                                        <Progress 
+                                            value={missingPct} 
+                                            className="h-2 bg-secondary"
+                                        />
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                            {missingPct > 20 
+                                                ? "Substantial protection gap. Critical standard covenants are absent from this contract."
+                                                : "Moderate protection gap. Standard protective covenants recommended below."}
+                                        </p>
+                                    </div>
+
+                                    {/* AI Misses Report List */}
+                                    <div className="space-y-2.5">
+                                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                            AI Misses Report (Recommended Additions)
+                                        </p>
+                                        {data.missingClauses && data.missingClauses.length > 0 ? (
+                                            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+                                                {data.missingClauses.map((mc: any, mIdx: number) => (
+                                                    <div key={mIdx} className="p-3 rounded-xl border border-amber-200/80 bg-amber-50/40 dark:bg-amber-950/20 space-y-2 text-xs">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-bold text-amber-950 dark:text-amber-100 flex items-center gap-1.5">
+                                                                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                                                                {mc.clauseName}
+                                                            </span>
+                                                            <Badge className="text-[9px] px-1.5 py-0 h-4 bg-amber-600 text-white font-bold">
+                                                                {mc.risk || 'Medium'} Risk
+                                                            </Badge>
+                                                        </div>
+                                                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                                            {mc.description}
+                                                        </p>
+                                                        {mc.suggestedAddition && (
+                                                            <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-amber-200/50">
+                                                                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 truncate">
+                                                                    Suggested insertion ready
+                                                                </span>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="h-6 px-2 text-[10px] font-bold text-primary hover:bg-primary/10 gap-1 shrink-0"
+                                                                    onClick={() => handleCopySuggestion(mc.suggestedAddition, 1000 + mIdx)}
+                                                                >
+                                                                    {copiedClauseIdx === (1000 + mIdx) ? (
+                                                                        <>
+                                                                            <CheckCheck className="h-3 w-3 text-emerald-600" />
+                                                                            Copied
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Copy className="h-3 w-3" />
+                                                                            Copy Addition
+                                                                        </>
+                                                                    )}
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50 text-xs text-emerald-900 flex items-center gap-2">
+                                                <CheckCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                                                <span>All critical standard covenants appear to be present in this agreement.</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* 3. Active Clause Inspector Card */}
+                            {selectedClauseIndex !== null && data.highlightedClauses && data.highlightedClauses[selectedClauseIndex] && (
+                                <Card className="rounded-2xl border border-primary/30 bg-card shadow-sm p-5 space-y-3 animate-in fade-in duration-300">
+                                    {(() => {
+                                        const activeClause = data.highlightedClauses[selectedClauseIndex];
+                                        const clTheme = getHighlightTheme(activeClause.type);
+                                        return (
+                                            <>
+                                                <div className="flex items-center justify-between">
+                                                    <Badge className={`text-[10px] font-extrabold uppercase ${clTheme.badgeBg}`}>
+                                                        {activeClause.type} • Clause #{selectedClauseIndex + 1}
+                                                    </Badge>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                                        onClick={() => setSelectedClauseIndex(null)}
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Original Document Text</p>
+                                                    <p className="text-xs font-serif italic text-foreground bg-secondary/50 p-2.5 rounded-lg border border-border mt-1 leading-relaxed">
+                                                        "{activeClause.text}"
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Identified Risk</p>
+                                                    <p className="text-xs font-bold text-foreground mt-0.5">{activeClause.issue}</p>
+                                                    {activeClause.explanation && (
+                                                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{activeClause.explanation}</p>
+                                                    )}
+                                                </div>
+                                                {activeClause.suggestion && (
+                                                    <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 p-3 space-y-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                                                                <Sparkles className="h-3 w-3 text-emerald-600" />
+                                                                What it should be
+                                                            </span>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="h-6 px-2 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100 rounded-md gap-1"
+                                                                onClick={() => handleCopySuggestion(activeClause.suggestion, selectedClauseIndex)}
+                                                            >
+                                                                {copiedClauseIdx === selectedClauseIndex ? (
+                                                                    <CheckCheck className="h-3 w-3 text-emerald-600" />
+                                                                ) : (
+                                                                    <Copy className="h-3 w-3" />
+                                                                )}
+                                                                Copy
+                                                            </Button>
+                                                        </div>
+                                                        <p className="text-xs font-semibold text-emerald-950 font-serif leading-relaxed italic bg-white/90 p-2 rounded border border-emerald-100">
+                                                            "{activeClause.suggestion}"
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
+                                </Card>
+                            )}
+
+                            {/* 4. Audit Metrics & Executive Summary Card */}
+                            <Card className="rounded-2xl border border-border bg-card shadow-sm p-5 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Analysis Overview</h4>
+                                    <Badge className={`${data.riskLevel === 'High' ? 'bg-rose-500' : data.riskLevel === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'} text-white font-bold text-[10px]`}>
+                                        {data.riskLevel?.toUpperCase()} RISK
+                                    </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 text-center">
+                                    <div className="p-3 rounded-xl bg-secondary/40 border border-border">
+                                        <p className="text-2xl font-black text-primary">{data.complianceScore}%</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Compliance Score</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-secondary/40 border border-border">
+                                        <p className="text-2xl font-black text-foreground">{totalClauses}</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Flagged Clauses</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <p className="text-[11px] font-bold text-foreground">Executive Summary</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">
+                                        {data.userReview || data.summary}
+                                    </p>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    function renderNonLegalView() {
+        const category = analysisData?.documentCategory || "Non-Legal Document";
+        const explanation = analysisData?.nonLegalExplanation || analysisData?.userReview || analysisData?.summary || "This document does not contain legal terms, contractual obligations, or statutory clauses.";
+        const fullTextSnippet = analysisData?.fullText ? analysisData.fullText.slice(0, 1000) : "";
+
+        return (
+            <div className="max-w-4xl mx-auto py-10 space-y-8 animate-in fade-in duration-500">
+                {/* Header Navigation */}
+                <div className="flex items-center justify-between">
+                    <Button 
+                        variant="ghost" 
+                        onClick={handleResetReview} 
+                        className="text-gray-600 hover:text-gray-900 gap-2"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Upload
+                    </Button>
+                    <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-800 px-3 py-1 text-xs font-semibold">
+                        Content Rejection Notice
+                    </Badge>
+                </div>
+
+                {/* Primary Alert Card */}
+                <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-50/40 shadow-lg rounded-3xl overflow-hidden">
+                    <CardContent className="p-8 md:p-10 space-y-8">
+                        <div className="flex items-start gap-6">
+                            <div className="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/30">
+                                <AlertTriangle className="h-9 w-9" />
+                            </div>
+                            <div className="space-y-2 flex-1">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+                                        This Document Is Not Legal-Related
+                                    </h1>
+                                    <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-100 border border-amber-300 font-bold px-3 py-1 text-xs uppercase tracking-wider">
+                                        Identified: {category}
+                                    </Badge>
+                                </div>
+                                <p className="text-gray-600 leading-relaxed text-base">
+                                    Vidhik AI's Legal Analysis Engine audited <span className="font-bold text-gray-900 font-mono text-sm">'{selectedFile?.name || "Uploaded File"}'</span> and determined that this file does not contain legal provisions, contractual covenants, or statutory subject matter. No simulated or artificial results have been generated.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* AI Rationale Box */}
+                        <div className="bg-white border border-amber-200 rounded-2xl p-6 space-y-3 shadow-sm">
+                            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-widest">
+                                <Sparkles className="h-4 w-4 text-amber-600" />
+                                AI Evaluation & Rationale
+                            </div>
+                            <p className="text-gray-800 leading-relaxed text-sm md:text-base font-medium">
+                                {explanation}
+                            </p>
+                        </div>
+
+                        {/* Two Column Diagnostic Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-6 space-y-3">
+                                <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2">
+                                    <X className="h-4 w-4 text-red-500" />
+                                    Why was this flagged as non-legal?
+                                </h4>
+                                <ul className="text-xs text-gray-700 space-y-2.5 leading-relaxed">
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-amber-600 font-bold text-base leading-none">•</span>
+                                        <span>No contractual parties, warranties, or liability covenants detected</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-amber-600 font-bold text-base leading-none">•</span>
+                                        <span>No governing laws, jurisdiction clauses, or legal obligations found</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-amber-600 font-bold text-base leading-none">•</span>
+                                        <span>Document content is classified as: <strong>{category}</strong></span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-6 space-y-3">
+                                <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-emerald-600" />
+                                    Supported Legal Document Types
+                                </h4>
+                                <ul className="text-xs text-gray-700 space-y-2.5 leading-relaxed">
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-emerald-600 font-bold text-base leading-none">•</span>
+                                        <span>Commercial Contracts (MSAs, SLAs, Vendor & Client Agreements)</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-emerald-600 font-bold text-base leading-none">•</span>
+                                        <span>Employment Contracts, NDAs, Non-Competes & Offer Letters</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-emerald-600 font-bold text-base leading-none">•</span>
+                                        <span>Leases, Deeds, Affidavits, Legal Notices & Court Pleadings</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Extracted Document Text Preview */}
+                        {fullTextSnippet && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                    <span className="font-semibold uppercase tracking-wider">Analyzed Document Extract</span>
+                                    <span>{fullTextSnippet.length} characters shown</span>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto p-4 bg-gray-50 border border-gray-200 rounded-2xl font-mono text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                    {fullTextSnippet}
+                                    {analysisData?.fullText?.length > 1000 && "\n\n... [Content Truncated]"}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
+                            <Button
+                                onClick={handleResetReview}
+                                className="w-full sm:w-auto h-12 px-8 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl gap-2 shadow-lg shadow-amber-600/20"
+                            >
+                                <Upload className="h-4 w-4" />
+                                Upload a Legal Document
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => navigate('/documents')}
+                                className="w-full sm:w-auto h-12 px-6 rounded-xl text-gray-700 border-gray-300 hover:bg-gray-100 font-semibold"
+                            >
+                                Back to Workspace
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    function renderErrorView() {
+        return (
+            <div className="max-w-xl mx-auto py-20 space-y-6 text-center animate-in fade-in duration-500">
+                <div className="w-16 h-16 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto shadow-sm">
+                    <ShieldAlert className="h-8 w-8" />
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-2xl font-bold text-gray-900">Analysis Could Not Be Completed</h2>
+                    <p className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto">
+                        {analysisError || "An error occurred while analyzing the document. No simulated or fallback data was generated."}
+                    </p>
+                </div>
+                <div className="pt-4 flex items-center justify-center gap-3">
+                    <Button onClick={handleResetReview} className="h-11 px-6 rounded-xl font-semibold gap-2">
+                        <Upload className="h-4 w-4" />
+                        Try Another Document
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate('/documents')} className="h-11 px-6 rounded-xl text-gray-700 border-gray-300">
+                        Back to Documents
+                    </Button>
                 </div>
             </div>
         );

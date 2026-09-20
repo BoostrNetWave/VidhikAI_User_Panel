@@ -26,6 +26,8 @@ import {
     Copy,
     ChevronDown,
     Layers,
+    FolderPlus,
+    CheckCircle2,
     History as HistoryIcon
 } from 'lucide-react';
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -69,6 +71,8 @@ export default function LegalResearchPage() {
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [recordingTime, setRecordingTime] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
+    const [isSavingToWorkspace, setIsSavingToWorkspace] = useState(false);
+    const [savingIndex, setSavingIndex] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'research' | 'history'>('research');
     const [historyFilter, setHistoryFilter] = useState<'all' | 'month' | 'week'>('all');
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -829,6 +833,164 @@ export default function LegalResearchPage() {
         generateLegalReportPDF('selected');
     };
 
+    const buildResearchHtml = (mode: 'selected' | 'full', selectedAssistantIndex?: number): { title: string; html: string } => {
+        const dateStr = new Date().toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        if (mode === 'selected') {
+            const targetIdx = selectedAssistantIndex ?? (messages.length - 1);
+            const assistantMsg = messages[targetIdx];
+            let userQ = query;
+            for (let j = targetIdx - 1; j >= 0; j--) {
+                if (messages[j]?.role === 'user') {
+                    userQ = messages[j].content;
+                    break;
+                }
+            }
+            const cleanTitle = userQ ? (userQ.length > 55 ? `${userQ.slice(0, 55)}...` : userQ) : "Legal Research Inquiry";
+            const citations = extractCitations(assistantMsg?.content || "");
+            const rawContent = (assistantMsg?.content || "").split('[CITATIONS]')[0].trim();
+
+            const contentHtml = rawContent.split(/\n{2,}/).map(block => {
+                const trimmed = block.trim();
+                if (!trimmed) return '';
+                if (trimmed.startsWith('### ')) return `<h3>${trimmed.slice(4)}</h3>`;
+                if (trimmed.startsWith('## ')) return `<h2>${trimmed.slice(3)}</h2>`;
+                if (trimmed.startsWith('# ')) return `<h1>${trimmed.slice(2)}</h1>`;
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                    const lis = trimmed.split('\n').map(l => `<li>${l.replace(/^[-*]\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('');
+                    return `<ul>${lis}</ul>`;
+                }
+                return `<p>${trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
+            }).filter(Boolean).join('');
+
+            const citationsHtml = citations.length > 0
+                ? `<h2>KEY LEGAL CITATIONS & PRECEDENTS</h2><ul>${citations.map(c => `<li>${c}</li>`).join('')}</ul>`
+                : '';
+
+            const disclaimerHtml = `
+                <div style="margin-top: 28px; padding: 14px 18px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; color: #92400e; font-size: 12px; line-height: 1.6;">
+                    <strong>AI Legal Assistance Notice:</strong> This content may not be 100% perfect as it is AI-generated. Legal precedents and statutory provisions can change—please cross-check with official legal gazettes and consult a qualified legal professional.
+                </div>
+            `;
+
+            const fullHtml = `
+                <h1 class="ql-align-center">LEGAL RESEARCH DOSSIER</h1>
+                <p class="ql-align-center"><strong>VIDHIK AI  |  JURISPRUDENTIAL CASE LAW ANALYSIS</strong></p>
+                <hr/>
+                <p><strong>Inquiry Matter:</strong> ${userQ}</p>
+                <p><strong>Generated on:</strong> ${dateStr}  |  <strong>Jurisdiction:</strong> Indian Law & Judicial Precedents</p>
+                <hr/>
+                <h2>LEGAL SYNTHESIS & STATUTORY EVALUATION</h2>
+                ${contentHtml}
+                ${citationsHtml}
+                ${disclaimerHtml}
+            `;
+
+            return { title: `Research: ${cleanTitle}`, html: fullHtml };
+        } else {
+            const firstUserMsg = messages.find(m => m.role === 'user');
+            const sessionTitle = firstUserMsg ? (firstUserMsg.content.length > 55 ? `${firstUserMsg.content.slice(0, 55)}...` : firstUserMsg.content) : "Legal Research Session";
+
+            let conversationHtml = '';
+            let exchangeNum = 1;
+
+            for (let idx = 0; idx < messages.length; idx++) {
+                if (messages[idx].role === 'user') {
+                    conversationHtml += `<h2 style="margin-top: 24px; color: #0f172a;">INQUIRY #${exchangeNum}: ${messages[idx].content}</h2>`;
+                } else if (messages[idx].role === 'assistant') {
+                    const citations = extractCitations(messages[idx].content);
+                    const rawContent = messages[idx].content.split('[CITATIONS]')[0].trim();
+                    const contentHtml = rawContent.split(/\n{2,}/).map(block => {
+                        const trimmed = block.trim();
+                        if (!trimmed) return '';
+                        if (trimmed.startsWith('### ')) return `<h3>${trimmed.slice(4)}</h3>`;
+                        if (trimmed.startsWith('## ')) return `<h2>${trimmed.slice(3)}</h2>`;
+                        if (trimmed.startsWith('# ')) return `<h1>${trimmed.slice(2)}</h1>`;
+                        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                            const lis = trimmed.split('\n').map(l => `<li>${l.replace(/^[-*]\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('');
+                            return `<ul>${lis}</ul>`;
+                        }
+                        return `<p>${trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
+                    }).filter(Boolean).join('');
+
+                    const citationsHtml = citations.length > 0
+                        ? `<h3>KEY LEGAL CITATIONS</h3><ul>${citations.map(c => `<li>${c}</li>`).join('')}</ul>`
+                        : '';
+
+                    conversationHtml += `${contentHtml}${citationsHtml}<hr style="margin: 20px 0; border: none; border-top: 1px dashed #cbd5e1;"/>`;
+                    exchangeNum++;
+                }
+            }
+
+            const disclaimerHtml = `
+                <div style="margin-top: 28px; padding: 14px 18px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; color: #92400e; font-size: 12px; line-height: 1.6;">
+                    <strong>AI Legal Assistance Notice:</strong> This content may not be 100% perfect as it is AI-generated. Legal precedents and statutory provisions can change—please cross-check with official legal gazettes and consult a qualified legal professional.
+                </div>
+            `;
+
+            const fullHtml = `
+                <h1 class="ql-align-center">COMPLETE LEGAL RESEARCH SESSION</h1>
+                <p class="ql-align-center"><strong>VIDHIK AI  |  MULTI-TURN RESEARCH DOSSIER</strong></p>
+                <hr/>
+                <p><strong>Primary Inquiry:</strong> ${sessionTitle}</p>
+                <p><strong>Generated on:</strong> ${dateStr}  |  <strong>Jurisdiction:</strong> Indian Law & Judicial Precedents</p>
+                <hr/>
+                ${conversationHtml}
+                ${disclaimerHtml}
+            `;
+
+            return { title: `Research: ${sessionTitle}`, html: fullHtml };
+        }
+    };
+
+    const handleAddToWorkspace = async (mode: 'selected' | 'full', targetAssistantIndex?: number) => {
+        try {
+            setIsSavingToWorkspace(true);
+            if (targetAssistantIndex !== undefined) {
+                setSavingIndex(targetAssistantIndex);
+            }
+
+            const profile = JSON.parse(localStorage.getItem('user_profile_data') || '{}');
+            const userId = profile._id || profile.id;
+
+            const { title, html } = buildResearchHtml(mode, targetAssistantIndex);
+
+            const response = await api.post('/documents/save', {
+                userId,
+                title,
+                documentType: 'legal_research',
+                content: html,
+                formData: {
+                    source: 'legal_research',
+                    mode,
+                    timestamp: new Date().toISOString()
+                }
+            });
+
+            if (response.data.success) {
+                toast.success("Saved to My Documents workspace!", {
+                    description: `"${title}" has been saved to your document repository.`,
+                    action: {
+                        label: "Open My Documents",
+                        onClick: () => navigate('/documents/my-documents')
+                    }
+                });
+            }
+        } catch (err: any) {
+            console.error("Failed to save to workspace:", err);
+            toast.error(err.response?.data?.message || "Failed to save document to workspace");
+        } finally {
+            setIsSavingToWorkspace(false);
+            setSavingIndex(null);
+        }
+    };
+
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -1194,53 +1356,121 @@ export default function LegalResearchPage() {
                                                     </div>
                                                 )}
 
-                                                {/* Download Report Button with Selected vs Full Chat Options */}
+                                                {/* AI Content Accuracy Disclaimer */}
+                                                <div className="mt-6 p-4 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-900 flex items-start gap-3 text-xs leading-relaxed">
+                                                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                                                    <div className="space-y-0.5">
+                                                        <p className="font-bold text-amber-950 text-xs flex items-center gap-1.5">
+                                                            <span>AI Legal Assistance Notice</span>
+                                                        </p>
+                                                        <p className="text-amber-800/95 text-[11.5px] font-medium leading-relaxed">
+                                                            This content may not be 100% perfect as it is AI-generated. Legal precedents and statutory provisions can change—please cross-check with official legal gazettes and consult a qualified legal professional before taking formal action.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Toolbar: Download Report, Add to Workspace, Copy */}
                                                 <div className="mt-7 pt-5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button
-                                                                className="h-11 px-5 rounded-xl bg-black hover:bg-black/90 text-white font-semibold text-xs sm:text-sm gap-2.5 shadow-sm hover:shadow-md transition-all inline-flex items-center"
-                                                            >
-                                                                <Download className="h-4 w-4" />
-                                                                <span>Download Report</span>
-                                                                <ChevronDown className="h-3.5 w-3.5 opacity-70 ml-0.5" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="start" className="w-80 p-2 rounded-xl shadow-xl border border-gray-200 bg-white">
-                                                            <div className="px-3 py-2 border-b border-gray-100 mb-1">
-                                                                <p className="text-xs font-bold text-gray-900">Download Research Report</p>
-                                                                <p className="text-[11px] text-gray-500">Choose your preferred export scope</p>
-                                                            </div>
-                                                            <DropdownMenuItem
-                                                                onClick={() => generateLegalReportPDF('selected', i)}
-                                                                className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
-                                                            >
-                                                                <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                                                                    <FileText className="h-4 w-4" />
+                                                    <div className="flex flex-wrap items-center gap-3">
+                                                        {/* Download Report Button with Selected vs Full Chat Options */}
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    className="h-11 px-5 rounded-xl bg-black hover:bg-black/90 text-white font-semibold text-xs sm:text-sm gap-2.5 shadow-sm hover:shadow-md transition-all inline-flex items-center"
+                                                                >
+                                                                    <Download className="h-4 w-4" />
+                                                                    <span>Download Report</span>
+                                                                    <ChevronDown className="h-3.5 w-3.5 opacity-70 ml-0.5" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="start" className="w-80 p-2 rounded-xl shadow-xl border border-gray-200 bg-white">
+                                                                <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                                                                    <p className="text-xs font-bold text-gray-900">Download Research Report</p>
+                                                                    <p className="text-[11px] text-gray-500">Choose your preferred export scope</p>
                                                                 </div>
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-semibold text-xs text-gray-900">Download Selected Chat</span>
-                                                                    <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
-                                                                        Download only this specific research query, analysis, and citations
-                                                                    </span>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => generateLegalReportPDF('selected', i)}
+                                                                    className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
+                                                                >
+                                                                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                                                                        <FileText className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-semibold text-xs text-gray-900">Download Selected Chat</span>
+                                                                        <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
+                                                                            Download only this specific research query, analysis, and citations
+                                                                        </span>
+                                                                    </div>
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => generateLegalReportPDF('full')}
+                                                                    className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
+                                                                >
+                                                                    <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                                                                        <Layers className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-semibold text-xs text-gray-900">Download Full Chat</span>
+                                                                        <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
+                                                                            Download the complete multi-turn conversation and follow-ups
+                                                                        </span>
+                                                                    </div>
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+
+                                                        {/* Add to Workspace Button with Selected vs Full Chat Options */}
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    disabled={isSavingToWorkspace}
+                                                                    className="h-11 px-5 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold text-xs sm:text-sm gap-2.5 shadow-sm hover:shadow-md transition-all inline-flex items-center"
+                                                                >
+                                                                    {savingIndex === i ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <FolderPlus className="h-4 w-4" />
+                                                                    )}
+                                                                    <span>Add to Workspace</span>
+                                                                    <ChevronDown className="h-3.5 w-3.5 opacity-70 ml-0.5" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="start" className="w-80 p-2 rounded-xl shadow-xl border border-gray-200 bg-white">
+                                                                <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                                                                    <p className="text-xs font-bold text-gray-900">Save to My Documents</p>
+                                                                    <p className="text-[11px] text-gray-500">Add directly to your workspace repository</p>
                                                                 </div>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() => generateLegalReportPDF('full')}
-                                                                className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
-                                                            >
-                                                                <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                                                                    <Layers className="h-4 w-4" />
-                                                                </div>
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-semibold text-xs text-gray-900">Download Full Chat</span>
-                                                                    <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
-                                                                        Download the complete multi-turn conversation and follow-ups
-                                                                    </span>
-                                                                </div>
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleAddToWorkspace('selected', i)}
+                                                                    className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
+                                                                >
+                                                                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                                                                        <FileText className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-semibold text-xs text-gray-900">Save Selected Analysis</span>
+                                                                        <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
+                                                                            Save this specific legal query, analysis, and citations to My Documents
+                                                                        </span>
+                                                                    </div>
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleAddToWorkspace('full')}
+                                                                    className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-50 focus:bg-slate-50 transition-colors"
+                                                                >
+                                                                    <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                                                                        <Layers className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-semibold text-xs text-gray-900">Save Full Research Session</span>
+                                                                        <span className="text-[11px] text-gray-500 leading-normal mt-0.5">
+                                                                            Save the complete multi-turn research thread to My Documents
+                                                                        </span>
+                                                                    </div>
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
 
                                                     <Button
                                                         variant="ghost"

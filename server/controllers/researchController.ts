@@ -22,7 +22,7 @@ export const handleLegalResearch = async (req: any, res: Response) => {
         }));
 
         const isFollowUp = formattedHistory.length > 0;
-        const fullContext = query + ' ' + formattedHistory.map(h => h.content).join(' ');
+        const fullContext = query + ' ' + formattedHistory.map((h: any) => h.content).join(' ');
 
         // Calculate credit cost (1, 3, or 5) and enforce word limit
         let creditPlan;

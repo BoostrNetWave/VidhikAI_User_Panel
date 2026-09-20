@@ -160,9 +160,25 @@ FORMATTING RULES:
             }
 
             const analysisResults = JSON.parse(jsonMatch[0]);
-            console.log(`[Document Service] Review completed successfully`);
+            console.log(`[Document Service] Review completed successfully. Is Legal: ${analysisResults.isLegalDocument !== false}`);
+            
+            const isLegal = analysisResults.isLegalDocument !== false;
+
             return {
-                ...analysisResults,
+                isLegalDocument: isLegal,
+                documentCategory: analysisResults.documentCategory || (isLegal ? 'Legal Document' : 'Non-Legal Document'),
+                nonLegalExplanation: analysisResults.nonLegalExplanation || '',
+                summary: analysisResults.summary || '',
+                userReview: analysisResults.userReview || '',
+                complianceScore: isLegal ? (typeof analysisResults.complianceScore === 'number' ? analysisResults.complianceScore : 85) : 0,
+                riskLevel: isLegal ? (analysisResults.riskLevel || 'Medium') : 'N/A',
+                suggestedAmendmentsCount: isLegal ? (analysisResults.suggestedAmendmentsCount || 0) : 0,
+                standardClausesCount: isLegal ? (analysisResults.standardClausesCount || 0) : 0,
+                missingDataPercentage: isLegal ? (typeof analysisResults.missingDataPercentage === 'number' ? analysisResults.missingDataPercentage : Math.min(30, (analysisResults.missingClauses?.length || 1) * 10)) : 0,
+                missingClausesCount: isLegal ? (typeof analysisResults.missingClausesCount === 'number' ? analysisResults.missingClausesCount : (analysisResults.missingClauses?.length || 0)) : 0,
+                missingClauses: isLegal && Array.isArray(analysisResults.missingClauses) ? analysisResults.missingClauses : [],
+                findings: isLegal && Array.isArray(analysisResults.findings) ? analysisResults.findings : [],
+                highlightedClauses: isLegal && Array.isArray(analysisResults.highlightedClauses) ? analysisResults.highlightedClauses : [],
                 fullText: text // Return original text for frontend display
             };
         } catch (error) {

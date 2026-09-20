@@ -1,7 +1,7 @@
-import { useState, ReactNode } from 'react';
+import { useState, useRef, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, Loader2, FileText, Download, Eye, Edit, Save, CheckCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, FileText, Download, Eye, Edit, Save, CheckCircle, PenTool, ShieldCheck } from "lucide-react";
 import api from '@/lib/api';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
@@ -15,6 +15,7 @@ import { DocumentGeneratorLoader } from '@/components/documents/DocumentGenerato
 import { DocumentPreview } from '@/components/documents/DocumentPreview';
 import { DocumentInfoBar } from '@/components/documents/DocumentInfoBar';
 import { DocumentSidebar } from '@/components/documents/DocumentSidebar';
+import { DigitalSignatureModal } from '@/components/documents/DigitalSignatureModal';
 import { parseHtmlToDocx } from '@/lib/docxUtils';
 import {
     DropdownMenu,
@@ -55,6 +56,8 @@ export default function DocumentBaseGenerator({
     const [formData, setFormData] = useState(initialFormData);
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const quillRef = useRef<any>(null);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -271,6 +274,28 @@ export default function DocumentBaseGenerator({
         }
     };
 
+    const handleInsertSignature = (signatureHtml: string) => {
+        if (isEditMode && quillRef.current) {
+            try {
+                const editor = quillRef.current.getEditor();
+                const range = editor.getSelection();
+                const index = range ? range.index : editor.getLength();
+                editor.clipboard.dangerouslyPasteHTML(index, signatureHtml);
+                const updatedHtml = editor.root.innerHTML;
+                setGeneratedDocument(updatedHtml);
+                toast.success("Digital signature inserted into agreement!");
+                return;
+            } catch (e) {
+                console.error("Failed to insert signature into Quill editor, fallback to append:", e);
+            }
+        }
+        setGeneratedDocument(prev => {
+            if (!prev) return signatureHtml;
+            return prev + '\n' + signatureHtml;
+        });
+        toast.success("Digital signature added to agreement!");
+    };
+
     return (
         <DashboardLayout userNav={<UserNav />}>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -331,9 +356,26 @@ export default function DocumentBaseGenerator({
 
                     {generatedDocument && (
                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-                                <CardTitle>Generated Agreement</CardTitle>
-                                <div className="flex gap-2">
+                            <CardHeader className="flex flex-row items-center justify-between border-b pb-4 flex-wrap gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <CardTitle>Generated Agreement</CardTitle>
+                                    {(generatedDocument.includes('vidhik-signature-block') || generatedDocument.includes('sig-badge') || generatedDocument.includes('Digitally Signed')) && (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                                            Digitally Signed
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setIsSignatureModalOpen(true)}
+                                        className="gap-1.5 text-xs text-indigo-700 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 font-semibold"
+                                    >
+                                        <PenTool className="h-3.5 w-3.5" />
+                                        Add Digital Signature
+                                    </Button>
                                     <Button variant="outline" size="sm" onClick={() => setIsEditMode(!isEditMode)} className="gap-2">
                                         {isEditMode ? <Eye className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                                         {isEditMode ? 'Preview' : 'Edit'}
@@ -384,10 +426,11 @@ export default function DocumentBaseGenerator({
                                 {isEditMode ? (
                                     <div className="p-8 w-full max-w-[210mm] mx-auto">
                                         <ReactQuill
+                                            ref={quillRef}
                                             value={generatedDocument}
                                             onChange={setGeneratedDocument}
                                             theme="snow"
-                                            className="min-h-[600px] bg-white shadow-md"
+                                            className="min-h-[600px] bg-white shadow-md font-serif text-slate-900"
                                         />
                                     </div>
                                 ) : (
@@ -408,6 +451,26 @@ export default function DocumentBaseGenerator({
                     />
                 </div>
             </div>
+
+            {/* Digital Signature Modal */}
+            <DigitalSignatureModal
+                isOpen={isSignatureModalOpen}
+                onClose={() => setIsSignatureModalOpen(false)}
+                onInsertSignature={handleInsertSignature}
+                defaultName={
+                    formData?.authorizedSignatory ||
+                    formData?.signatory_name ||
+                    formData?.signatoryName ||
+                    formData?.employer_name ||
+                    formData?.employerName ||
+                    formData?.clientName ||
+                    formData?.client_name ||
+                    formData?.consultantName ||
+                    formData?.party1_signatory ||
+                    formData?.party2_signatory ||
+                    ''
+                }
+            />
         </DashboardLayout>
     );
 }
