@@ -11,7 +11,9 @@ import {
     cancelConsultation,
     sendConsultationSignal,
     getConsultationSignals,
-    clearConsultationSignals
+    clearConsultationSignals,
+    joinConsultation,
+    endConsultation
 } from '../controllers/consultationController';
 import multer from 'multer';
 import path from 'path';
@@ -72,6 +74,8 @@ router.post('/:id/propose', proposeConsultationTime);
 router.post('/:id/pay', payAndConfirmConsultation);
 router.post('/:id/upload', upload.single('file'), uploadConsultationDocument);
 router.post('/:id/cancel', cancelConsultation);
+router.post('/:id/join', joinConsultation);
+router.post('/:id/end', endConsultation);
 router.post('/:id/signals', sendConsultationSignal);
 router.get('/:id/signals', getConsultationSignals);
 router.post('/:id/signals/clear', clearConsultationSignals);

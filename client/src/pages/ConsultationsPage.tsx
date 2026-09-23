@@ -43,6 +43,9 @@ export default function ConsultationsPage() {
     const [isPayingId, setIsPayingId] = useState<string | null>(null);
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+    // Completed consultation summary modal
+    const [selectedSummary, setSelectedSummary] = useState<IConsultation | null>(null);
+
     useEffect(() => {
         fetchConsultations();
         fetchLawyers();
@@ -253,6 +256,16 @@ export default function ConsultationsPage() {
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <h3 className="text-xl font-extrabold text-slate-900 leading-tight">{consultation.title}</h3>
                                                 {getStatusBadge(consultation.status)}
+                                                {consultation.status === 'scheduled' && consultation.meetingJoinedByLawyer && (
+                                                    <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-bold text-[10px] animate-pulse">
+                                                        Advocate in Room
+                                                    </Badge>
+                                                )}
+                                                {consultation.status === 'scheduled' && consultation.meetingJoinedByClient && (
+                                                    <Badge className="bg-blue-500/10 text-blue-600 border border-blue-500/20 font-bold text-[10px]">
+                                                        You Joined
+                                                    </Badge>
+                                                )}
                                             </div>
                                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-500">
                                                 <span className="flex items-center gap-1.5">
@@ -281,9 +294,9 @@ export default function ConsultationsPage() {
                                                     </Button>
                                                     <Button 
                                                         onClick={() => {
-                                                            setCounterConsultation(consultation);
-                                                            setCounterDate(consultation.scheduledDate.split('T')[0]);
-                                                            setCounterTime(consultation.scheduledTime);
+                                                             setCounterConsultation(consultation);
+                                                             setCounterDate(consultation.scheduledDate.split('T')[0]);
+                                                             setCounterTime(consultation.scheduledTime);
                                                         }}
                                                         variant="outline"
                                                         className="border-slate-200 rounded-xl font-semibold text-xs text-slate-700"
@@ -308,8 +321,31 @@ export default function ConsultationsPage() {
                                                     className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md shadow-sm"
                                                 >
                                                     <Video className="h-4 w-4" />
-                                                    Join Video Room
+                                                    {consultation.meetingJoinedByLawyer ? "Advocate Joined • Join Room" : "Join Video Room"}
                                                 </Button>
+                                            )}
+
+                                            {consultation.status === 'completed' && (
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <Button 
+                                                        onClick={() => setSelectedSummary(consultation)}
+                                                        variant="outline"
+                                                        className="border-primary/30 text-primary hover:bg-primary/10 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                        View Summary
+                                                    </Button>
+                                                    <Button 
+                                                        onClick={() => {
+                                                            setSelectedLawyer(consultation.lawyer);
+                                                            setShowNewRequest(true);
+                                                        }}
+                                                        className="bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                                                    >
+                                                        <Plus className="h-4 w-4" />
+                                                        Book New Consultation
+                                                    </Button>
+                                                </div>
                                             )}
 
                                             {consultation.status !== 'completed' && consultation.status !== 'cancelled' && (
@@ -605,6 +641,128 @@ export default function ConsultationsPage() {
                                 {submittingCounter ? "Submitting..." : "Submit Proposal"}
                             </Button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: View Meeting Summary */}
+            {selectedSummary && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden border border-slate-200 shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                            <div className="space-y-1">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    Completed Session
+                                </span>
+                                <h3 className="text-xl font-extrabold text-slate-900">Consultation Summary</h3>
+                            </div>
+                            <Button 
+                                onClick={() => setSelectedSummary(null)}
+                                variant="ghost" 
+                                size="icon" 
+                                className="rounded-full"
+                            >
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </div>
+
+                        <div className="p-6 space-y-5 overflow-y-auto flex-1 font-sans">
+                            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
+                                <div className="flex justify-between items-start gap-2">
+                                    <div>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Topic / Case Title</span>
+                                        <h4 className="text-sm font-bold text-slate-900 mt-0.5">{selectedSummary.title}</h4>
+                                    </div>
+                                    <span className="text-xs font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
+                                        ₹{selectedSummary.totalFee}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 text-xs">
+                                    <div>
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase block">Advocate</span>
+                                        <span className="font-bold text-slate-800">Adv. {selectedSummary.lawyer?.fullName}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase block">Meeting Duration</span>
+                                        <span className="font-bold text-slate-800">{selectedSummary.meetingDuration ? `${selectedSummary.meetingDuration} mins` : "Completed"}</span>
+                                    </div>
+                                </div>
+
+                                <div className="text-xs text-slate-500 pt-1">
+                                    Scheduled: {new Date(selectedSummary.scheduledDate).toLocaleDateString()} at {selectedSummary.scheduledTime}
+                                </div>
+                            </div>
+
+                            {selectedSummary.meetingNotes ? (
+                                <div className="space-y-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Advocate's Legal Advice & Summary Notes</span>
+                                    <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap font-medium">
+                                        {selectedSummary.meetingNotes}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl text-xs text-slate-500 italic text-center">
+                                    No additional meeting notes were recorded by counsel for this session.
+                                </div>
+                            )}
+
+                            {selectedSummary.documents && selectedSummary.documents.length > 0 && (
+                                <div className="space-y-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Shared Documents ({selectedSummary.documents.length})</span>
+                                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                                        {selectedSummary.documents.map((doc, idx) => (
+                                            <div key={idx} className="p-3 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                                <div className="flex items-center gap-2 truncate">
+                                                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                                                    <span className="font-bold text-slate-800 truncate">{doc.name}</span>
+                                                </div>
+                                                <a
+                                                    href={`/lawyer${doc.url}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-primary hover:underline font-bold text-[11px] shrink-0"
+                                                >
+                                                    Download
+                                                </a>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Repayment and Rejoin Disabled Warning */}
+                            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-900 space-y-1.5">
+                                <p className="font-bold flex items-center gap-1.5 text-amber-800">
+                                    <AlertCircle className="w-3.5 h-3.5" />
+                                    Session Finalized • Rejoin Disabled
+                                </p>
+                                <p className="text-[11px] text-amber-700 leading-relaxed">
+                                    This consultation has been closed and cannot be reopened or rejoined. If you need further legal counsel or follow-up discussion, please book and pay for a new consultation.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
+                            <Button 
+                                onClick={() => setSelectedSummary(null)}
+                                variant="outline"
+                                className="flex-1 rounded-xl h-11 text-xs font-bold border-slate-200 text-slate-700"
+                            >
+                                Close
+                            </Button>
+                            <Button 
+                                onClick={() => {
+                                    const advocate = selectedSummary.lawyer;
+                                    setSelectedSummary(null);
+                                    setSelectedLawyer(advocate);
+                                    setShowNewRequest(true);
+                                }}
+                                className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl h-11 text-xs font-bold shadow-md shadow-primary/20"
+                            >
+                                Book New Consultation
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}
