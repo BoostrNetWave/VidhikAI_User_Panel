@@ -6,6 +6,7 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
     let token;
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
             token = req.headers.authorization.split(' ')[1];
             const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret');
             const userId = decoded.id || decoded._id || decoded.userId;
@@ -16,7 +17,7 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
             if (req.user.isSuspended) {
                 return res.status(403).json({ message: 'Account is suspended' });
             }
-            next();
+            return next();
         } catch (error) {
             console.error('[AUTH ERROR] Token verification failed');
             return res.status(401).json({ message: 'Not authorized, token failed' });
@@ -24,7 +25,7 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
     }
 
     if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+        return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
