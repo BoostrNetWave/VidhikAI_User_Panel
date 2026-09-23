@@ -143,17 +143,20 @@ export default function ConsultationRoom() {
         const initRoom = async () => {
             try {
                 setLoading(true);
-                const [data] = await Promise.all([
-                    consultationService.getConsultationById(id!),
-                    startLocalStream().catch(err => {
-                        console.warn("Could not acquire local preview on mount:", err);
-                        return null;
-                    })
-                ]);
+                const data = await consultationService.getConsultationById(id!);
                 setConsultation(data);
+
                 if (data?.status === 'completed') {
                     setShowSummaryModal(true);
+                } else {
+                    // Let backend know client has joined consultation
+                    await consultationService.joinConsultation(id!).catch(e => console.warn(e));
                 }
+
+                // Initialize WebRTC Preview
+                await startLocalStream().catch(err => {
+                    console.warn("Could not acquire local preview on mount:", err);
+                });
             } catch (error) {
                 console.error(error);
                 toast.error("Failed to load consultation details");
@@ -213,12 +216,12 @@ export default function ConsultationRoom() {
             ]
         });
 
-        // Add local tracks
+        // Add local tracks to RTCPeerConnection
         stream.getTracks().forEach(track => {
             pc.addTrack(track, stream);
         });
 
-        // Local ICE candidate
+        // Send local ICE candidates to backend
         pc.onicecandidate = (event) => {
             if (event.candidate) {
                 consultationService.sendSignal(id!, {
@@ -229,13 +232,14 @@ export default function ConsultationRoom() {
             }
         };
 
-        // Remote track received
+        // Capture remote stream tracks
         pc.ontrack = (event) => {
             console.log("Client received remote track:", event.track.kind);
             const remoteTracks = pc.getReceivers()
                 .map(r => r.track)
                 .filter(t => t && t.readyState === 'live');
 
+            console.log("Client active remote tracks count:", remoteTracks.length);
             if (remoteTracks.length > 0) {
                 setRemoteStream(new MediaStream(remoteTracks));
                 setIsConnected(true);
@@ -268,7 +272,7 @@ export default function ConsultationRoom() {
                 const signals = await consultationService.getSignals(id!);
                 const remoteSignals = signals.filter((s: any) => s.sender === 'lawyer');
 
-                // 1. Process Offer from Lawyer
+                // 1. Process Offer from Lawyer (with session reset capability)
                 const offerSignal = remoteSignals.find((s: any) => s.type === 'offer');
                 if (offerSignal && offerSignal.sdp !== lastAnsweredOfferSdp.current) {
                     console.log("Client detecting new remote offer. Resetting peer connection...");
@@ -286,11 +290,13 @@ export default function ConsultationRoom() {
                     // Re-setup peer connection
                     const newPc = setupPeerConnection(localStreamRef.current!);
 
+                    console.log("Client setting remote description...");
                     await newPc.setRemoteDescription(new RTCSessionDescription({
                         type: 'offer',
                         sdp: offerSignal.sdp
                     }));
 
+                    console.log("Client creating answer...");
                     const answer = await newPc.createAnswer();
                     await newPc.setLocalDescription(answer);
 
@@ -300,7 +306,7 @@ export default function ConsultationRoom() {
                         sdp: answer.sdp
                     });
                     console.log("Client answer sent successfully.");
-                    return;
+                    return; // Yield this poll tick
                 }
 
                 // 2. Process Candidates from Lawyer
@@ -308,6 +314,7 @@ export default function ConsultationRoom() {
                 for (const signal of candidateSignals) {
                     if (signal._id && !processedCandidatesRef.current.has(signal._id)) {
                         if (!pc.remoteDescription || !pc.remoteDescription.type) {
+                            // Delay candidate processing until remote offer description is set
                             continue;
                         }
                         processedCandidatesRef.current.add(signal._id);
@@ -315,6 +322,7 @@ export default function ConsultationRoom() {
                             const candidateObj = JSON.parse(signal.candidate);
                             if (candidateObj) {
                                 await pc.addIceCandidate(new RTCIceCandidate(candidateObj));
+                                console.log("Client added remote candidate successfully");
                             }
                         } catch (iceErr) {
                             console.error("Error adding client ICE candidate:", iceErr);
@@ -326,6 +334,7 @@ export default function ConsultationRoom() {
             }
         };
 
+        // Poll immediately and then every 1.5 seconds
         poll();
         pollingIntervalRef.current = setInterval(poll, 1500);
     };
@@ -342,7 +351,6 @@ export default function ConsultationRoom() {
                 localVideoRef.current.play().catch(() => {});
             }
             setupPeerConnection(stream);
-            setIsConnecting(true);
             startPolling();
 
             // Mark consultation as joined by client in database
@@ -353,7 +361,7 @@ export default function ConsultationRoom() {
                 .catch(err => console.error("Error setting client joined state:", err));
         } catch (err) {
             console.error("Error starting call:", err);
-            toast.error("Failed to start call. Please try again.");
+            toast.error("Failed to establish video call connection");
             setHasJoinedCall(false);
         }
     };
@@ -615,39 +623,54 @@ export default function ConsultationRoom() {
                                     </Button>
                                 </div>
                             ) : (
-                                /* Active Remote Video View */
-                                remoteStream && isRemoteVideoActive ? (
-                                    <video
-                                        ref={remoteVideoCallback}
-                                        autoPlay
-                                        playsInline
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center">
-                                        <div className="relative">
-                                            <div className="h-28 w-28 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-slate-400 overflow-hidden shadow-2xl">
-                                                <User className="h-14 w-14 text-slate-500" />
+                                /* Remote Video (Full Screen / Large) */
+                                remoteStream ? (
+                                    <>
+                                        <video
+                                            ref={remoteVideoCallback}
+                                            autoPlay
+                                            playsInline
+                                            className={`w-full h-full object-cover transition-opacity duration-500 ${
+                                                isRemoteVideoActive ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'
+                                            }`}
+                                        />
+                                        
+                                        {/* Remote Camera Off Placeholder */}
+                                        {!isRemoteVideoActive && (
+                                            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 animate-in fade-in duration-300">
+                                                <div className="h-24 w-24 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 text-3xl font-bold shadow-xl">
+                                                    {consultation.lawyer?.fullName?.split(' ').map((n: string) => n[0]).join('') || 'ADV'}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-white font-extrabold text-base tracking-tight">
+                                                        Adv. {consultation.lawyer?.fullName || 'Advocate'}
+                                                    </h4>
+                                                    <p className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 justify-center">
+                                                        <VideoOff className="w-3.5 h-3.5 text-red-500" /> Camera is turned off / busy
+                                                    </p>
+                                                </div>
                                             </div>
-                                            {(isConnected || consultation.meetingJoinedByLawyer) && (
-                                                <div className="absolute bottom-1 right-1 h-5 w-5 bg-green-500 rounded-full border-4 border-slate-950 animate-pulse" />
-                                            )}
+                                        )}
+                                    </>
+                                ) : (
+                                    /* Waiting Overlay */
+                                    <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 animate-pulse">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-primary/90/20 rounded-full blur-xl animate-ping"></div>
+                                            <div className="relative h-20 w-20 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-primary/80">
+                                                <Video className="w-10 h-10 animate-bounce" />
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <h4 className="text-white font-bold text-base">Adv. {consultation.lawyer?.fullName}</h4>
-                                            <p className="text-xs text-slate-400 font-medium">
-                                                {isConnected 
-                                                    ? (remoteStream && !isRemoteVideoActive ? "Camera is turned off" : "Connected (Audio Only)")
-                                                    : isConnecting 
-                                                        ? "Connecting to advocate..." 
-                                                        : consultation.meetingJoinedByLawyer
-                                                            ? "Advocate has entered room • Connecting video..."
-                                                            : "Waiting for advocate to enter room..."
-                                                }
+                                        <div className="space-y-1.5">
+                                            <h4 className="text-white font-extrabold text-base tracking-tight">
+                                                Waiting for Advocate to connect...
+                                            </h4>
+                                            <p className="text-xs text-slate-400 max-w-xs font-semibold">
+                                                Once the Advocate enters this encrypted channel, the call session will start automatically.
                                             </p>
-                                            {consultation.meetingJoinedByLawyer && !isConnected && (
-                                                <span className="inline-block mt-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-bold animate-pulse">
-                                                    Advocate Present in Room
+                                            {consultation.meetingJoinedByLawyer && (
+                                                <span className="inline-block mt-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-bold">
+                                                    Advocate Present in Room • Synchronizing...
                                                 </span>
                                             )}
                                         </div>
