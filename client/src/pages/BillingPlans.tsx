@@ -186,6 +186,15 @@ export default function BillingPlans() {
 
     useEffect(() => {
         loadBillingData();
+
+        // Re-fetch billing data when admin updates subscription via socket
+        const handleSubscriptionUpdated = () => {
+            loadBillingData();
+        };
+        window.addEventListener('subscription_updated', handleSubscriptionUpdated);
+        return () => {
+            window.removeEventListener('subscription_updated', handleSubscriptionUpdated);
+        };
     }, []);
 
 

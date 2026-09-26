@@ -75,10 +75,18 @@ function App() {
                     });
 
                     socket.on('SUBSCRIPTION_UPDATED', (data) => {
-                        toast.success(`Your subscription has been updated to ${data.subscription}`);
-                        const updatedUser = { ...user, subscription: data.subscription };
+                        toast.success(`Your subscription has been updated to ${data.subscription} plan! You now have ${data.monthlyCredits ?? 'updated'} monthly credits.`);
+                        const updatedUser = { 
+                            ...user, 
+                            subscription: data.subscription,
+                            monthlyCredits: data.monthlyCredits,
+                            extraCredits: data.extraCredits,
+                            aiCredits: data.aiCredits
+                        };
                         localStorage.setItem('user_profile_data', JSON.stringify(updatedUser));
+                        // Notify all listeners (storage event + custom event for same-tab refresh)
                         window.dispatchEvent(new Event('storage'));
+                        window.dispatchEvent(new CustomEvent('subscription_updated', { detail: data }));
                     });
                 }
             } catch (e) {

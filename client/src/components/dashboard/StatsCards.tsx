@@ -29,6 +29,16 @@ export function StatsCards() {
             }
         };
         fetchStats();
+
+        // Re-fetch stats when admin updates subscription via socket
+        const handleSubscriptionUpdated = () => {
+            setLoading(true);
+            fetchStats();
+        };
+        window.addEventListener('subscription_updated', handleSubscriptionUpdated);
+        return () => {
+            window.removeEventListener('subscription_updated', handleSubscriptionUpdated);
+        };
     }, []);
 
     return (

@@ -8,6 +8,9 @@ import LiveConsultation from '../models/LiveConsultation';
 import LoginHistory from '../models/LoginHistory';
 import { emitToUser } from '../socket';
 import { sendEmail } from '../utils/emailService';
+import CreditService, { PLAN_CREDIT_ALLOCATIONS } from '../services/creditService';
+import UsageRecord from '../models/UsageRecord';
+import Transaction from '../models/Transaction';
 /**
  * Admin Controller
  * Handles all requests from the Super Admin Panel
@@ -323,22 +326,76 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { subscription } = req.body;
 
-        const user = await User.findByIdAndUpdate(
-            id,
-            { subscription },
-            { new: true }
-        ).select('-password');
+        // Normalize the plan name to match system plan names (Free, Starter, Growth, Enterprise)
+        const planNormalized = (() => {
+            const raw = (subscription || '').toString().trim().toLowerCase();
+            if (raw === 'free') return 'Free';
+            if (raw === 'starter' || raw === 'pro' || raw === 'professional') return 'Starter';
+            if (raw === 'growth' || raw === 'business') return 'Growth';
+            if (raw === 'enterprise') return 'Enterprise';
+            // fallback: capitalize first letter
+            return subscription.charAt(0).toUpperCase() + subscription.slice(1);
+        })();
 
+        const user = await User.findById(id);
         if (!user) {
             res.status(404).json({ message: 'User not found' });
             return;
         }
 
-        // Emit real-time event to the specific user
-        emitToUser(id, 'SUBSCRIPTION_UPDATED', { subscription });
+        const previousPlan = user.subscription || 'Free';
 
-        res.json({ message: 'User subscription updated successfully', user });
+        // Allocate the correct credits for the new plan
+        const newQuota = PLAN_CREDIT_ALLOCATIONS[planNormalized] ?? 30;
+
+        user.subscription = planNormalized;
+        user.monthlyCredits = newQuota;
+        user.subscriptionStartedAt = new Date();
+        user.subscriptionRenewsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        // Keep extra credits intact; recalculate total
+        user.aiCredits = newQuota + (user.extraCredits || 0);
+        await user.save();
+
+        // Audit ledger entry
+        await UsageRecord.create({
+            userId: user._id,
+            featureType: 'subscription_grant',
+            featureName: `Admin Plan Override: ${previousPlan} -> ${planNormalized}`,
+            creditsUsed: 0,
+            subscriptionPlan: planNormalized,
+            notes: `Admin manually changed plan. Allocated ${newQuota} monthly credits.`
+        });
+
+        // Record an admin transaction for auditability
+        await Transaction.create({
+            userId: user._id,
+            orderId: `admin_override_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            type: 'plan_subscription',
+            planName: planNormalized,
+            billingCycle: 'monthly',
+            amount: 0,
+            currency: 'INR',
+            status: 'paid',
+            creditsGranted: newQuota,
+            paymentMethod: 'admin_override',
+            notes: { adminOverride: true, previousPlan }
+        });
+
+        // Emit real-time event to the specific user with full credit details
+        emitToUser(id, 'SUBSCRIPTION_UPDATED', {
+            subscription: planNormalized,
+            monthlyCredits: user.monthlyCredits,
+            extraCredits: user.extraCredits,
+            aiCredits: user.aiCredits,
+            renewsAt: user.subscriptionRenewsAt
+        });
+
+        const updatedUser = user.toObject();
+        delete (updatedUser as any).password;
+
+        res.json({ message: 'User subscription updated successfully', user: updatedUser });
     } catch (error) {
+        console.error('[Admin] Error updating user subscription:', error);
         res.status(500).json({ message: 'Error updating user subscription' });
     }
 };

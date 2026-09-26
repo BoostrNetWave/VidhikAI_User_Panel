@@ -160,6 +160,29 @@ const seedData = [
                 cta: "Upgrade to Growth", 
                 disabled: false, 
                 limits: { monthlyCredits: 500, maxChatWords: 10000, maxDocGenWords: 15000, maxDocReviewWords: 50000 } 
+            },
+            { 
+                id: "enterprise",
+                name: "Enterprise", 
+                priceMonthly: 0, 
+                priceYearly: 0, 
+                monthlyCredits: 5000,
+                desc: "Full-scale enterprise access, admin-assigned only", 
+                features: [
+                    "5,000 Monthly AI Credits", 
+                    "Unlimited Legal Chat context", 
+                    "Full Document Generation access", 
+                    "Full Document Review access (unlimited words)",
+                    "Verified Lawyer Marketplace access",
+                    "Dedicated priority support",
+                    "Admin-assigned plan"
+                ], 
+                gradient: "from-slate-900 to-slate-700", 
+                popular: false, 
+                iconName: "Shield", 
+                cta: "Enterprise Plan", 
+                disabled: true, 
+                limits: { monthlyCredits: 5000, maxChatWords: 50000, maxDocGenWords: 50000, maxDocReviewWords: 100000 } 
             }
         ],
         category: 'user_panel',

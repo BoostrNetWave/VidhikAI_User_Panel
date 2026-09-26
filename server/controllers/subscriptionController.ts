@@ -65,6 +65,25 @@ const DEFAULT_PLANS = [
         gradient: "from-indigo-500 to-blue-600", 
         popular: false, 
         iconName: "Building2"
+    },
+    { 
+        id: "enterprise",
+        name: "Enterprise", 
+        priceMonthly: 0, 
+        priceYearly: 0, 
+        monthlyCredits: 5000,
+        desc: "Full-scale enterprise access, admin-assigned only", 
+        features: [
+            "5,000 Monthly AI Credits", 
+            "Unlimited Legal Chat context", 
+            "Full Document Generation access", 
+            "Full Document Review access",
+            "Dedicated priority support",
+            "Admin-assigned plan"
+        ], 
+        gradient: "from-slate-900 to-slate-700", 
+        popular: false, 
+        iconName: "Shield"
     }
 ];
 

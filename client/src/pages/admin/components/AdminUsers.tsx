@@ -283,13 +283,12 @@ export function AdminUsers({
                       <h4 className="text-sm font-semibold text-destructive">Subscription Override</h4>
                       <p className="text-xs text-muted-foreground">Manually override this user's subscription plan. This is a consequential action.</p>
                       
-                      <div className="flex gap-2">
-                        {['free', 'pro', 'enterprise'].map(plan => (
+                      <div className="flex gap-2 flex-wrap">
+                        {['Free', 'Starter', 'Growth', 'Enterprise'].map(plan => (
                           <Button 
                             key={plan}
-                            variant={selectedUser.subscription === plan ? 'default' : 'outline'}
+                            variant={selectedUser.subscription?.toLowerCase() === plan.toLowerCase() ? 'default' : 'outline'}
                             size="sm"
-                            className="capitalize"
                             onClick={() => {
                               const reason = prompt(`Reason for overriding plan to ${plan}?`);
                               if (reason) {

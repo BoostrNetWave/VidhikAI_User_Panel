@@ -54,10 +54,13 @@ export class CreditService {
     static async syncUserSubscription(user: any): Promise<any> {
         let changed = false;
         const rawPlan = (user.subscription || 'Free').toString().trim();
+        const rawLower = rawPlan.toLowerCase();
         let planName = 'Free';
-        if (rawPlan.toLowerCase() === 'growth' || rawPlan.toLowerCase() === 'enterprise' || rawPlan.toLowerCase() === 'business') {
+        if (rawLower === 'enterprise') {
+            planName = 'Enterprise';
+        } else if (rawLower === 'growth' || rawLower === 'business') {
             planName = 'Growth';
-        } else if (rawPlan.toLowerCase() === 'starter' || rawPlan.toLowerCase() === 'pro' || rawPlan.toLowerCase() === 'professional') {
+        } else if (rawLower === 'starter' || rawLower === 'pro' || rawLower === 'professional') {
             planName = 'Starter';
         } else {
             planName = 'Free';
