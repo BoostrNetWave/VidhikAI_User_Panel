@@ -99,5 +99,10 @@ export const adminService = {
     async getLoginHistory() {
         const response = await api.get('/admin/login-history');
         return response.data;
+    },
+
+    async toggleConsultantVisibility(id: string, showInConsultants: boolean) {
+        const response = await api.post(`/admin/lawyers/${id}/toggle-consultant`, { showInConsultants });
+        return response.data;
     }
 };

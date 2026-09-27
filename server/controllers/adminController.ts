@@ -127,7 +127,8 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
         const lawyers = await User.find({
             role: 'lawyer',
             isApproved: true,
-            isSuspended: { $ne: true }
+            isSuspended: { $ne: true },
+            showInConsultants: { $ne: false }
         })
         .select('-password -verificationOTP -otpExpires -subscriptionRenewsAt')
         .sort({ rating: -1, createdAt: -1 });
@@ -139,12 +140,13 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
         const enriched = lawyers.map(l => {
             const obj = l.toObject() as any;
             if (obj.avatar && !obj.avatar.startsWith('http')) {
-                let cleanPath = obj.avatar;
-                if (cleanPath.startsWith('/lawyer/uploads/')) {
-                    cleanPath = cleanPath.replace('/lawyer', '');
+                let filename = obj.avatar;
+                if (filename.includes('/uploads/')) {
+                    filename = filename.substring(filename.indexOf('/uploads/') + 9);
+                } else if (filename.startsWith('/')) {
+                    filename = filename.substring(1);
                 }
-                if (!cleanPath.startsWith('/')) cleanPath = `/${cleanPath}`;
-                obj.avatar = `https://lawyer.vidhikai.com/lawyer${cleanPath}`;
+                obj.avatar = `https://user.vidhikai.com/user/uploads/${filename}`;
             }
             return obj;
         });
@@ -155,6 +157,26 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error fetching public lawyers:', error);
         res.status(500).json({ message: 'Error fetching lawyers' });
+    }
+};
+
+// @desc    Toggle lawyer visibility on public landing page consultants section
+// @route   POST /api/admin/lawyers/:id/toggle-consultant
+export const toggleConsultantVisibility = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { showInConsultants } = req.body;
+        const user = await User.findByIdAndUpdate(
+            id,
+            { $set: { showInConsultants: Boolean(showInConsultants) } },
+            { new: true }
+        );
+        if (!user) {
+            return res.status(404).json({ message: 'Lawyer not found' });
+        }
+        res.json({ message: 'Visibility updated successfully', showInConsultants: (user as any).showInConsultants });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating visibility' });
     }
 };
         res.status(500).json({ message: 'Error fetching lawyers' });

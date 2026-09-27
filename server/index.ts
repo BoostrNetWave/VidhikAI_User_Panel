@@ -59,25 +59,30 @@ const __dirname = path.dirname(__filename);
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/user-admin2';
 
-// Serve uploads from shared lawyer-admin-main uploads folder (and local fallback)
-const lawyerUploadsPath = path.resolve(__dirname, '../../lawyer-admin-main/backend/uploads');
-const localUploadsPath = path.resolve(__dirname, '../uploads');
+// Serve uploads from shared lawyer-admin-main uploads folder across all server directory configurations
+const possibleUploadPaths = [
+    '/var/www/vidhik/lawyer-admin-main/backend/uploads',
+    '/var/www/html/Vidhik_AI_Lawyer/backend/uploads',
+    '/var/www/html/lawyer/backend/uploads',
+    path.resolve(__dirname, '../../lawyer-admin-main/backend/uploads'),
+    path.resolve(__dirname, '../uploads'),
+    path.resolve(__dirname, './uploads')
+];
 
-if (fs.existsSync(lawyerUploadsPath)) {
-    console.log(`[Static] Serving uploads from shared lawyer-admin uploads: ${lawyerUploadsPath}`);
-    app.use('/uploads', express.static(lawyerUploadsPath));
-    app.use('/lawyer/uploads', express.static(lawyerUploadsPath));
-    app.use('/user/uploads', express.static(lawyerUploadsPath));
-    app.use('/user/lawyer/uploads', express.static(lawyerUploadsPath));
-}
+possibleUploadPaths.forEach(dirPath => {
+    if (fs.existsSync(dirPath)) {
+        console.log(`[Static] Mounting upload path: ${dirPath}`);
+        app.use('/uploads', express.static(dirPath));
+        app.use('/user/uploads', express.static(dirPath));
+        app.use('/lawyer/uploads', express.static(dirPath));
+        app.use('/user/lawyer/uploads', express.static(dirPath));
+    }
+});
 
-if (fs.existsSync(localUploadsPath)) {
-    console.log(`[Static] Serving uploads from local uploads: ${localUploadsPath}`);
-    app.use('/uploads', express.static(localUploadsPath));
-    app.use('/lawyer/uploads', express.static(localUploadsPath));
-    app.use('/user/uploads', express.static(localUploadsPath));
-    app.use('/user/lawyer/uploads', express.static(localUploadsPath));
-}
+// Explicit handler for missing image uploads so Express NEVER returns HTML index.html for image requests!
+app.use(['/uploads/*', '/user/uploads/*', '/lawyer/uploads/*', '/user/lawyer/uploads/*'], (_req, res) => {
+    res.status(404).send('Image Not Found');
+});
 
 // Serve static assets unconditionally (bulletproof routing)
 let clientBuildPath = path.join(__dirname, '../dist/client');

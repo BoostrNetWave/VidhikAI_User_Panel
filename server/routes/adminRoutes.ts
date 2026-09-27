@@ -20,7 +20,8 @@ import {
     sendDirectEmail,
     reverifyUser,
     getAllConsultations,
-    getLoginHistory
+    getLoginHistory,
+    toggleConsultantVisibility
 } from '../controllers/adminController';
 import { protect, adminOnly } from '../middleware/authMiddleware';
 
@@ -36,6 +37,7 @@ router.put('/config', protect, adminOnly, updateConfig);
 router.get('/users', protect, adminOnly, getAllUsers);
 router.get('/pending-lawyers', protect, adminOnly, getPendingLawyers);
 router.post('/approve-lawyer/:id', protect, adminOnly, approveLawyer);
+router.post('/lawyers/:id/toggle-consultant', protect, adminOnly, toggleConsultantVisibility);
 router.post('/verify-user/:id', protect, adminOnly, verifyUser);
 router.get('/cases', protect, adminOnly, getAllCases);
 router.post('/cases/:id/milestones/:index/approve-payout', protect, adminOnly, approveMilestonePayout);

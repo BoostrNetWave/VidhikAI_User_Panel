@@ -66,6 +66,7 @@ const userSchema = new mongoose.Schema({
     experience: { type: String, default: "" },
     practiceAreas: { type: [String], default: [] },
     languages: { type: [String], default: [] },
+    showInConsultants: { type: Boolean, default: true },
     education: [{
         degree: String,
         school: String,
