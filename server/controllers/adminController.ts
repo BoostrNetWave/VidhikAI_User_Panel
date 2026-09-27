@@ -114,6 +114,15 @@ export const verifyUser = async (req: Request, res: Response) => {
 // @desc    Get all APPROVED, non-suspended lawyers for public consultant listing
 // @route   GET /api/admin/public/lawyers
 export const getPublicLawyers = async (req: Request, res: Response) => {
+    // Explicit CORS headers for cross-origin requests from landing page (vidhikai.com)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     try {
         const lawyers = await User.find({
             role: 'lawyer',
@@ -123,17 +132,15 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
         .select('-password -verificationOTP -otpExpires -subscriptionRenewsAt')
         .sort({ rating: -1, createdAt: -1 });
 
-        // Resolve avatar URLs: relative paths like /uploads/... → full URL via lawyer panel
+        // Resolve avatar URLs: relative paths like /uploads/... → full URL via user-admin panel
         const origin = `${req.protocol}://${req.get('host')}`;
         const lawyerPanelBase = origin.replace(/:\d+/, '') + (process.env.NODE_ENV === 'production' ? '' : ':5025');
 
         const enriched = lawyers.map(l => {
             const obj = l.toObject() as any;
             if (obj.avatar && !obj.avatar.startsWith('http')) {
-                // In production: served via Nginx at /lawyer/uploads/
-                // In development: served from lawyer-admin-main backend at port 5025
                 obj.avatar = process.env.NODE_ENV === 'production'
-                    ? `/lawyer${obj.avatar}`
+                    ? `https://user.vidhikai.com/user${obj.avatar}`
                     : `${lawyerPanelBase}${obj.avatar}`;
             }
             return obj;
@@ -143,6 +150,10 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
         res.set('Cache-Control', 'no-store');
         res.json(enriched);
     } catch (error) {
+        console.error('Error fetching public lawyers:', error);
+        res.status(500).json({ message: 'Error fetching lawyers' });
+    }
+};
         res.status(500).json({ message: 'Error fetching lawyers' });
     }
 };
