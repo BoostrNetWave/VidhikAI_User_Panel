@@ -139,9 +139,12 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
         const enriched = lawyers.map(l => {
             const obj = l.toObject() as any;
             if (obj.avatar && !obj.avatar.startsWith('http')) {
-                obj.avatar = process.env.NODE_ENV === 'production'
-                    ? `https://user.vidhikai.com/user${obj.avatar}`
-                    : `${lawyerPanelBase}${obj.avatar}`;
+                let cleanPath = obj.avatar;
+                if (cleanPath.startsWith('/lawyer/uploads/')) {
+                    cleanPath = cleanPath.replace('/lawyer', '');
+                }
+                if (!cleanPath.startsWith('/')) cleanPath = `/${cleanPath}`;
+                obj.avatar = `https://lawyer.vidhikai.com/lawyer${cleanPath}`;
             }
             return obj;
         });
