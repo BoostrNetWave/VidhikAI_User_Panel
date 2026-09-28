@@ -179,9 +179,6 @@ export const toggleConsultantVisibility = async (req: Request, res: Response) =>
         res.status(500).json({ message: 'Error updating visibility' });
     }
 };
-        res.status(500).json({ message: 'Error fetching lawyers' });
-    }
-};
 
 
 // @desc    Get all cases on the platform
@@ -444,13 +441,17 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
         });
 
         // Emit real-time event to the specific user with full credit details
-        emitToUser(id, 'SUBSCRIPTION_UPDATED', {
+        const socketPayload = {
             subscription: planNormalized,
             monthlyCredits: user.monthlyCredits,
             extraCredits: user.extraCredits,
             aiCredits: user.aiCredits,
             renewsAt: user.subscriptionRenewsAt
-        });
+        };
+        emitToUser(id, 'SUBSCRIPTION_UPDATED', socketPayload);
+        if (user._id.toString() !== id) {
+            emitToUser(user._id.toString(), 'SUBSCRIPTION_UPDATED', socketPayload);
+        }
 
         const updatedUser = user.toObject();
         delete (updatedUser as any).password;

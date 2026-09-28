@@ -289,11 +289,23 @@ export function AdminUsers({
                             key={plan}
                             variant={selectedUser.subscription?.toLowerCase() === plan.toLowerCase() ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => {
+                            onClick={async () => {
                               const reason = prompt(`Reason for overriding plan to ${plan}?`);
                               if (reason) {
-                                onUpdateSubscription(selectedUser._id, plan);
-                                setSelectedUser({...selectedUser, subscription: plan});
+                                try {
+                                  toast.loading(`Updating subscription to ${plan}...`, { id: 'admin-sub-update' });
+                                  await onUpdateSubscription(selectedUser._id, plan);
+                                  const quota = plan === 'Enterprise' ? 5000 : plan === 'Growth' ? 500 : plan === 'Starter' ? 150 : 30;
+                                  setSelectedUser({
+                                    ...selectedUser, 
+                                    subscription: plan,
+                                    monthlyCredits: quota,
+                                    aiCredits: quota + (selectedUser.extraCredits || 0)
+                                  });
+                                  toast.success(`User plan updated to ${plan}! Allocated ${quota} credits.`, { id: 'admin-sub-update' });
+                                } catch (err) {
+                                  toast.error("Failed to update user subscription", { id: 'admin-sub-update' });
+                                }
                               }
                             }}
                           >

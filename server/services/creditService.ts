@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import User from '../models/User';
 import UsageRecord from '../models/UsageRecord';
+import { emitToUser } from '../socket';
 
 export const PLAN_CREDIT_ALLOCATIONS: Record<string, number> = {
     'Free': 30,
@@ -68,6 +69,7 @@ export class CreditService {
 
         if (user.subscription !== planName) {
             user.subscription = planName;
+            user.monthlyCredits = PLAN_CREDIT_ALLOCATIONS[planName] ?? 30;
             changed = true;
         }
 
@@ -250,6 +252,19 @@ export class CreditService {
 
         user.aiCredits = (user.monthlyCredits || 0) + (user.extraCredits || 0);
         await user.save();
+
+        // Emit real-time credit balance update to client socket
+        try {
+            emitToUser(user._id.toString(), 'SUBSCRIPTION_UPDATED', {
+                subscription: user.subscription || 'Free',
+                monthlyCredits: user.monthlyCredits,
+                extraCredits: user.extraCredits,
+                aiCredits: user.aiCredits,
+                renewsAt: user.subscriptionRenewsAt
+            });
+        } catch (sockErr) {
+            console.warn('[CreditService] Failed to emit real-time credit update via socket:', sockErr);
+        }
 
         // Write ledger record
         await UsageRecord.create({

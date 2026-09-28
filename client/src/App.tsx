@@ -60,8 +60,9 @@ function App() {
         if (userDataStr) {
             try {
                 const user = JSON.parse(userDataStr);
-                if (user && user._id) {
-                    registerSocketUser(user._id);
+                const userId = user._id || user.id || user.userId;
+                if (userId) {
+                    registerSocketUser(userId.toString());
                     const socket = getSocket();
                     
                     socket.on('USER_SUSPENDED', (data) => {
@@ -75,15 +76,20 @@ function App() {
                     });
 
                     socket.on('SUBSCRIPTION_UPDATED', (data) => {
-                        toast.success(`Your subscription has been updated to ${data.subscription} plan! You now have ${data.monthlyCredits ?? 'updated'} monthly credits.`);
+                        toast.success(`Subscription updated to ${data.subscription} plan! You now have ${data.aiCredits ?? data.monthlyCredits ?? 'updated'} AI credits.`, {
+                            id: 'sub-update-toast',
+                            duration: 5000
+                        });
+                        const currentProfile = JSON.parse(localStorage.getItem('user_profile_data') || '{}');
                         const updatedUser = { 
-                            ...user, 
+                            ...currentProfile, 
                             subscription: data.subscription,
                             monthlyCredits: data.monthlyCredits,
                             extraCredits: data.extraCredits,
                             aiCredits: data.aiCredits
                         };
                         localStorage.setItem('user_profile_data', JSON.stringify(updatedUser));
+                        localStorage.setItem('vidhik_user_data', JSON.stringify(updatedUser));
                         // Notify all listeners (storage event + custom event for same-tab refresh)
                         window.dispatchEvent(new Event('storage'));
                         window.dispatchEvent(new CustomEvent('subscription_updated', { detail: data }));

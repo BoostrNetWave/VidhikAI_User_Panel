@@ -132,13 +132,21 @@ export const loginUser = async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 email: user.email,
                 role: user.role,
+                subscription: user.subscription || 'Free',
+                monthlyCredits: user.monthlyCredits ?? 30,
+                extraCredits: user.extraCredits ?? 0,
+                aiCredits: user.aiCredits ?? 30,
                 token: generateToken(user._id.toString(), (user.userId || user._id.toString()), user.role),
                 user: {
                     id: user._id,
                     userId: user.userId || user._id.toString(),
                     email: user.email,
                     fullName: user.fullName,
-                    role: user.role
+                    role: user.role,
+                    subscription: user.subscription || 'Free',
+                    monthlyCredits: user.monthlyCredits ?? 30,
+                    extraCredits: user.extraCredits ?? 0,
+                    aiCredits: user.aiCredits ?? 30
                 }
             });
         } else {

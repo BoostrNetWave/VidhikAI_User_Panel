@@ -20,7 +20,26 @@ export function StatsCards() {
             try {
                 const response = await api.get('/dashboard/stats');
                 if (response.data && response.data.success) {
-                    setStats(response.data.data);
+                    const data = response.data.data;
+                    setStats(data);
+
+                    // Sync user_profile_data in localStorage
+                    const userStr = localStorage.getItem('user_profile_data');
+                    if (userStr && data.aiCredits !== undefined) {
+                        try {
+                            const u = JSON.parse(userStr);
+                            if (u.aiCredits !== data.aiCredits || u.subscription !== data.plan) {
+                                u.aiCredits = data.aiCredits;
+                                u.subscription = data.plan;
+                                u.monthlyCredits = data.monthlyCreditsRemaining;
+                                u.extraCredits = data.extraCreditsRemaining;
+                                localStorage.setItem('user_profile_data', JSON.stringify(u));
+                                localStorage.setItem('vidhik_user_data', JSON.stringify(u));
+                            }
+                        } catch (e) {
+                            console.error("Stats profile sync error:", e);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch dashboard stats:", error);
@@ -30,14 +49,16 @@ export function StatsCards() {
         };
         fetchStats();
 
-        // Re-fetch stats when admin updates subscription via socket
+        // Re-fetch stats when admin updates subscription via socket or storage event
         const handleSubscriptionUpdated = () => {
             setLoading(true);
             fetchStats();
         };
         window.addEventListener('subscription_updated', handleSubscriptionUpdated);
+        window.addEventListener('storage', handleSubscriptionUpdated);
         return () => {
             window.removeEventListener('subscription_updated', handleSubscriptionUpdated);
+            window.removeEventListener('storage', handleSubscriptionUpdated);
         };
     }, []);
 

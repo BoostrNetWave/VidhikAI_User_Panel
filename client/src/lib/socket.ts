@@ -4,7 +4,9 @@ let socket: Socket | null = null;
 
 export const getSocket = (): Socket => {
     if (!socket) {
-        socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5003', {
+        const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5003';
+        const serverUrl = rawUrl.replace(/\/api\/?$/, '');
+        socket = io(serverUrl, {
             withCredentials: true,
         });
 
