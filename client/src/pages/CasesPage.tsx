@@ -1036,25 +1036,14 @@ export default function CasesPage() {
                                                 </div>
                                                 <div className="flex flex-wrap justify-end gap-3 pt-2">
                                                     <Button 
-                                                        variant="outline"
-                                                        disabled={isProcessingPayment}
-                                                        onClick={() => {
-                                                            setIsPayingForCaseId(selectedCase._id);
-                                                            handleCheckoutPayment(true);
-                                                        }}
-                                                        className="border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 font-bold rounded-xl px-5 py-2 text-xs"
-                                                    >
-                                                        ⚡ Simulate Test Payment
-                                                    </Button>
-                                                    <Button 
                                                         disabled={isProcessingPayment}
                                                         onClick={() => {
                                                             setIsPayingForCaseId(selectedCase._id);
                                                             handleCheckoutPayment(false);
                                                         }}
-                                                        className="bg-orange-600 hover:bg-orange-700 text-white font-extrabold rounded-xl px-6 py-2 shadow-lg shadow-orange-100 text-xs"
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl px-6 py-2.5 shadow-md shadow-emerald-100 text-xs"
                                                     >
-                                                        Pay ₹{selectedCase.totalFee.toLocaleString()} via Razorpay
+                                                        Pay ₹{selectedCase.totalFee.toLocaleString()}
                                                     </Button>
                                                 </div>
                                             </div>

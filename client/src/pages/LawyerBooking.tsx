@@ -685,22 +685,12 @@ export default function LawyerBooking() {
 
                                 <div className="space-y-3">
                                     <Button 
-                                        className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-indigo-650 bg-primary text-white hover:from-violet-750 hover:to-indigo-755 hover:bg-violet-800 active:bg-violet-900 disabled:bg-violet-400 shadow-2xl transition-all font-black text-base flex items-center justify-center gap-3 uppercase tracking-widest active:scale-[0.98]"
+                                        className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg transition-all font-black text-base flex items-center justify-center gap-3 uppercase tracking-wider active:scale-[0.98]"
                                         onClick={() => handlePayment(false)}
                                         disabled={isBooking}
                                     >
                                         <Lock className="w-4 h-4" />
-                                        {isBooking ? "Initializing Order..." : "Pay via Razorpay"}
-                                    </Button>
-
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        disabled={isBooking}
-                                        onClick={() => handlePayment(true)}
-                                        className="w-full h-11 rounded-2xl font-bold text-xs border-amber-300 bg-amber-50/70 hover:bg-amber-100 text-amber-900 flex items-center justify-center gap-2 transition-all shadow-xs"
-                                    >
-                                        <span>⚡ Simulate Test Payment (1-Click Test)</span>
+                                        {isBooking ? "Initializing Order..." : `Pay ₹${Math.round(totalAmount).toLocaleString()}`}
                                     </Button>
                                 </div>
 

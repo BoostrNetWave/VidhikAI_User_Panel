@@ -147,8 +147,8 @@ export default function ConsultationsPage() {
         }
     };
 
-    const handlePayment = async (targetId?: string, simulateDirect = false) => {
-        const idToPay = targetId || isPayingId;
+    const handlePayment = async (targetId?: string | any, simulateDirect = false) => {
+        const idToPay = (typeof targetId === 'string' && targetId) ? targetId : isPayingId;
         if (!idToPay) return;
         setIsProcessingPayment(true);
         try {
@@ -342,25 +342,14 @@ export default function ConsultationsPage() {
                                             {consultation.status === 'pending_payment' && (
                                                 <div className="flex items-center gap-2">
                                                     <Button 
-                                                        variant="outline"
-                                                        disabled={isProcessingPayment}
-                                                        onClick={() => {
-                                                            setIsPayingId(consultation._id);
-                                                            handlePayment(consultation._id, true);
-                                                        }}
-                                                        className="border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 rounded-xl font-bold text-xs"
-                                                    >
-                                                        ⚡ Simulate Test Payment
-                                                    </Button>
-                                                    <Button 
                                                         disabled={isProcessingPayment}
                                                         onClick={() => {
                                                             setIsPayingId(consultation._id);
                                                             handlePayment(consultation._id, false);
                                                         }}
-                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100"
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-100"
                                                     >
-                                                        Pay ₹{consultation.totalFee} via Razorpay
+                                                        Pay ₹{consultation.totalFee}
                                                     </Button>
                                                 </div>
                                             )}
@@ -631,11 +620,11 @@ export default function ConsultationsPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <Button 
-                                onClick={handlePayment} 
+                                onClick={() => handlePayment(isPayingId, false)} 
                                 disabled={isProcessingPayment}
-                                className="bg-primary text-white hover:bg-primary/95 rounded-2xl h-12 font-bold shadow-sm"
+                                className="bg-emerald-600 text-white hover:bg-emerald-700 rounded-2xl h-12 font-bold shadow-sm transition-colors"
                             >
-                                {isProcessingPayment ? "Confirming..." : "Pay & Confirm"}
+                                {isProcessingPayment ? "Processing..." : `Pay ₹${consultations.find(c => c._id === isPayingId)?.totalFee || ''}`}
                             </Button>
                             <Button 
                                 onClick={() => setIsPayingId(null)}

@@ -229,23 +229,14 @@ export const BuyCreditsModal = ({ isOpen, onClose, onSuccess }: BuyCreditsModalP
                             Cancel
                         </Button>
                         <Button 
-                            type="button"
-                            variant="outline"
-                            onClick={() => handlePurchase(true)}
-                            className="flex-1 rounded-xl h-12 font-bold border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
-                            disabled={isPurchasing}
-                        >
-                            ⚡ Simulate Test Payment
-                        </Button>
-                        <Button 
                             onClick={() => handlePurchase(false)}
-                            className="flex-1 rounded-xl h-12 font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-2 shadow-sm"
+                            className="flex-1 rounded-xl h-12 font-bold bg-emerald-600 text-white hover:bg-emerald-700 gap-2 shadow-sm"
                             disabled={isPurchasing}
                         >
                             {isPurchasing ? (
                                 <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    Confirming...
+                                    Processing...
                                 </>
                             ) : (
                                 <>

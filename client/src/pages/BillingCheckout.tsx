@@ -419,25 +419,10 @@ export default function BillingCheckout() {
                                     ) : (
                                         <>
                                             <Lock className="h-4 w-4 text-emerald-400" />
-                                            <span>Pay ₹{totalAmount.toLocaleString()} via Razorpay</span>
+                                            <span>Pay ₹{totalAmount.toLocaleString()}</span>
                                         </>
                                     )}
                                 </Button>
-
-                                {!isFreePlan && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        disabled={isProcessing}
-                                        onClick={() => {
-                                            (window as any).__force_test_simulation = true;
-                                            handleCheckout();
-                                        }}
-                                        className="w-full h-11 rounded-2xl font-bold text-xs border-amber-300 bg-amber-50/50 hover:bg-amber-100 text-amber-900 flex items-center justify-center gap-2 transition-all shadow-xs"
-                                    >
-                                        <span>⚡ Simulate Test Payment (1-Click Test)</span>
-                                    </Button>
-                                )}
                             </CardContent>
                         </Card>
                     </div>

@@ -816,10 +816,10 @@ export default function BillingPlans() {
                                                 <div className="shrink-0 flex md:flex-col items-end gap-2 w-full md:w-auto">
                                                     <Button 
                                                         onClick={() => setIsTopUpModalOpen(true)}
-                                                        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-2 font-bold text-xs"
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2 font-bold text-xs"
                                                     >
                                                         <Coins className="h-3.5 w-3.5" />
-                                                        Add Credits via Razorpay
+                                                        Add Credits
                                                     </Button>
                                                 </div>
                                             </div>
