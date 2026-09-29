@@ -8,8 +8,8 @@ class RazorpayService {
     private webhookSecret: string;
 
     constructor() {
-        this.keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_SQDQhkqtpziQjS';
-        this.keySecret = process.env.RAZORPAY_KEY_SECRET || 's9Rcs7NhSx7bfStIzMk8R34A';
+        this.keyId = process.env.RAZORPAY_KEY_ID || 'rzp_live_TgCEUlVBTCIKzS';
+        this.keySecret = process.env.RAZORPAY_KEY_SECRET || 'rGrn0nfRqbrr2RHN677sXR1u';
         this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || 'vidhik_ai_razorpay_webhook_secret_2026';
 
         try {
