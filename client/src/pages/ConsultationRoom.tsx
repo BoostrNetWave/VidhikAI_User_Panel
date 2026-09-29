@@ -148,12 +148,9 @@ export default function ConsultationRoom() {
 
                 if (data?.status === 'completed') {
                     setShowSummaryModal(true);
-                } else {
-                    // Let backend know client has joined consultation
-                    await consultationService.joinConsultation(id!).catch(e => console.warn(e));
                 }
 
-                // Initialize WebRTC Preview
+                // Initialize WebRTC Local Preview
                 await startLocalStream().catch(err => {
                     console.warn("Could not acquire local preview on mount:", err);
                 });
@@ -205,6 +202,17 @@ export default function ConsultationRoom() {
             }
         };
     }, [id]);
+
+    // Protect against accidental tab closes or page reloads while call is active
+    useEffect(() => {
+        if (!hasJoinedCall || showSummaryModal) return;
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = 'You have an active video consultation session. Are you sure you want to leave?';
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [hasJoinedCall, showSummaryModal]);
 
     // WebRTC Peer Connection Setup
     const setupPeerConnection = (stream: MediaStream) => {
@@ -467,13 +475,17 @@ export default function ConsultationRoom() {
             }
             await consultationService.clearSignals(id!).catch(console.error);
             const ended = await consultationService.endConsultation(id!);
-            setConsultation(ended);
+            if (ended) setConsultation(ended);
             setShowEndModal(false);
             setShowSummaryModal(true);
             toast.success("Consultation session ended.");
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error ending consultation:", err);
-            toast.error("Failed to end consultation");
+            if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
+            if (peerConnectionRef.current) peerConnectionRef.current.close();
+            setShowEndModal(false);
+            setShowSummaryModal(true);
+            toast.success("Consultation session concluded.");
         } finally {
             setIsEnding(false);
         }
@@ -625,33 +637,12 @@ export default function ConsultationRoom() {
                             ) : (
                                 /* Remote Video (Full Screen / Large) */
                                 remoteStream ? (
-                                    <>
-                                        <video
-                                            ref={remoteVideoCallback}
-                                            autoPlay
-                                            playsInline
-                                            className={`w-full h-full object-cover transition-opacity duration-500 ${
-                                                isRemoteVideoActive ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'
-                                            }`}
-                                        />
-                                        
-                                        {/* Remote Camera Off Placeholder */}
-                                        {!isRemoteVideoActive && (
-                                            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 animate-in fade-in duration-300">
-                                                <div className="h-24 w-24 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 text-3xl font-bold shadow-xl">
-                                                    {consultation.lawyer?.fullName?.split(' ').map((n: string) => n[0]).join('') || 'ADV'}
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <h4 className="text-white font-extrabold text-base tracking-tight">
-                                                        Adv. {consultation.lawyer?.fullName || 'Advocate'}
-                                                    </h4>
-                                                    <p className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 justify-center">
-                                                        <VideoOff className="w-3.5 h-3.5 text-red-500" /> Camera is turned off / busy
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
+                                    <video
+                                        ref={remoteVideoCallback}
+                                        autoPlay
+                                        playsInline
+                                        className="w-full h-full object-cover"
+                                    />
                                 ) : (
                                     /* Waiting Overlay */
                                     <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 animate-pulse">
