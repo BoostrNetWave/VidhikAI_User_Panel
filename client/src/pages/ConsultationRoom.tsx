@@ -220,8 +220,21 @@ export default function ConsultationRoom() {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
-            ]
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' },
+                {
+                    urls: [
+                        'turn:openrelay.metered.ca:80',
+                        'turn:openrelay.metered.ca:443',
+                        'turn:openrelay.metered.ca:443?transport=tcp'
+                    ],
+                    username: 'openrelay',
+                    credential: 'openrelay'
+                }
+            ],
+            iceCandidatePoolSize: 10
         });
 
         // Add local tracks to RTCPeerConnection
@@ -301,12 +314,12 @@ export default function ConsultationRoom() {
                         activePc.close();
                     }
 
-                    // Re-setup peer connection
-                    let stream = localStreamRef.current || localStream;
-                    if (!stream) {
-                        stream = await startLocalStream();
+                    // Re-setup peer connection with safe stream acquisition
+                    let activeStream = localStreamRef.current;
+                    if (!activeStream) {
+                        activeStream = await startLocalStream();
                     }
-                    const newPc = setupPeerConnection(stream);
+                    const newPc = setupPeerConnection(activeStream);
 
                     console.log("Client setting remote description...");
                     await newPc.setRemoteDescription(new RTCSessionDescription({
@@ -337,14 +350,8 @@ export default function ConsultationRoom() {
                         }
                         processedCandidatesRef.current.add(signal._id);
                         try {
-                            let candidateObj = signal.candidate;
-                            if (typeof candidateObj === 'string') {
-                                try { candidateObj = JSON.parse(candidateObj); } catch (e) {}
-                            }
-                            if (typeof candidateObj === 'string') {
-                                try { candidateObj = JSON.parse(candidateObj); } catch (e) {}
-                            }
-                            if (candidateObj && (candidateObj.candidate !== undefined || candidateObj.sdpMid !== undefined)) {
+                            const candidateObj = JSON.parse(signal.candidate);
+                            if (candidateObj) {
                                 await pc.addIceCandidate(new RTCIceCandidate(candidateObj));
                                 console.log("Client added remote candidate successfully");
                             }
