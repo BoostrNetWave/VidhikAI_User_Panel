@@ -81,8 +81,13 @@ export const consultationService = {
         return response.data;
     },
 
-    async payAndConfirm(id: string): Promise<IConsultation> {
-        const response = await api.post(`/consultations/${id}/pay`);
+    async createPaymentOrder(id: string): Promise<any> {
+        const response = await api.post(`/consultations/${id}/create-order`);
+        return response.data;
+    },
+
+    async payAndConfirm(id: string, paymentData?: { razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string }): Promise<IConsultation> {
+        const response = await api.post(`/consultations/${id}/pay`, paymentData || {});
         return response.data;
     },
 

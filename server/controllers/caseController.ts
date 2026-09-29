@@ -4,6 +4,8 @@ import User from '../models/User';
 import Signal from '../models/Signal';
 import UsageRecord from '../models/UsageRecord';
 import SystemConfig from '../models/SystemConfig';
+import Transaction from '../models/Transaction';
+import razorpayService from '../services/razorpayService';
 import { sendEmail } from '../utils/emailService';
 
 export const getCasesForClient = async (req: any, res: Response): Promise<void> => {
@@ -176,32 +178,127 @@ export const bookLawyer = async (req: any, res: Response): Promise<void> => {
     }
 };
 
+export const createCasePaymentOrder = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const kase = await Case.findOne({ _id: id, client: req.user._id });
+
+        if (!kase) {
+            res.status(404).json({ success: false, message: 'Case not found' });
+            return;
+        }
+
+        const amount = kase.totalFee || 1000;
+        const receiptId = `rcpt_case_${Date.now().toString().slice(-8)}`;
+        const notes = {
+            userId: req.user._id.toString(),
+            caseId: kase._id.toString(),
+            type: 'case_booking',
+            title: kase.title
+        };
+
+        const order = await razorpayService.createOrder(amount, receiptId, notes);
+
+        await Transaction.create({
+            userId: req.user._id,
+            orderId: order.id,
+            caseId: kase._id,
+            type: 'case_booking',
+            amount,
+            currency: 'INR',
+            status: 'created',
+            notes
+        });
+
+        res.json({
+            success: true,
+            order: {
+                id: order.id,
+                amount: order.amount,
+                currency: order.currency || 'INR',
+                keyId: razorpayService.getKeyId(),
+                name: 'Vidhik AI Legal Services',
+                description: `Case Consultation Fee: ${kase.title}`,
+                prefill: {
+                    name: req.user.fullName,
+                    email: req.user.email,
+                    contact: req.user.phone || ''
+                }
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const payAndConfirmCase = async (req: any, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const kase = await Case.findOneAndUpdate(
-            { _id: id, client: req.user._id, status: 'pending_payment' },
-            { $set: { status: 'active' } },
-            { new: true }
-        ).populate('lawyer', 'fullName email phone location title expertise avatar');
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+
+        const kase = await Case.findOne({ _id: id, client: req.user._id })
+            .populate('lawyer', 'fullName email phone location title expertise avatar');
 
         if (!kase) {
             res.status(404).json({ message: 'Case not found or not in pending payment status' });
             return;
         }
 
+        if (razorpay_order_id && razorpay_payment_id && razorpay_signature) {
+            const isValid = razorpayService.verifyPaymentSignature(
+                razorpay_order_id,
+                razorpay_payment_id,
+                razorpay_signature
+            );
+
+            if (!isValid) {
+                res.status(400).json({ message: 'Invalid Razorpay payment signature' });
+                return;
+            }
+
+            await Transaction.findOneAndUpdate(
+                { orderId: razorpay_order_id },
+                {
+                    status: 'paid',
+                    paymentId: razorpay_payment_id,
+                    signature: razorpay_signature,
+                    paymentMethod: 'razorpay'
+                }
+            );
+        } else {
+            // Direct / simulated test payment fallback
+            const simOrderId = `order_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            const simPaymentId = `pay_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            await Transaction.create({
+                userId: req.user._id,
+                orderId: simOrderId,
+                paymentId: simPaymentId,
+                caseId: kase._id,
+                type: 'case_booking',
+                amount: kase.totalFee || 1000,
+                currency: 'INR',
+                status: 'paid',
+                paymentMethod: 'simulated_test'
+            });
+        }
+
+        kase.status = 'active';
+        await kase.save();
+
         // Send confirmation email to lawyer
-        await sendEmail(
-            (kase.lawyer as any).email,
-            `Booking Payment Confirmed: ${kase.title}`,
-            `<h3>Consultation Payment Confirmed</h3>
-             <p>Hello Adv. ${(kase.lawyer as any).fullName},</p>
-             <p>The client <strong>${req.user.fullName}</strong> has successfully completed the payment for the case: <strong>${kase.title}</strong>.</p>
-             <p><strong>Proposed Consultation Date:</strong> ${kase.bookingDate ? new Date(kase.bookingDate).toLocaleDateString() : 'N/A'}</p>
-             <p><strong>Proposed Consultation Time:</strong> ${kase.bookingTime || 'N/A'}</p>
-             <p><strong>Consultation Meeting Link:</strong> <a href="${kase.meetingLink}">${kase.meetingLink}</a></p>
-             <p>This engagement is now <strong>Active</strong>. You can now log in to your dashboard to join the consultation or upload your roadmap.</p>`
-        );
+        if (kase.lawyer) {
+            await sendEmail(
+                (kase.lawyer as any).email,
+                `Booking Payment Confirmed: ${kase.title}`,
+                `<h3>Consultation Payment Confirmed</h3>
+                 <p>Hello Adv. ${(kase.lawyer as any).fullName},</p>
+                 <p>The client <strong>${req.user.fullName}</strong> has successfully completed the payment for the case: <strong>${kase.title}</strong>.</p>
+                 <p><strong>Proposed Consultation Date:</strong> ${kase.bookingDate ? new Date(kase.bookingDate).toLocaleDateString() : 'N/A'}</p>
+                 <p><strong>Proposed Consultation Time:</strong> ${kase.bookingTime || 'N/A'}</p>
+                 <p><strong>Consultation Meeting Link:</strong> <a href="${kase.meetingLink}">${kase.meetingLink}</a></p>
+                 <p>This engagement is now <strong>Active</strong>. You can now log in to your dashboard to join the consultation or upload your roadmap.</p>`
+            );
+        }
 
         // Send confirmation email to client
         await sendEmail(

@@ -38,6 +38,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { caseService, ICase } from "@/services/caseService";
 import { lawyerService } from "@/services/lawyerService";
+import { launchRazorpayCheckout, createSimulatedTestResponse } from "@/services/razorpayHelper";
 import { toast } from "sonner";
 
 export default function CasesPage() {
@@ -209,18 +210,49 @@ export default function CasesPage() {
         }
     };
 
-    const handleCheckoutPayment = async () => {
+    const handleCheckoutPayment = async (simulateDirect = false) => {
         if (!isPayingForCaseId) return;
         setIsProcessingPayment(true);
         try {
-            await caseService.payAndConfirm(isPayingForCaseId);
-            toast.success("Payment completed & Booking Confirmed!");
-            setIsPayingForCaseId(null);
-            fetchCases();
+            const orderRes = await caseService.createPaymentOrder(isPayingForCaseId);
+            const { order } = orderRes;
+
+            const completeCasePayment = async (paymentResp: any) => {
+                await caseService.payAndConfirm(isPayingForCaseId, paymentResp);
+                toast.success("Payment completed & Booking Confirmed!");
+                setIsPayingForCaseId(null);
+                fetchCases();
+            };
+
+            if (simulateDirect) {
+                const simResp = createSimulatedTestResponse(order.id);
+                await completeCasePayment(simResp);
+                return;
+            }
+
+            const launched = await launchRazorpayCheckout({
+                order,
+                onSuccess: async (paymentResp) => {
+                    await completeCasePayment(paymentResp);
+                },
+                onError: (err) => {
+                    console.error("Razorpay error:", err);
+                    toast.error(err?.message || "Razorpay payment encountered an error.");
+                    setIsProcessingPayment(false);
+                },
+                onDismiss: () => {
+                    setIsProcessingPayment(false);
+                    toast.info("Payment was cancelled.");
+                }
+            });
+
+            if (!launched) {
+                setIsProcessingPayment(false);
+            }
+
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.message || "Payment processing failed.");
-        } finally {
+            toast.error(error.response?.data?.message || error.message || "Payment processing failed.");
             setIsProcessingPayment(false);
         }
     };
@@ -1002,12 +1034,27 @@ export default function CasesPage() {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="flex justify-end pt-2">
+                                                <div className="flex flex-wrap justify-end gap-3 pt-2">
                                                     <Button 
-                                                        onClick={() => setIsPayingForCaseId(selectedCase._id)}
-                                                        className="bg-orange-600 hover:bg-orange-700 text-white font-extrabold rounded-xl px-6 py-2 shadow-lg shadow-orange-100"
+                                                        variant="outline"
+                                                        disabled={isProcessingPayment}
+                                                        onClick={() => {
+                                                            setIsPayingForCaseId(selectedCase._id);
+                                                            handleCheckoutPayment(true);
+                                                        }}
+                                                        className="border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 font-bold rounded-xl px-5 py-2 text-xs"
                                                     >
-                                                        Proceed to Payment & Confirm
+                                                        ⚡ Simulate Test Payment
+                                                    </Button>
+                                                    <Button 
+                                                        disabled={isProcessingPayment}
+                                                        onClick={() => {
+                                                            setIsPayingForCaseId(selectedCase._id);
+                                                            handleCheckoutPayment(false);
+                                                        }}
+                                                        className="bg-orange-600 hover:bg-orange-700 text-white font-extrabold rounded-xl px-6 py-2 shadow-lg shadow-orange-100 text-xs"
+                                                    >
+                                                        Pay ₹{selectedCase.totalFee.toLocaleString()} via Razorpay
                                                     </Button>
                                                 </div>
                                             </div>

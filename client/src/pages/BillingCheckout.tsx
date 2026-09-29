@@ -162,6 +162,49 @@ export default function BillingCheckout() {
 
             const { order } = orderRes.data;
 
+            const processVerification = async (paymentResp: any) => {
+                const verifyRes = await api.post('/subscription/verify-payment', {
+                    razorpay_order_id: paymentResp.razorpay_order_id,
+                    razorpay_payment_id: paymentResp.razorpay_payment_id,
+                    razorpay_signature: paymentResp.razorpay_signature
+                });
+
+                if (verifyRes.data?.success) {
+                    toast.success("Payment Verified & Completed!", {
+                        description: verifyRes.data.message
+                    });
+
+                    // Sync localStorage
+                    const userStr = localStorage.getItem('user_profile_data');
+                    if (userStr && verifyRes.data.data) {
+                        try {
+                            const u = JSON.parse(userStr);
+                            if (verifyRes.data.data.plan) u.subscription = verifyRes.data.data.plan;
+                            if (verifyRes.data.data.totalCredits !== undefined) u.aiCredits = verifyRes.data.data.totalCredits;
+                            localStorage.setItem('user_profile_data', JSON.stringify(u));
+                            window.dispatchEvent(new Event('storage'));
+                        } catch (e) {
+                            console.error("Local profile update error:", e);
+                        }
+                    }
+
+                    navigate('/billing');
+                } else {
+                    toast.error(verifyRes.data?.message || "Payment verification failed.");
+                }
+            };
+
+            // If user clicked direct simulation or test fallback
+            if ((window as any).__force_test_simulation) {
+                (window as any).__force_test_simulation = false;
+                await processVerification({
+                    razorpay_order_id: order.id,
+                    razorpay_payment_id: `pay_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                    razorpay_signature: `sig_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`
+                });
+                return;
+            }
+
             // 4. Open Razorpay Checkout Modal
             const options = {
                 key: order.keyId,
@@ -179,37 +222,8 @@ export default function BillingCheckout() {
                     }
                 },
                 handler: async (response: any) => {
-                    // 5. Send cryptographic signatures for backend verification
                     try {
-                        const verifyRes = await api.post('/subscription/verify-payment', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-
-                        if (verifyRes.data?.success) {
-                            toast.success("Payment Verified & Completed!", {
-                                description: verifyRes.data.message
-                            });
-
-                            // Sync localStorage
-                            const userStr = localStorage.getItem('user_profile_data');
-                            if (userStr && verifyRes.data.data) {
-                                try {
-                                    const u = JSON.parse(userStr);
-                                    if (verifyRes.data.data.plan) u.subscription = verifyRes.data.data.plan;
-                                    if (verifyRes.data.data.totalCredits !== undefined) u.aiCredits = verifyRes.data.data.totalCredits;
-                                    localStorage.setItem('user_profile_data', JSON.stringify(u));
-                                    window.dispatchEvent(new Event('storage'));
-                                } catch (e) {
-                                    console.error("Local profile update error:", e);
-                                }
-                            }
-
-                            navigate('/billing');
-                        } else {
-                            toast.error(verifyRes.data?.message || "Payment verification failed.");
-                        }
+                        await processVerification(response);
                     } catch (verifyErr: any) {
                         console.error("Payment verification request failed:", verifyErr);
                         toast.error(verifyErr.response?.data?.message || "Payment verification failed on server.");
@@ -409,6 +423,21 @@ export default function BillingCheckout() {
                                         </>
                                     )}
                                 </Button>
+
+                                {!isFreePlan && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={isProcessing}
+                                        onClick={() => {
+                                            (window as any).__force_test_simulation = true;
+                                            handleCheckout();
+                                        }}
+                                        className="w-full h-11 rounded-2xl font-bold text-xs border-amber-300 bg-amber-50/50 hover:bg-amber-100 text-amber-900 flex items-center justify-center gap-2 transition-all shadow-xs"
+                                    >
+                                        <span>⚡ Simulate Test Payment (1-Click Test)</span>
+                                    </Button>
+                                )}
                             </CardContent>
                         </Card>
                     </div>

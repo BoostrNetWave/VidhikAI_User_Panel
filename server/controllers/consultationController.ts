@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import LiveConsultation from '../models/LiveConsultation';
 import User from '../models/User';
+import Transaction from '../models/Transaction';
+import razorpayService from '../services/razorpayService';
 import { sendEmail } from '../utils/emailService';
 import Signal from '../models/Signal';
 
@@ -171,9 +173,64 @@ export const proposeConsultationTime = async (req: any, res: Response): Promise<
     }
 };
 
+export const createConsultationPaymentOrder = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const consultation = await LiveConsultation.findOne({ _id: id, client: req.user._id });
+
+        if (!consultation) {
+            res.status(404).json({ success: false, message: 'Consultation not found' });
+            return;
+        }
+
+        const amount = consultation.totalFee || 1000;
+        const receiptId = `rcpt_vdo_${Date.now().toString().slice(-8)}`;
+        const notes = {
+            userId: req.user._id.toString(),
+            consultationId: consultation._id.toString(),
+            type: 'video_consultation',
+            title: consultation.title
+        };
+
+        const order = await razorpayService.createOrder(amount, receiptId, notes);
+
+        await Transaction.create({
+            userId: req.user._id,
+            orderId: order.id,
+            consultationId: consultation._id,
+            type: 'video_consultation',
+            amount,
+            currency: 'INR',
+            status: 'created',
+            notes
+        });
+
+        res.json({
+            success: true,
+            order: {
+                id: order.id,
+                amount: order.amount,
+                currency: order.currency || 'INR',
+                keyId: razorpayService.getKeyId(),
+                name: 'Vidhik AI Legal Consultations',
+                description: `Live Video Consultation Fee: ${consultation.title}`,
+                prefill: {
+                    name: req.user.fullName,
+                    email: req.user.email,
+                    contact: req.user.phone || ''
+                }
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const payAndConfirmConsultation = async (req: any, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+
         const consultation = await LiveConsultation.findOne({ _id: id, client: req.user._id, status: 'pending_payment' })
             .populate('lawyer', 'fullName email')
             .populate('client', 'fullName email');
@@ -183,33 +240,75 @@ export const payAndConfirmConsultation = async (req: any, res: Response): Promis
             return;
         }
 
+        if (razorpay_order_id && razorpay_payment_id && razorpay_signature) {
+            const isValid = razorpayService.verifyPaymentSignature(
+                razorpay_order_id,
+                razorpay_payment_id,
+                razorpay_signature
+            );
+
+            if (!isValid) {
+                res.status(400).json({ message: 'Invalid Razorpay payment signature' });
+                return;
+            }
+
+            await Transaction.findOneAndUpdate(
+                { orderId: razorpay_order_id },
+                {
+                    status: 'paid',
+                    paymentId: razorpay_payment_id,
+                    signature: razorpay_signature,
+                    paymentMethod: 'razorpay'
+                }
+            );
+        } else {
+            // Simulated test payment fallback
+            const simOrderId = `order_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            const simPaymentId = `pay_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            await Transaction.create({
+                userId: req.user._id,
+                orderId: simOrderId,
+                paymentId: simPaymentId,
+                consultationId: consultation._id,
+                type: 'video_consultation',
+                amount: consultation.totalFee || 1000,
+                currency: 'INR',
+                status: 'paid',
+                paymentMethod: 'simulated_test'
+            });
+        }
+
         consultation.status = 'scheduled';
         await consultation.save();
 
         // Send confirmation emails
-        await sendEmail(
-            (consultation.lawyer as any).email,
-            `Live Consultation Payment Confirmed: ${consultation.title}`,
-            `<h3>Consultation Payment Confirmed</h3>
-             <p>Hello Adv. ${(consultation.lawyer as any).fullName},</p>
-             <p>The client <strong>${(consultation.client as any).fullName}</strong> has completed the payment for the live consultation: <strong>${consultation.title}</strong>.</p>
-             <p><strong>Date:</strong> ${new Date(consultation.scheduledDate).toLocaleDateString()}</p>
-             <p><strong>Time:</strong> ${consultation.scheduledTime}</p>
-             <p><strong>Meeting Room Link:</strong> <a href="${consultation.meetingLink}">${consultation.meetingLink}</a></p>
-             <p>Please log in to your lawyer dashboard at the scheduled time to join the video session.</p>`
-        );
+        if (consultation.lawyer) {
+            await sendEmail(
+                (consultation.lawyer as any).email,
+                `Live Consultation Payment Confirmed: ${consultation.title}`,
+                `<h3>Consultation Payment Confirmed</h3>
+                 <p>Hello Adv. ${(consultation.lawyer as any).fullName},</p>
+                 <p>The client <strong>${(consultation.client as any).fullName}</strong> has completed the payment for the live consultation: <strong>${consultation.title}</strong>.</p>
+                 <p><strong>Date:</strong> ${new Date(consultation.scheduledDate).toLocaleDateString()}</p>
+                 <p><strong>Time:</strong> ${consultation.scheduledTime}</p>
+                 <p><strong>Meeting Room Link:</strong> <a href="${consultation.meetingLink}">${consultation.meetingLink}</a></p>
+                 <p>Please log in to your lawyer dashboard at the scheduled time to join the video session.</p>`
+            );
+        }
 
-        await sendEmail(
-            (consultation.client as any).email,
-            `Live Consultation Scheduled & Confirmed: ${consultation.title}`,
-            `<h3>Consultation Confirmed</h3>
-             <p>Hello ${(consultation.client as any).fullName},</p>
-             <p>Your payment for the live consultation <strong>${consultation.title}</strong> with Advocate <strong>${(consultation.lawyer as any).fullName}</strong> was confirmed.</p>
-             <p><strong>Date:</strong> ${new Date(consultation.scheduledDate).toLocaleDateString()}</p>
-             <p><strong>Time:</strong> ${consultation.scheduledTime}</p>
-             <p><strong>Meeting Room Link:</strong> <a href="${consultation.meetingLink}">${consultation.meetingLink}</a></p>
-             <p>You can join the video conference directly from your Client Dashboard under Live Consultations.</p>`
-        );
+        if (consultation.client) {
+            await sendEmail(
+                (consultation.client as any).email,
+                `Live Consultation Scheduled & Confirmed: ${consultation.title}`,
+                `<h3>Consultation Confirmed</h3>
+                 <p>Hello ${(consultation.client as any).fullName},</p>
+                 <p>Your payment for the live consultation <strong>${consultation.title}</strong> with Advocate <strong>${(consultation.lawyer as any).fullName}</strong> was confirmed.</p>
+                 <p><strong>Date:</strong> ${new Date(consultation.scheduledDate).toLocaleDateString()}</p>
+                 <p><strong>Time:</strong> ${consultation.scheduledTime}</p>
+                 <p><strong>Meeting Room Link:</strong> <a href="${consultation.meetingLink}">${consultation.meetingLink}</a></p>
+                 <p>You can join the video conference directly from your Client Dashboard under Live Consultations.</p>`
+            );
+        }
 
         res.json(consultation);
     } catch (error: any) {

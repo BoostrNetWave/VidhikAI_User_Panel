@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { lawyerService } from '@/services/lawyerService';
 import { consultationService } from '@/services/consultationService';
+import { launchRazorpayCheckout, createSimulatedTestResponse } from '@/services/razorpayHelper';
 
 export default function LawyerBooking() {
     const navigate = useNavigate();
@@ -105,7 +106,7 @@ export default function LawyerBooking() {
     const gst = hourlyRate * 0.18;
     const totalAmount = hourlyRate + serviceFee + gst;
 
-    const handlePayment = async () => {
+    const handlePayment = async (simulateDirect = false) => {
         const newErrors: Record<string, string> = {};
         if (!caseTitle.trim()) {
             newErrors.caseTitle = "Case title / request topic is required";
@@ -130,10 +131,10 @@ export default function LawyerBooking() {
         setIsBooking(true);
 
         try {
-            toast.info("Submitting booking request...");
+            toast.info("Submitting booking & initializing Razorpay order...");
             
-            // Create Live Consultation record
-            await consultationService.createConsultation({
+            // 1. Create Live Consultation record
+            const consultation = await consultationService.createConsultation({
                 lawyerId: lawyer._id,
                 title: caseTitle.trim(),
                 description: description.trim(),
@@ -142,32 +143,66 @@ export default function LawyerBooking() {
                 totalFee: totalAmount
             });
 
-            toast.success("Consultation Booked Successfully!");
-            
-            // Redirect to success page and pass lawyer name and details via router state
-            navigate('/lawyers/booking-success', {
-                state: {
-                    lawyerName: lawyer.fullName,
-                    specialization: lawyer.expertise || "General Practice",
-                    avatar: lawyer.avatar,
-                    bookingDate: bookingDate!.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-                    bookingTime: bookingTime
+            // 2. Create Razorpay Payment Order on backend
+            const orderRes = await consultationService.createPaymentOrder(consultation._id);
+            const { order } = orderRes;
+
+            const completeBookingConfirmation = (lawyerName: string) => {
+                toast.success("Consultation & Payment Confirmed!");
+                navigate('/lawyers/booking-success', {
+                    state: {
+                        lawyerName: lawyerName,
+                        specialization: lawyer.expertise || "General Practice",
+                        avatar: lawyer.avatar,
+                        bookingDate: bookingDate!.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+                        bookingTime: bookingTime
+                    }
+                });
+            };
+
+            // Option A: Direct Simulation Mode
+            if (simulateDirect) {
+                const simResp = createSimulatedTestResponse(order.id);
+                await consultationService.payAndConfirm(consultation._id, simResp);
+                completeBookingConfirmation(lawyer.fullName);
+                return;
+            }
+
+            // Option B: Open Razorpay Standard Checkout Modal
+            const launched = await launchRazorpayCheckout({
+                order,
+                onSuccess: async (paymentResp) => {
+                    await consultationService.payAndConfirm(consultation._id, paymentResp);
+                    completeBookingConfirmation(lawyer.fullName);
+                },
+                onError: (err) => {
+                    console.error("Razorpay Payment Error:", err);
+                    toast.error(err?.message || "Razorpay payment encountered an error.");
+                    setIsBooking(false);
+                },
+                onDismiss: () => {
+                    setIsBooking(false);
+                    toast.info("Payment was cancelled.");
                 }
             });
+
+            if (!launched) {
+                setIsBooking(false);
+            }
+
         } catch (error: any) {
             console.error("Booking error:", error);
             if (error.response?.status === 403 && error.response?.data?.error === 'limit_reached') {
                 toast.error('Booking Restricted', {
-                    description: error.response.data.message || 'You or the selected lawyer have reached case capacity limits under the current subscription plans.',
+                    description: error.response.data.message || 'Capacity limit reached.',
                     action: {
                         label: 'View Billing',
                         onClick: () => window.location.href = '/user/billing'
                     }
                 });
             } else {
-                toast.error(error.response?.data?.message || "Failed to register case booking");
+                toast.error(error.response?.data?.message || error.message || "Failed to process booking payment");
             }
-        } finally {
             setIsBooking(false);
         }
     };
@@ -648,14 +683,26 @@ export default function LawyerBooking() {
                                     </div>
                                 </div>
 
-                                <Button 
-                                    className="w-full h-16 rounded-2xl bg-gradient-to-r from-primary to-indigo-650 bg-primary text-white hover:from-violet-750 hover:to-indigo-755 hover:bg-violet-800 active:bg-violet-900 disabled:bg-violet-400 shadow-2xl transition-all font-black text-base flex items-center justify-center gap-3 uppercase tracking-widest active:scale-[0.98]"
-                                    onClick={handlePayment}
-                                    disabled={isBooking}
-                                >
-                                    <Lock className="w-4 h-4" />
-                                    {isBooking ? "Registering Case..." : "Pay & Confirm Booking"}
-                                </Button>
+                                <div className="space-y-3">
+                                    <Button 
+                                        className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-indigo-650 bg-primary text-white hover:from-violet-750 hover:to-indigo-755 hover:bg-violet-800 active:bg-violet-900 disabled:bg-violet-400 shadow-2xl transition-all font-black text-base flex items-center justify-center gap-3 uppercase tracking-widest active:scale-[0.98]"
+                                        onClick={() => handlePayment(false)}
+                                        disabled={isBooking}
+                                    >
+                                        <Lock className="w-4 h-4" />
+                                        {isBooking ? "Initializing Order..." : "Pay via Razorpay"}
+                                    </Button>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={isBooking}
+                                        onClick={() => handlePayment(true)}
+                                        className="w-full h-11 rounded-2xl font-bold text-xs border-amber-300 bg-amber-50/70 hover:bg-amber-100 text-amber-900 flex items-center justify-center gap-2 transition-all shadow-xs"
+                                    >
+                                        <span>⚡ Simulate Test Payment (1-Click Test)</span>
+                                    </Button>
+                                </div>
 
                                 <div className="flex flex-row justify-center gap-4 text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-5 pb-2 border-b border-slate-100">
                                     <span>🛡️ SECURE PAYMENT</span>

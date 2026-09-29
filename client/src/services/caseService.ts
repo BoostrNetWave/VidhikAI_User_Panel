@@ -111,8 +111,13 @@ export const caseService = {
         return response.data;
     },
 
-    async payAndConfirm(id: string): Promise<ICase> {
-        const response = await api.post(`/cases/${id}/pay`);
+    async createPaymentOrder(id: string): Promise<any> {
+        const response = await api.post(`/cases/${id}/create-order`);
+        return response.data;
+    },
+
+    async payAndConfirm(id: string, paymentData?: { razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string }): Promise<ICase> {
+        const response = await api.post(`/cases/${id}/pay`, paymentData || {});
         return response.data;
     },
 

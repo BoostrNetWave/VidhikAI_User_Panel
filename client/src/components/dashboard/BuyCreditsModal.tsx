@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { X, CreditCard, Coins, Loader2, Check } from "lucide-react";
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { loadRazorpayScript } from '@/services/razorpayHelper';
 
 interface BuyCreditsModalProps {
     isOpen: boolean;
@@ -53,19 +54,12 @@ export const BuyCreditsModal = ({ isOpen, onClose, onSuccess }: BuyCreditsModalP
     const addedCredits = activePkg?.credits || 100;
     const price = activePkg?.price || 349;
 
-    const handlePurchase = async () => {
+    const handlePurchase = async (simulateDirect = false) => {
         setIsPurchasing(true);
         try {
             // 1. Ensure Razorpay checkout script is loaded
             if (!(window as any).Razorpay) {
-                await new Promise((resolve) => {
-                    const script = document.createElement('script');
-                    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                    script.async = true;
-                    script.onload = () => resolve(true);
-                    script.onerror = () => resolve(false);
-                    document.body.appendChild(script);
-                });
+                await loadRazorpayScript();
             }
 
             // 2. Create authoritative order on server
@@ -79,6 +73,47 @@ export const BuyCreditsModal = ({ isOpen, onClose, onSuccess }: BuyCreditsModalP
             }
 
             const { order } = orderRes.data;
+
+            const processVerify = async (paymentData: any) => {
+                const verifyRes = await api.post('/subscription/verify-payment', {
+                    razorpay_order_id: paymentData.razorpay_order_id,
+                    razorpay_payment_id: paymentData.razorpay_payment_id,
+                    razorpay_signature: paymentData.razorpay_signature
+                });
+
+                if (verifyRes.data?.success) {
+                    toast.success(`Successfully added ${addedCredits} Extra AI Credits!`, {
+                        description: `New total balance: ${verifyRes.data.data.totalCredits} Credits.`
+                    });
+
+                    // Sync localStorage
+                    const userStr = localStorage.getItem('user_profile_data');
+                    if (userStr && verifyRes.data.data.totalCredits !== undefined) {
+                        try {
+                            const u = JSON.parse(userStr);
+                            u.aiCredits = verifyRes.data.data.totalCredits;
+                            localStorage.setItem('user_profile_data', JSON.stringify(u));
+                            window.dispatchEvent(new Event('storage'));
+                        } catch (e) {
+                            console.error("Local profile update error:", e);
+                        }
+                    }
+
+                    onSuccess?.();
+                    onClose();
+                } else {
+                    toast.error(verifyRes.data?.message || "Payment verification failed.");
+                }
+            };
+
+            if (simulateDirect) {
+                await processVerify({
+                    razorpay_order_id: order.id,
+                    razorpay_payment_id: `pay_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                    razorpay_signature: `sig_sim_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`
+                });
+                return;
+            }
 
             // 3. Open Razorpay Checkout modal
             const options = {
@@ -97,35 +132,7 @@ export const BuyCreditsModal = ({ isOpen, onClose, onSuccess }: BuyCreditsModalP
                 },
                 handler: async (response: any) => {
                     try {
-                        const verifyRes = await api.post('/subscription/verify-payment', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-
-                        if (verifyRes.data?.success) {
-                            toast.success(`Successfully added ${addedCredits} Extra AI Credits!`, {
-                                description: `New total balance: ${verifyRes.data.data.totalCredits} Credits.`
-                            });
-
-                            // Sync localStorage
-                            const userStr = localStorage.getItem('user_profile_data');
-                            if (userStr && verifyRes.data.data.totalCredits !== undefined) {
-                                try {
-                                    const u = JSON.parse(userStr);
-                                    u.aiCredits = verifyRes.data.data.totalCredits;
-                                    localStorage.setItem('user_profile_data', JSON.stringify(u));
-                                    window.dispatchEvent(new Event('storage'));
-                                } catch (e) {
-                                    console.error("Local profile update error:", e);
-                                }
-                            }
-
-                            onSuccess?.();
-                            onClose();
-                        } else {
-                            toast.error(verifyRes.data?.message || "Payment verification failed.");
-                        }
+                        await processVerify(response);
                     } catch (verifyErr: any) {
                         toast.error(verifyErr.response?.data?.message || "Payment verification failed.");
                     } finally {
@@ -212,29 +219,38 @@ export const BuyCreditsModal = ({ isOpen, onClose, onSuccess }: BuyCreditsModalP
                         </div>
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3">
                         <Button 
                             variant="outline" 
                             onClick={onClose}
-                            className="flex-1 rounded-xl h-12 font-bold"
+                            className="rounded-xl h-12 font-bold"
                             disabled={isPurchasing}
                         >
                             Cancel
                         </Button>
                         <Button 
-                            onClick={handlePurchase}
+                            type="button"
+                            variant="outline"
+                            onClick={() => handlePurchase(true)}
+                            className="flex-1 rounded-xl h-12 font-bold border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                            disabled={isPurchasing}
+                        >
+                            ⚡ Simulate Test Payment
+                        </Button>
+                        <Button 
+                            onClick={() => handlePurchase(false)}
                             className="flex-1 rounded-xl h-12 font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-2 shadow-sm"
                             disabled={isPurchasing}
                         >
                             {isPurchasing ? (
                                 <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    Confirming Payment...
+                                    Confirming...
                                 </>
                             ) : (
                                 <>
                                     <Check className="h-4 w-4" />
-                                    Confirm & Pay ₹{price.toLocaleString()}
+                                    Pay ₹{price.toLocaleString()}
                                 </>
                             )}
                         </Button>

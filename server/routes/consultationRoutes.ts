@@ -6,6 +6,7 @@ import {
     getConsultationById,
     acceptConsultation,
     proposeConsultationTime,
+    createConsultationPaymentOrder,
     payAndConfirmConsultation,
     uploadConsultationDocument,
     cancelConsultation,
@@ -71,6 +72,7 @@ router.get('/', getConsultationsForClient);
 router.get('/:id', getConsultationById);
 router.post('/:id/accept', acceptConsultation);
 router.post('/:id/propose', proposeConsultationTime);
+router.post('/:id/create-order', createConsultationPaymentOrder);
 router.post('/:id/pay', payAndConfirmConsultation);
 router.post('/:id/upload', upload.single('file'), uploadConsultationDocument);
 router.post('/:id/cancel', cancelConsultation);

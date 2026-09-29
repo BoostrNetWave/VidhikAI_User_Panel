@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { consultationService, IConsultation } from '@/services/consultationService';
 import { lawyerService } from '@/services/lawyerService';
+import { launchRazorpayCheckout, createSimulatedTestResponse } from '@/services/razorpayHelper';
 
 export default function ConsultationsPage() {
     const navigate = useNavigate();
@@ -146,18 +147,50 @@ export default function ConsultationsPage() {
         }
     };
 
-    const handlePayment = async () => {
-        if (!isPayingId) return;
+    const handlePayment = async (targetId?: string, simulateDirect = false) => {
+        const idToPay = targetId || isPayingId;
+        if (!idToPay) return;
         setIsProcessingPayment(true);
         try {
-            await consultationService.payAndConfirm(isPayingId);
-            toast.success("Payment successful! Consultation meeting scheduled.");
-            setIsPayingId(null);
-            fetchConsultations();
+            const orderRes = await consultationService.createPaymentOrder(idToPay);
+            const { order } = orderRes;
+
+            const completeConsultationPayment = async (paymentResp: any) => {
+                await consultationService.payAndConfirm(idToPay, paymentResp);
+                toast.success("Payment successful! Consultation meeting scheduled.");
+                setIsPayingId(null);
+                fetchConsultations();
+            };
+
+            if (simulateDirect) {
+                const simResp = createSimulatedTestResponse(order.id);
+                await completeConsultationPayment(simResp);
+                return;
+            }
+
+            const launched = await launchRazorpayCheckout({
+                order,
+                onSuccess: async (paymentResp) => {
+                    await completeConsultationPayment(paymentResp);
+                },
+                onError: (err) => {
+                    console.error("Razorpay Payment Error:", err);
+                    toast.error(err?.message || "Razorpay payment encountered an error.");
+                    setIsProcessingPayment(false);
+                },
+                onDismiss: () => {
+                    setIsProcessingPayment(false);
+                    toast.info("Payment was cancelled.");
+                }
+            });
+
+            if (!launched) {
+                setIsProcessingPayment(false);
+            }
+
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.message || "Payment checkout failed");
-        } finally {
+            toast.error(error.response?.data?.message || error.message || "Payment checkout failed");
             setIsProcessingPayment(false);
         }
     };
@@ -307,12 +340,29 @@ export default function ConsultationsPage() {
                                             )}
 
                                             {consultation.status === 'pending_payment' && (
-                                                <Button 
-                                                    onClick={() => setIsPayingId(consultation._id)}
-                                                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100"
-                                                >
-                                                    Pay ₹{consultation.totalFee} & Schedule
-                                                </Button>
+                                                <div className="flex items-center gap-2">
+                                                    <Button 
+                                                        variant="outline"
+                                                        disabled={isProcessingPayment}
+                                                        onClick={() => {
+                                                            setIsPayingId(consultation._id);
+                                                            handlePayment(consultation._id, true);
+                                                        }}
+                                                        className="border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 rounded-xl font-bold text-xs"
+                                                    >
+                                                        ⚡ Simulate Test Payment
+                                                    </Button>
+                                                    <Button 
+                                                        disabled={isProcessingPayment}
+                                                        onClick={() => {
+                                                            setIsPayingId(consultation._id);
+                                                            handlePayment(consultation._id, false);
+                                                        }}
+                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100"
+                                                    >
+                                                        Pay ₹{consultation.totalFee} via Razorpay
+                                                    </Button>
+                                                </div>
                                             )}
 
                                             {consultation.status === 'scheduled' && (

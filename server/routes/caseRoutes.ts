@@ -7,6 +7,7 @@ import {
     approvePlan, 
     hireLawyer,
     bookLawyer,
+    createCasePaymentOrder,
     payAndConfirmCase,
     joinMeeting,
     sendSignal,
@@ -25,6 +26,7 @@ router.post('/', createCase);
 router.post('/hire', hireLawyer);
 router.post('/book', bookLawyer);
 router.post('/:id/notes', addCaseNote);
+router.post('/:id/create-order', createCasePaymentOrder);
 router.post('/:id/pay', payAndConfirmCase);
 router.post('/:id/join-meeting', joinMeeting);
 router.post('/:id/signal', sendSignal);
