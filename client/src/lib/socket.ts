@@ -21,9 +21,9 @@ export const getSocket = (): Socket => {
     return socket;
 };
 
-export const registerSocketUser = (userId: string) => {
+export const registerSocketUser = (userOrId: any) => {
     const s = getSocket();
-    s.emit('register', userId);
+    s.emit('register', userOrId);
 };
 
 export const disconnectSocket = () => {

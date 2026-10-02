@@ -440,7 +440,7 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
             notes: { adminOverride: true, previousPlan }
         });
 
-        // Emit real-time event to the specific user with full credit details
+        // Emit real-time event to the specific user with full credit details across all socket registration keys
         const socketPayload = {
             subscription: planNormalized,
             monthlyCredits: user.monthlyCredits,
@@ -448,10 +448,7 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
             aiCredits: user.aiCredits,
             renewsAt: user.subscriptionRenewsAt
         };
-        emitToUser(id, 'SUBSCRIPTION_UPDATED', socketPayload);
-        if (user._id.toString() !== id) {
-            emitToUser(user._id.toString(), 'SUBSCRIPTION_UPDATED', socketPayload);
-        }
+        emitToUser([id, user._id.toString(), user.userId?.toString(), user.email], 'SUBSCRIPTION_UPDATED', socketPayload);
 
         const updatedUser = user.toObject();
         delete (updatedUser as any).password;

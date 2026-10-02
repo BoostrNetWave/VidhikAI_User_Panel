@@ -60,9 +60,8 @@ function App() {
         if (userDataStr) {
             try {
                 const user = JSON.parse(userDataStr);
-                const userId = user._id || user.id || user.userId;
-                if (userId) {
-                    registerSocketUser(userId.toString());
+                if (user) {
+                    registerSocketUser(user);
                     const socket = getSocket();
                     
                     socket.on('USER_SUSPENDED', (data) => {

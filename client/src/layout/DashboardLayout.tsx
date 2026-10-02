@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button"
-import { Mail, Settings, LayoutDashboard, FileText, CheckSquare, Folder, MessageSquare, ChevronLeft, ChevronRight, Users, CreditCard, Briefcase, Video, LifeBuoy } from "lucide-react"
+import { Mail, Settings, LayoutDashboard, FileText, CheckSquare, Folder, MessageSquare, ChevronLeft, ChevronRight, Users, CreditCard, Briefcase, Video, LifeBuoy, Zap } from "lucide-react"
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Notifications } from "@/components/dashboard/Notifications"
 import { DashboardSearch } from "@/components/dashboard/DashboardSearch"
@@ -17,8 +17,31 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+    const [userProfile, setUserProfile] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('user_profile_data') || '{}');
+        } catch {
+            return {};
+        }
+    });
+
     useEffect(() => {
         document.title = "Vidhik AI - Client Dashboard";
+    }, []);
+
+    // Listen for real-time subscription and storage updates
+    useEffect(() => {
+        const syncProfile = () => {
+            try {
+                setUserProfile(JSON.parse(localStorage.getItem('user_profile_data') || '{}'));
+            } catch {}
+        };
+        window.addEventListener('storage', syncProfile);
+        window.addEventListener('subscription_updated', syncProfile);
+        return () => {
+            window.removeEventListener('storage', syncProfile);
+            window.removeEventListener('subscription_updated', syncProfile);
+        };
     }, []);
 
     // Close mobile sidebar on route change
@@ -253,6 +276,15 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                        <div 
+                            onClick={() => navigate('/billing')} 
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold cursor-pointer hover:bg-amber-500/20 transition-all shadow-xs"
+                            title="Click to view subscription and AI credits"
+                        >
+                            <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500 shrink-0" />
+                            <span>{userProfile.aiCredits ?? userProfile.monthlyCredits ?? 30} Credits</span>
+                            <span className="text-[10px] text-amber-600/70 font-semibold uppercase hidden md:inline">({userProfile.subscription || 'Free'})</span>
+                        </div>
                         <Notifications />
                         <Button variant="ghost" size="icon" className="text-slate-500 hover:bg-slate-100 h-9 w-9 hidden sm:flex">
                             <Mail className="h-5 w-5" />
@@ -261,10 +293,10 @@ export default function DashboardLayout({ children, userNav }: DashboardLayoutPr
                         <div className="flex items-center gap-3">
                             <div className="text-right hidden sm:block">
                                 <p className="text-sm font-semibold text-slate-900 leading-none">
-                                    {JSON.parse(localStorage.getItem('user_profile_data') || '{}').fullName || 'User'}
+                                    {userProfile.fullName || 'User'}
                                 </p>
                                 <p className="text-[11px] text-slate-500 font-medium mt-1">
-                                    {JSON.parse(localStorage.getItem('user_profile_data') || '{}').designation || 'Legal Member'}
+                                    {userProfile.designation || 'Legal Member'}
                                 </p>
                             </div>
                             {userNav}
