@@ -37,16 +37,24 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/research', researchRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/cases', caseRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/consultations', consultationRoutes);
-app.use('/api/subscription', subscriptionRoutes);
+// Routes - Mounted with /api prefix as well as root & plural aliases for Nginx proxy compatibility
+const registerRoute = (basePath: string, router: any) => {
+    app.use(`/api${basePath}`, router);
+    app.use(basePath, router);
+};
+
+registerRoute('/auth', authRoutes);
+registerRoute('/documents', documentRoutes);
+registerRoute('/research', researchRoutes);
+registerRoute('/admin', adminRoutes);
+registerRoute('/cases', caseRoutes);
+registerRoute('/dashboard', dashboardRoutes);
+registerRoute('/support', supportRoutes);
+registerRoute('/consultations', consultationRoutes);
+registerRoute('/subscription', subscriptionRoutes);
+registerRoute('/subscriptions', subscriptionRoutes);
+registerRoute('/payment', subscriptionRoutes);
+registerRoute('/payments', subscriptionRoutes);
 
 // Basic Route
 app.get('/api/health', (_req, res) => {
