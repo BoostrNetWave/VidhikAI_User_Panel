@@ -214,6 +214,15 @@ export default function ConsultationRoom() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [hasJoinedCall, showSummaryModal]);
 
+    useEffect(() => {
+        if (remoteVideoRef.current && remoteStream) {
+            if (remoteVideoRef.current.srcObject !== remoteStream) {
+                remoteVideoRef.current.srcObject = remoteStream;
+            }
+            remoteVideoRef.current.play().catch(err => console.warn("Remote video play error:", err));
+        }
+    }, [remoteStream]);
+
     // WebRTC Peer Connection Setup
     const setupPeerConnection = (stream: MediaStream) => {
         const pc = new RTCPeerConnection({
@@ -227,8 +236,11 @@ export default function ConsultationRoom() {
                 {
                     urls: [
                         'turn:openrelay.metered.ca:80',
+                        'turn:openrelay.metered.ca:80?transport=tcp',
                         'turn:openrelay.metered.ca:443',
-                        'turn:openrelay.metered.ca:443?transport=tcp'
+                        'turn:openrelay.metered.ca:443?transport=tcp',
+                        'turns:openrelay.metered.ca:443',
+                        'turns:openrelay.metered.ca:443?transport=tcp'
                     ],
                     username: 'openrelay',
                     credential: 'openrelay'
@@ -256,21 +268,15 @@ export default function ConsultationRoom() {
         // Capture remote stream tracks
         pc.ontrack = (event) => {
             console.log("Client received remote track:", event.track.kind);
-            if (event.streams && event.streams[0]) {
-                setRemoteStream(event.streams[0]);
+            const remoteTracks = pc.getReceivers()
+                .map(r => r.track)
+                .filter(t => t && t.readyState === 'live');
+
+            console.log("Client active remote tracks count:", remoteTracks.length);
+            if (remoteTracks.length > 0) {
+                setRemoteStream(new MediaStream(remoteTracks));
                 setIsConnected(true);
                 setIsConnecting(false);
-            } else {
-                const remoteTracks = pc.getReceivers()
-                    .map(r => r.track)
-                    .filter(t => t && t.readyState === 'live');
-
-                console.log("Client active remote tracks count:", remoteTracks.length);
-                if (remoteTracks.length > 0) {
-                    setRemoteStream(new MediaStream(remoteTracks));
-                    setIsConnected(true);
-                    setIsConnecting(false);
-                }
             }
         };
 
