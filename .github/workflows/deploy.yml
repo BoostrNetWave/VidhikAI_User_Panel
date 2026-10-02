@@ -165,13 +165,7 @@ jobs:
              fi"
 
       # =====================================================
-      # 11. DEPLOY BUILD
-      #
-      # Local:
-      # dist/client/
-      #
-      # Server:
-      # /var/www/html/VidhikAI_User_Panel/dist/client/
+      # 11. DEPLOY APPLICATION & BACKEND CODE
       # =====================================================
       - name: Deploy application to Vultr
         env:
@@ -180,21 +174,50 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
           echo "========================================"
-          echo "Deploying application to Vultr"
+          echo "Deploying application & backend to Vultr"
           echo "========================================"
 
           sshpass -e rsync \
             -avz \
             --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='node_modules/' \
             -e "ssh -o StrictHostKeyChecking=no" \
-            dist/client/ \
-            "${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/dist/client/"
+            ./ \
+            "${SERVER_USER}@${SERVER_HOST}:/var/www/html/VidhikAI_User_Panel/"
 
           echo ""
           echo "File deployment completed."
 
       # =====================================================
-      # 12. VERIFY DEPLOYMENT
+      # 12. INSTALL DEPENDENCIES & RESTART PM2 BACKEND
+      # =====================================================
+      - name: Install server dependencies and restart PM2
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          echo "Installing dependencies and restarting PM2 backend..."
+
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "cd /var/www/html/VidhikAI_User_Panel && \
+             npm install --no-audit --no-fund && \
+             if pm2 describe vidhik-user-backend > /dev/null 2>&1; then \
+               pm2 restart vidhik-user-backend --update-env; \
+             elif pm2 describe user-admin2 > /dev/null 2>&1; then \
+               pm2 restart user-admin2 --update-env; \
+             else \
+               pm2 restart all || true; \
+             fi && \
+             pm2 save"
+
+      # =====================================================
+      # 13. VERIFY DEPLOYMENT
       # =====================================================
       - name: Verify deployed files
         env:
@@ -215,43 +238,7 @@ jobs:
              echo 'index.html found successfully'"
 
       # =====================================================
-      # 13. VERIFY ASSETS
-      # =====================================================
-      - name: Verify deployed assets
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-        run: |
-          sshpass -e ssh \
-            -o StrictHostKeyChecking=no \
-            "${SERVER_USER}@${SERVER_HOST}" \
-            "if [ -d /var/www/html/VidhikAI_User_Panel/dist/client/assets ]; then \
-               echo 'Assets directory found'; \
-               ls -lah /var/www/html/VidhikAI_User_Panel/dist/client/assets | head -20; \
-             else \
-               echo 'ERROR: Assets directory not found'; \
-               exit 1; \
-             fi"
-
-      # =====================================================
-      # 14. TEST NGINX
-      # =====================================================
-      - name: Test Nginx configuration
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-        run: |
-          echo "Testing Nginx configuration..."
-
-          sshpass -e ssh \
-            -o StrictHostKeyChecking=no \
-            "${SERVER_USER}@${SERVER_HOST}" \
-            "sudo nginx -t"
-
-      # =====================================================
-      # 15. RELOAD NGINX
+      # 14. TEST & RELOAD NGINX
       # =====================================================
       - name: Reload Nginx
         env:
@@ -264,7 +251,7 @@ jobs:
           sshpass -e ssh \
             -o StrictHostKeyChecking=no \
             "${SERVER_USER}@${SERVER_HOST}" \
-            "sudo systemctl reload nginx"
+            "sudo nginx -t && sudo systemctl reload nginx"
 
       # =====================================================
       # 16. CHECK NGINX STATUS
