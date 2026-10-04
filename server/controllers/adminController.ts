@@ -564,4 +564,140 @@ export const getLoginHistory = async (_req: Request, res: Response) => {
     }
 };
 
+// @desc    Get all payouts data (Consultation Payouts & Case Milestone Payouts)
+// @route   GET /api/admin/payouts
+export const getAllPayouts = async (_req: Request, res: Response) => {
+    try {
+        const consultations = await LiveConsultation.find({
+            $or: [
+                { isPaidByUser: true },
+                { status: { $in: ['scheduled', 'completed'] } },
+                { payoutStatus: { $in: ['requested', 'approved', 'rejected', 'pending'] } }
+            ]
+        })
+        .populate('client', 'fullName email phone')
+        .populate('lawyer', 'fullName email phone bankName accountNumber ifsc upiId title')
+        .sort({ updatedAt: -1 });
+
+        const cases = await Case.find({})
+            .populate('client', 'fullName email phone')
+            .populate('lawyer', 'fullName email phone bankName accountNumber ifsc upiId title')
+            .sort({ updatedAt: -1 });
+
+        const caseMilestones: any[] = [];
+        cases.forEach((kase: any) => {
+            if (kase.milestones && Array.isArray(kase.milestones)) {
+                kase.milestones.forEach((m: any, idx: number) => {
+                    caseMilestones.push({
+                        caseId: kase._id,
+                        caseTitle: kase.title,
+                        milestoneIndex: idx,
+                        milestoneId: m._id,
+                        milestoneTitle: m.title,
+                        milestoneDescription: m.description,
+                        status: m.status,
+                        progressIncrement: m.progressIncrement,
+                        payoutAmount: m.payoutAmount || 0,
+                        payoutStatus: m.payoutStatus || 'pending',
+                        proofDocs: m.proofDocs || [],
+                        completedAt: m.completedAt,
+                        client: kase.client,
+                        lawyer: kase.lawyer
+                    });
+                });
+            }
+        });
+
+        let totalConsultationFee = 0;
+        let pendingConsultationPayoutCount = 0;
+        let pendingConsultationPayoutAmount = 0;
+        let approvedConsultationPayoutAmount = 0;
+
+        consultations.forEach((c: any) => {
+            totalConsultationFee += (c.totalFee || 0);
+            if (c.payoutStatus === 'requested' || (c.isPaidByUser && c.payoutStatus === 'pending')) {
+                pendingConsultationPayoutCount++;
+                pendingConsultationPayoutAmount += (c.totalFee || 0);
+            } else if (c.payoutStatus === 'approved') {
+                approvedConsultationPayoutAmount += (c.totalFee || 0);
+            }
+        });
+
+        let pendingCasePayoutCount = 0;
+        let pendingCasePayoutAmount = 0;
+        let approvedCasePayoutAmount = 0;
+
+        caseMilestones.forEach((m: any) => {
+            if (m.payoutStatus === 'requested') {
+                pendingCasePayoutCount++;
+                pendingCasePayoutAmount += m.payoutAmount;
+            } else if (m.payoutStatus === 'approved') {
+                approvedCasePayoutAmount += m.payoutAmount;
+            }
+        });
+
+        res.json({
+            consultations,
+            caseMilestones,
+            summary: {
+                totalConsultationFee,
+                pendingConsultationPayoutCount,
+                pendingConsultationPayoutAmount,
+                approvedConsultationPayoutAmount,
+                pendingCasePayoutCount,
+                pendingCasePayoutAmount,
+                approvedCasePayoutAmount,
+                grandTotalPendingPayouts: pendingConsultationPayoutAmount + pendingCasePayoutAmount,
+                grandTotalApprovedPayouts: approvedConsultationPayoutAmount + approvedCasePayoutAmount
+            }
+        });
+    } catch (error: any) {
+        console.error('Error fetching payouts data:', error);
+        res.status(500).json({ message: 'Error fetching payouts data' });
+    }
+};
+
+// @desc    Approve consultation payout
+// @route   POST /api/admin/consultations/:id/approve-payout
+export const approveConsultationPayout = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const consultation = await LiveConsultation.findById(id);
+
+        if (!consultation) {
+            res.status(404).json({ message: 'Consultation not found' });
+            return;
+        }
+
+        consultation.payoutStatus = 'approved';
+        consultation.payoutProcessedAt = new Date();
+        await consultation.save();
+
+        res.json({ message: 'Consultation payout approved successfully', consultation });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error approving consultation payout' });
+    }
+};
+
+// @desc    Reject consultation payout
+// @route   POST /api/admin/consultations/:id/reject-payout
+export const rejectConsultationPayout = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const consultation = await LiveConsultation.findById(id);
+
+        if (!consultation) {
+            res.status(404).json({ message: 'Consultation not found' });
+            return;
+        }
+
+        consultation.payoutStatus = 'rejected';
+        await consultation.save();
+
+        res.json({ message: 'Consultation payout rejected', consultation });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error rejecting consultation payout' });
+    }
+};
+
 

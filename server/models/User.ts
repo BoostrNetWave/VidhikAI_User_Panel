@@ -72,6 +72,11 @@ const userSchema = new mongoose.Schema({
         school: String,
         year: String
     }],
+    // Payment / Bank Payout Information
+    bankName: { type: String, default: "" },
+    accountNumber: { type: String, default: "" },
+    ifsc: { type: String, default: "" },
+    upiId: { type: String, default: "" },
     rating: { type: Number, default: 0 },
     reviews: { type: Number, default: 0 },
     

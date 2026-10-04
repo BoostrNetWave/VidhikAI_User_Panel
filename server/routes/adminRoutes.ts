@@ -21,7 +21,10 @@ import {
     reverifyUser,
     getAllConsultations,
     getLoginHistory,
-    toggleConsultantVisibility
+    toggleConsultantVisibility,
+    getAllPayouts,
+    approveConsultationPayout,
+    rejectConsultationPayout
 } from '../controllers/adminController';
 import { protect, adminOnly } from '../middleware/authMiddleware';
 
@@ -42,6 +45,11 @@ router.post('/verify-user/:id', protect, adminOnly, verifyUser);
 router.get('/cases', protect, adminOnly, getAllCases);
 router.post('/cases/:id/milestones/:index/approve-payout', protect, adminOnly, approveMilestonePayout);
 router.post('/cases/:id/milestones/:index/reject-payout', protect, adminOnly, rejectMilestonePayout);
+
+// Payout Operations
+router.get('/payouts', protect, adminOnly, getAllPayouts);
+router.post('/consultations/:id/approve-payout', protect, adminOnly, approveConsultationPayout);
+router.post('/consultations/:id/reject-payout', protect, adminOnly, rejectConsultationPayout);
 
 // Tickets & Documents management
 router.get('/tickets', protect, adminOnly, getAllTickets);

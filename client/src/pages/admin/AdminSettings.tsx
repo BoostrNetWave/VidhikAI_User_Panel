@@ -16,6 +16,7 @@ import { AdminTickets } from "./components/AdminTickets";
 import { AdminDocuments } from "./components/AdminDocuments";
 import { AdminLoginHistory } from "./components/AdminLoginHistory";
 import { AdminLLMConfig } from "./components/AdminLLMConfig";
+import { AdminPayments } from "./components/AdminPayments";
 
 export default function AdminSettings() {
     const { tab } = useParams();
@@ -213,8 +214,10 @@ export default function AdminSettings() {
             case 'lawyers':
                 return <AdminLawyers pendingLawyers={pendingLawyers} onApprove={handleApproveLawyer} />;
             case 'cases':
-            case 'payments': // Alias cases and payments to the financial view
                 return <AdminCases cases={cases} />;
+            case 'payments':
+            case 'payouts':
+                return <AdminPayments onRefreshOverview={fetchData} />;
             case 'consultations':
                 return <AdminConsultations consultations={consultations} />;
             case 'tickets':

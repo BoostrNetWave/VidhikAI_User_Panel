@@ -279,6 +279,8 @@ export const payAndConfirmConsultation = async (req: any, res: Response): Promis
         }
 
         consultation.status = 'scheduled';
+        consultation.isPaidByUser = true;
+        consultation.payoutStatus = 'pending';
         await consultation.save();
 
         // Send confirmation emails
@@ -512,6 +514,36 @@ export const endConsultation = async (req: any, res: Response): Promise<void> =>
             .populate('lawyer', 'fullName email phone location title expertise avatar');
 
         res.json(updated);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const requestConsultationPayout = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const userId = req.user._id || req.user.id;
+
+        const consultation = await LiveConsultation.findOne({
+            _id: id,
+            lawyer: userId
+        });
+
+        if (!consultation) {
+            res.status(404).json({ message: 'Consultation not found' });
+            return;
+        }
+
+        if (!consultation.isPaidByUser && consultation.status !== 'scheduled' && consultation.status !== 'completed') {
+            res.status(400).json({ message: 'Payout can only be requested after client payment is processed.' });
+            return;
+        }
+
+        consultation.payoutStatus = 'requested';
+        consultation.payoutRequestedAt = new Date();
+        await consultation.save();
+
+        res.json({ message: 'Payout request submitted to admin successfully', consultation });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

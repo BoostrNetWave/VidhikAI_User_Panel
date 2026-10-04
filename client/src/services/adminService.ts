@@ -104,5 +104,20 @@ export const adminService = {
     async toggleConsultantVisibility(id: string, showInConsultants: boolean) {
         const response = await api.post(`/admin/lawyers/${id}/toggle-consultant`, { showInConsultants });
         return response.data;
+    },
+
+    async getAllPayouts() {
+        const response = await api.get('/admin/payouts');
+        return response.data;
+    },
+
+    async approveConsultationPayout(id: string) {
+        const response = await api.post(`/admin/consultations/${id}/approve-payout`);
+        return response.data;
+    },
+
+    async rejectConsultationPayout(id: string) {
+        const response = await api.post(`/admin/consultations/${id}/reject-payout`);
+        return response.data;
     }
 };

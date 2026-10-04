@@ -14,7 +14,8 @@ import {
     getSignals,
     clearSignals,
     createCase,
-    addCaseNote
+    addCaseNote,
+    requestMilestonePayout
 } from '../controllers/caseController';
 
 const router = Router();
@@ -28,6 +29,7 @@ router.post('/book', bookLawyer);
 router.post('/:id/notes', addCaseNote);
 router.post('/:id/create-order', createCasePaymentOrder);
 router.post('/:id/pay', payAndConfirmCase);
+router.post('/:id/milestones/:index/request-payout', requestMilestonePayout);
 router.post('/:id/join-meeting', joinMeeting);
 router.post('/:id/signal', sendSignal);
 router.get('/:id/signals', getSignals);

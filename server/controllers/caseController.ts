@@ -451,4 +451,35 @@ export const addCaseNote = async (req: any, res: Response): Promise<void> => {
     }
 };
 
+export const requestMilestonePayout = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { id, index } = req.params;
+        const milestoneIndex = parseInt(index as string);
+        const userId = req.user._id || req.user.id;
+
+        const kase = await Case.findOne({ _id: id, lawyer: userId });
+        if (!kase) {
+            res.status(404).json({ message: 'Case not found' });
+            return;
+        }
+
+        if (isNaN(milestoneIndex) || milestoneIndex < 0 || milestoneIndex >= kase.milestones.length) {
+            res.status(400).json({ message: 'Invalid milestone index' });
+            return;
+        }
+
+        const milestone = kase.milestones[milestoneIndex];
+        if (milestone.status !== 'completed') {
+            res.status(400).json({ message: 'Milestone must be completed before requesting payout.' });
+            return;
+        }
+
+        milestone.payoutStatus = 'requested';
+        await kase.save();
+        res.json({ message: 'Payout request for milestone submitted successfully', kase });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 
