@@ -302,6 +302,8 @@ export function AdminConfigManager({
                   { key: 'LANDING_HERO_BADGE', value: heroData.badge, category: 'landing', description: 'Hero badge tag' },
                   { key: 'LANDING_HERO_PRIMARY_CTA_TEXT', value: heroData.primaryCtaText, category: 'landing', description: 'Primary CTA label' },
                   { key: 'LANDING_HERO_PRIMARY_CTA_LINK', value: heroData.primaryCtaLink, category: 'landing', description: 'Primary CTA link' },
+                  { key: 'LANDING_HERO_SECONDARY_CTA_TEXT', value: heroData.secondaryCtaText, category: 'landing', description: 'Secondary CTA label' },
+                  { key: 'LANDING_HERO_SECONDARY_CTA_LINK', value: heroData.secondaryCtaLink, category: 'landing', description: 'Secondary CTA link' },
                   { key: 'LANDING_HERO_IMAGE', value: heroData.imageUrl, category: 'landing', description: 'Hero image URL' },
                   { key: 'LANDING_PRICING_PLANS', value: pricingPlans, category: 'landing', description: 'Landing page pricing plans' },
                   { key: 'USER_PRICING_PLANS', value: pricingPlans, category: 'user_panel', description: 'User panel billing plans' },

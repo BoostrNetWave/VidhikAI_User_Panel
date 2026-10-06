@@ -216,9 +216,27 @@ mongoose.connect(MONGO_URI)
                 { upsert: true }
             );
 
-            console.log('✅ Official v3.0 Pricing Plans and Extra Credit Packages synced to database');
+            // Auto-sync official v3.0 Hero Section default configs if missing or stale
+            const defaultHeroConfigs = [
+                { key: 'LANDING_HERO_TITLE', value: 'Legal work, drafted with intelligence.', category: 'landing', description: 'Main headline on the landing page' },
+                { key: 'LANDING_HERO_SUBTITLE', value: 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.', category: 'landing', description: 'Subtitle text under the main headline' },
+                { key: 'LANDING_HERO_BADGE', value: 'Get started with Vidhik AI', category: 'landing', description: 'Top badge tag text on hero section' },
+                { key: 'LANDING_HERO_PRIMARY_CTA_TEXT', value: 'Start Free Trial', category: 'landing', description: 'Primary CTA button label' },
+                { key: 'LANDING_HERO_PRIMARY_CTA_LINK', value: '/user/auth?mode=register', category: 'landing', description: 'Primary CTA target link' },
+                { key: 'LANDING_HERO_SECONDARY_CTA_TEXT', value: 'Watch Demo', category: 'landing', description: 'Secondary CTA button label' },
+                { key: 'LANDING_HERO_SECONDARY_CTA_LINK', value: '#demo', category: 'landing', description: 'Secondary CTA target link' }
+            ];
+
+            for (const cfg of defaultHeroConfigs) {
+                const existing = await SystemConfig.findOne({ key: cfg.key });
+                if (!existing || existing.value === 'Affordable Legal Services') {
+                    await SystemConfig.findOneAndUpdate({ key: cfg.key }, cfg, { upsert: true });
+                }
+            }
+
+            console.log('✅ Official v3.0 Pricing Plans, Credit Packages, and Hero Section Configs synced to database');
         } catch (syncErr) {
-            console.warn('⚠️ Pricing config sync warning:', syncErr);
+            console.warn('⚠️ Config sync warning:', syncErr);
         }
 
         server.listen(PORT, () => {
