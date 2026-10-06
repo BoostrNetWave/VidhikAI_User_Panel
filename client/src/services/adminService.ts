@@ -6,8 +6,13 @@ export const adminService = {
         return response.data;
     },
 
-    async updateConfig(key: string, value: any) {
-        const response = await api.put('/admin/config', { key, value });
+    async updateConfig(key: string, value: any, category?: string, description?: string) {
+        const response = await api.put('/admin/config', { key, value, category, description });
+        return response.data;
+    },
+
+    async bulkUpdateConfigs(configs: Array<{ key: string; value: any; category?: string; description?: string }>) {
+        const response = await api.post('/admin/config/bulk', { configs });
         return response.data;
     },
 

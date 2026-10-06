@@ -2,6 +2,7 @@ import express from 'express';
 import { 
     getConfigs, 
     updateConfig, 
+    bulkUpdateConfigs,
     getAllUsers, 
     getPendingLawyers, 
     approveLawyer, 
@@ -37,6 +38,7 @@ const router = express.Router();
 
 router.get('/config', protect, adminOnly, getConfigs);
 router.put('/config', protect, adminOnly, updateConfig);
+router.post('/config/bulk', protect, adminOnly, bulkUpdateConfigs);
 router.get('/users', protect, adminOnly, getAllUsers);
 router.get('/pending-lawyers', protect, adminOnly, getPendingLawyers);
 router.post('/approve-lawyer/:id', protect, adminOnly, approveLawyer);

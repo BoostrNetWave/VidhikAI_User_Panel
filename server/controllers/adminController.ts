@@ -31,21 +31,52 @@ export const getConfigs = async (_req: Request, res: Response) => {
 // @route   PUT /api/admin/config
 export const updateConfig = async (req: Request, res: Response) => {
     try {
-        const { key, value } = req.body;
+        const { key, value, category, description } = req.body;
         
+        const updateDoc: any = { value };
+        if (category) updateDoc.category = category;
+        if (description) updateDoc.description = description;
+
         const config = await SystemConfig.findOneAndUpdate(
             { key },
-            { value },
-            { new: true }
+            updateDoc,
+            { new: true, upsert: true }
         );
-
-        if (!config) {
-            return res.status(404).json({ message: 'Configuration not found' });
-        }
 
         res.json({ message: 'Configuration updated successfully', config });
     } catch (error) {
         res.status(500).json({ message: 'Error updating configuration' });
+    }
+};
+
+// @desc    Bulk update multiple configurations
+// @route   POST /api/admin/config/bulk
+export const bulkUpdateConfigs = async (req: Request, res: Response) => {
+    try {
+        const { configs } = req.body;
+        if (!Array.isArray(configs)) {
+            return res.status(400).json({ message: 'Invalid configs array' });
+        }
+
+        const results = [];
+        for (const item of configs) {
+            if (!item.key) continue;
+            const updateDoc: any = { value: item.value };
+            if (item.category) updateDoc.category = item.category;
+            if (item.description) updateDoc.description = item.description;
+
+            const updated = await SystemConfig.findOneAndUpdate(
+                { key: item.key },
+                updateDoc,
+                { new: true, upsert: true }
+            );
+            results.push(updated);
+        }
+
+        res.json({ message: 'Configurations saved successfully', configs: results });
+    } catch (error) {
+        console.error('Error bulk updating configs:', error);
+        res.status(500).json({ message: 'Error bulk updating configurations' });
     }
 };
 
