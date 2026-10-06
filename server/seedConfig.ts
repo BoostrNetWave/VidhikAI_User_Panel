@@ -6,15 +6,45 @@ import './config/env'; // Load env variables
 const seedData = [
     {
         key: 'LANDING_HERO_TITLE',
-        value: 'Affordable Legal Services',
+        value: 'Legal work, drafted with intelligence.',
         category: 'landing',
         description: 'Main headline on the landing page'
     },
     {
         key: 'LANDING_HERO_SUBTITLE',
-        value: 'Create legal documents, review contracts, and get legal help instantly using AI. Designed for startups, freelancers, and businesses.',
+        value: 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.',
         category: 'landing',
         description: 'Subtitle text under the main headline'
+    },
+    {
+        key: 'LANDING_HERO_BADGE',
+        value: 'Get started with Vidhik AI',
+        category: 'landing',
+        description: 'Top badge tag text on hero section'
+    },
+    {
+        key: 'LANDING_HERO_PRIMARY_CTA_TEXT',
+        value: 'Start Free Trial',
+        category: 'landing',
+        description: 'Primary CTA button label'
+    },
+    {
+        key: 'LANDING_HERO_PRIMARY_CTA_LINK',
+        value: '/user/auth?mode=register',
+        category: 'landing',
+        description: 'Primary CTA target link'
+    },
+    {
+        key: 'LANDING_HERO_SECONDARY_CTA_TEXT',
+        value: 'Watch Demo',
+        category: 'landing',
+        description: 'Secondary CTA button label'
+    },
+    {
+        key: 'LANDING_HERO_SECONDARY_CTA_LINK',
+        value: '#demo',
+        category: 'landing',
+        description: 'Secondary CTA target link'
     },
     {
         key: 'LANDING_LOGO_URL',

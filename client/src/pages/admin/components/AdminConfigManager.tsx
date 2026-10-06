@@ -67,13 +67,13 @@ export function AdminConfigManager({
 
   // Local state for complex object editing
   const [heroData, setHeroData] = useState<any>({
-    title: '',
-    subtitle: '',
-    badge: 'AI-POWERED LEGAL PLATFORM',
-    primaryCtaText: 'Get Started Free',
+    title: 'Legal work, drafted with intelligence.',
+    subtitle: 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.',
+    badge: 'Get started with Vidhik AI',
+    primaryCtaText: 'Start Free Trial',
     primaryCtaLink: '/user/auth?mode=register',
-    secondaryCtaText: 'Explore Features',
-    secondaryCtaLink: '#features',
+    secondaryCtaText: 'Watch Demo',
+    secondaryCtaLink: '#demo',
     imageUrl: '',
     statDocuments: '10k+',
     statAccuracy: '99.8%',
@@ -107,19 +107,19 @@ export function AdminConfigManager({
 
   // Sync state when configs array changes
   useEffect(() => {
-    const heroTitle = getConfig('LANDING_HERO_TITLE');
-    const heroSubtitle = getConfig('LANDING_HERO_SUBTITLE');
+    const heroTitle = getConfig('LANDING_HERO_TITLE', 'Legal work, drafted with intelligence.');
+    const heroSubtitle = getConfig('LANDING_HERO_SUBTITLE', 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.');
     const heroImage = getConfig('LANDING_HERO_IMAGE');
-    const heroBadge = getConfig('LANDING_HERO_BADGE', 'AI-POWERED LEGAL PLATFORM');
+    const heroBadge = getConfig('LANDING_HERO_BADGE', 'Get started with Vidhik AI');
     
     setHeroData({
-      title: heroTitle || 'Affordable Legal Services Powered by AI',
-      subtitle: heroSubtitle || 'Create legal documents, review contracts, and consult top lawyers instantly.',
+      title: heroTitle,
+      subtitle: heroSubtitle,
       badge: heroBadge,
-      primaryCtaText: getConfig('LANDING_HERO_PRIMARY_CTA_TEXT', 'Get Started Free'),
+      primaryCtaText: getConfig('LANDING_HERO_PRIMARY_CTA_TEXT', 'Start Free Trial'),
       primaryCtaLink: getConfig('LANDING_HERO_PRIMARY_CTA_LINK', '/user/auth?mode=register'),
-      secondaryCtaText: getConfig('LANDING_HERO_SECONDARY_CTA_TEXT', 'Explore Features'),
-      secondaryCtaLink: getConfig('LANDING_HERO_SECONDARY_CTA_LINK', '#features'),
+      secondaryCtaText: getConfig('LANDING_HERO_SECONDARY_CTA_TEXT', 'Watch Demo'),
+      secondaryCtaLink: getConfig('LANDING_HERO_SECONDARY_CTA_LINK', '#demo'),
       imageUrl: heroImage || '',
       statDocuments: getConfig('LANDING_STAT_DOCUMENTS', '10k+'),
       statAccuracy: getConfig('LANDING_STAT_ACCURACY', '99.8%'),
@@ -399,6 +399,7 @@ export function AdminConfigManager({
                       <Input
                         value={heroData.primaryCtaText}
                         onChange={e => setHeroData({ ...heroData, primaryCtaText: e.target.value })}
+                        placeholder="e.g. Start Free Trial"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -406,6 +407,26 @@ export function AdminConfigManager({
                       <Input
                         value={heroData.primaryCtaLink}
                         onChange={e => setHeroData({ ...heroData, primaryCtaLink: e.target.value })}
+                        placeholder="e.g. /user/auth?mode=register"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">Secondary Button Text</label>
+                      <Input
+                        value={heroData.secondaryCtaText}
+                        onChange={e => setHeroData({ ...heroData, secondaryCtaText: e.target.value })}
+                        placeholder="e.g. Watch Demo"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">Secondary Button Link</label>
+                      <Input
+                        value={heroData.secondaryCtaLink}
+                        onChange={e => setHeroData({ ...heroData, secondaryCtaLink: e.target.value })}
+                        placeholder="e.g. #demo"
                       />
                     </div>
                   </div>
@@ -421,38 +442,50 @@ export function AdminConfigManager({
                 </CardContent>
               </Card>
 
-              {/* Live Preview Card */}
-              <Card className="border-primary/20 bg-gradient-to-b from-slate-900 to-indigo-950 text-white shadow-xl flex flex-col justify-between">
-                <CardHeader>
+              {/* Live Preview Card (Mirrors vidhikai.com visual look) */}
+              <Card className="border border-purple-200/60 bg-gradient-to-b from-purple-50/70 via-white to-slate-50 text-slate-900 shadow-md flex flex-col justify-between overflow-hidden">
+                <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-xs border-primary/40 text-primary">
-                      Live Hero Preview
+                    <Badge variant="outline" className="text-xs border-purple-200 bg-purple-100/60 text-purple-800 font-bold">
+                      Live Preview (vidhikai.com)
                     </Badge>
                     <span className="text-[10px] text-slate-400 font-mono">vidhikai.com</span>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4 my-auto">
-                  <div className="inline-block px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-bold tracking-wider uppercase border border-primary/30">
-                    {heroData.badge || 'BADGE'}
+
+                <CardContent className="space-y-4 my-auto py-6 flex flex-col items-center text-center px-6">
+                  {/* Top Pill Badge */}
+                  <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-xs">
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 text-blue-600 font-bold text-[10px]">⚡</span>
+                    <span>{heroData.badge || 'Get started with Vidhik AI'}</span>
+                    <span className="text-slate-400">→</span>
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
-                    {heroData.title || 'Your Main Headline Here'}
+
+                  {/* Main Display Title */}
+                  <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 leading-tight max-w-md">
+                    {heroData.title || 'Legal work, drafted with intelligence.'}
                   </h1>
-                  <p className="text-xs text-slate-300 leading-relaxed max-w-lg">
-                    {heroData.subtitle || 'Your subtitle description text will appear here.'}
+
+                  {/* Subtitle */}
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-sm">
+                    {heroData.subtitle || 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.'}
                   </p>
+
+                  {/* CTA Buttons */}
                   <div className="flex items-center gap-3 pt-2">
-                    <button className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-lg shadow-primary/30">
-                      {heroData.primaryCtaText || 'Action'}
+                    <button className="px-5 py-2.5 rounded-full bg-slate-900 text-white font-bold text-xs shadow-md">
+                      {heroData.primaryCtaText || 'Start Free Trial'}
                     </button>
-                    <button className="px-4 py-2 rounded-xl bg-white/10 text-white font-bold text-xs border border-white/20">
-                      {heroData.secondaryCtaText || 'Secondary'}
+                    <button className="px-5 py-2.5 rounded-full bg-white text-slate-900 font-bold text-xs border border-slate-200 shadow-xs flex items-center gap-1.5">
+                      <span className="text-[10px]">▷</span>
+                      <span>{heroData.secondaryCtaText || 'Watch Demo'}</span>
                     </button>
                   </div>
                 </CardContent>
-                <div className="p-4 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
-                  <span>Changes apply to production landing page upon saving.</span>
-                  <Sparkles className="h-4 w-4 text-primary" />
+
+                <div className="p-3.5 bg-white/80 border-t border-slate-100 text-[10px] text-slate-500 flex items-center justify-between">
+                  <span>Changes sync dynamically to production landing page upon saving.</span>
+                  <Sparkles className="h-4 w-4 text-purple-600" />
                 </div>
               </Card>
             </div>
