@@ -303,10 +303,21 @@ export const replyToTicket = async (req: Request, res: Response) => {
             ticket.adminReply = replyMessage;
         }
 
-        if (status && status !== ticket.status) {
-            ticket.status = status;
+        let targetStatus = status;
+        if (targetStatus) {
+            const lower = targetStatus.toLowerCase().replace(/_/g, ' ');
+            if (lower === 'in progress') targetStatus = 'In Progress';
+            else if (lower === 'waiting for customer') targetStatus = 'Waiting for Customer';
+            else if (lower === 'open') targetStatus = 'Open';
+            else if (lower === 'pending') targetStatus = 'Pending';
+            else if (lower === 'resolved') targetStatus = 'Resolved';
+            else if (lower === 'closed') targetStatus = 'Closed';
+        }
+
+        if (targetStatus && targetStatus !== ticket.status) {
+            ticket.status = targetStatus;
             ticket.statusHistory.push({
-                status: status as any,
+                status: targetStatus as any,
                 changedBy: 'admin',
                 changedAt: new Date(),
                 note: replyMessage ? 'Status updated with admin reply' : 'Status updated by admin'

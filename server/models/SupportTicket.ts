@@ -12,7 +12,7 @@ export interface ITicketMessage {
 
 export interface IStatusHistory {
     _id?: any;
-    status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Resolved' | 'Closed';
+    status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Pending' | 'Resolved' | 'Closed';
     changedBy: 'user' | 'admin';
     changedAt: Date;
     note?: string;
@@ -29,7 +29,7 @@ export interface ISupportTicket extends Document {
     description: string;
     attachment?: string;
     attachmentName?: string;
-    status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Resolved' | 'Closed';
+    status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Pending' | 'Resolved' | 'Closed';
     messages: ITicketMessage[];
     statusHistory: IStatusHistory[];
     adminReply?: string; // backwards compatibility
@@ -67,7 +67,7 @@ const ticketMessageSchema = new Schema({
 const statusHistorySchema = new Schema({
     status: {
         type: String,
-        enum: ['Open', 'In Progress', 'Waiting for Customer', 'Resolved', 'Closed'],
+        enum: ['Open', 'In Progress', 'Waiting for Customer', 'Pending', 'Resolved', 'Closed'],
         required: true
     },
     changedBy: {
@@ -130,7 +130,7 @@ const supportTicketSchema: Schema = new Schema({
     },
     status: {
         type: String,
-        enum: ['Open', 'In Progress', 'Waiting for Customer', 'Resolved', 'Closed'],
+        enum: ['Open', 'In Progress', 'Waiting for Customer', 'Pending', 'Resolved', 'Closed'],
         default: 'Open'
     },
     messages: [ticketMessageSchema],

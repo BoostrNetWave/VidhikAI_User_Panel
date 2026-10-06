@@ -63,8 +63,28 @@ export function AdminTickets({ tickets = [], onReply, onUpdateStatus }: AdminTic
 
   const getFileUrl = (url?: string) => {
     if (!url) return '';
-    if (url.startsWith('http')) return url;
-    return url.startsWith('/') ? url : `/${url}`;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+
+    let clean = url.replace(/\\/g, '/').trim();
+    clean = clean.replace(/^\.\//, '');
+    if (!clean.startsWith('/')) {
+      clean = '/' + clean;
+    }
+
+    const viteApiUrl = import.meta.env.VITE_API_URL || '';
+    if (viteApiUrl && viteApiUrl.startsWith('http')) {
+      const apiBase = viteApiUrl.replace(/\/api\/?$/, '');
+      return `${apiBase}${clean}`;
+    }
+
+    if (typeof window !== 'undefined' && window.location) {
+      if (['5173', '3000', '5174'].includes(window.location.port)) {
+        return `http://localhost:5003${clean}`;
+      }
+      return `${window.location.origin}${clean}`;
+    }
+
+    return clean;
   };
 
   // Build unified message list

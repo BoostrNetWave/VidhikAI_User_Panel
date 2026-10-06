@@ -133,12 +133,13 @@ export default function AdminSettings() {
 
     const handleReplyTicket = async (id: string, text: string) => {
         try {
-            await adminService.replyToTicket(id, text, 'In_Progress');
+            await adminService.replyToTicket(id, text, 'Waiting for Customer');
             toast.success("Reply sent");
             const newTickets = await adminService.getAllTickets();
             setTickets(newTickets);
-        } catch (e) {
-            toast.error("Failed to send reply");
+        } catch (e: any) {
+            console.error("Failed to send reply:", e);
+            toast.error(e?.response?.data?.message || "Failed to send reply");
         }
     };
 

@@ -177,6 +177,32 @@ export function TicketDetailsModal({
         });
     };
 
+    const getFileUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+
+        let clean = url.replace(/\\/g, '/').trim();
+        clean = clean.replace(/^\.\//, '');
+        if (!clean.startsWith('/')) {
+            clean = '/' + clean;
+        }
+
+        const viteApiUrl = (import.meta as any).env?.VITE_API_URL || '';
+        if (viteApiUrl && viteApiUrl.startsWith('http')) {
+            const apiBase = viteApiUrl.replace(/\/api\/?$/, '');
+            return `${apiBase}${clean}`;
+        }
+
+        if (typeof window !== 'undefined' && window.location) {
+            if (['5173', '3000', '5174'].includes(window.location.port)) {
+                return `http://localhost:5003${clean}`;
+            }
+            return `${window.location.origin}${clean}`;
+        }
+
+        return clean;
+    };
+
     const isClosed = ticket?.status === 'Closed';
     const currentStepIndex = getStatusStepIndex(ticket?.status || 'Open');
 
@@ -294,7 +320,7 @@ export function TicketDetailsModal({
                                 {ticket?.attachment && (
                                     <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
                                         <a
-                                            href={ticket.attachment}
+                                            href={getFileUrl(ticket.attachment)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors"
@@ -361,7 +387,7 @@ export function TicketDetailsModal({
                                                     {msg.attachment && (
                                                         <div className={`mt-3 pt-2.5 border-t ${isAdmin ? 'border-slate-100' : 'border-white/20'}`}>
                                                             <a
-                                                                href={msg.attachment}
+                                                                href={getFileUrl(msg.attachment)}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
