@@ -12,6 +12,8 @@ import { sendEmail } from '../utils/emailService';
 import CreditService, { PLAN_CREDIT_ALLOCATIONS } from '../services/creditService';
 import UsageRecord from '../models/UsageRecord';
 import Transaction from '../models/Transaction';
+import LLMLog from '../models/LLMLog';
+import { llmService } from '../services/llmService';
 
 // Helper to keep legacy websitecontents collection in sync with SystemConfig updates
 const syncToWebsiteContentCollection = async (key: string, value: any) => {
@@ -788,5 +790,117 @@ export const rejectConsultationPayout = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error rejecting consultation payout' });
     }
 };
+
+// @desc    Get real dynamic LLM usage metrics & logs
+// @route   GET /api/admin/llm/metrics
+export const getLLMMetrics = async (_req: Request, res: Response) => {
+    try {
+        const totalRequests = await LLMLog.countDocuments({});
+        
+        const tokenStats = await LLMLog.aggregate([
+            { $group: { _id: null, totalTokens: { $sum: '$totalTokens' }, totalCost: { $sum: '$estimatedCost' } } }
+        ]);
+
+        const successfulRequests = await LLMLog.countDocuments({ status: 'success' });
+        const failedRequests = await LLMLog.countDocuments({ status: 'error' });
+        const successRate = totalRequests > 0 ? ((successfulRequests / totalRequests) * 100).toFixed(1) : '100.0';
+
+        const totalTokens = tokenStats[0]?.totalTokens || 0;
+        const totalCost = tokenStats[0]?.totalCost || 0;
+
+        // Provider breakdown
+        const providerStats = await LLMLog.aggregate([
+            { $group: { _id: '$provider', count: { $sum: 1 }, tokens: { $sum: '$totalTokens' }, cost: { $sum: '$estimatedCost' } } }
+        ]);
+
+        // Recent request logs
+        const recentLogs = await LLMLog.find({})
+            .sort({ createdAt: -1 })
+            .limit(30)
+            .populate('userId', 'fullName email role');
+
+        let healthStatus = 'Operational';
+        if (totalRequests > 5 && parseFloat(successRate) < 80) {
+            healthStatus = 'Degraded';
+        } else if (totalRequests > 5 && parseFloat(successRate) < 50) {
+            healthStatus = 'Critical';
+        }
+
+        res.json({
+            totalRequests,
+            totalTokens,
+            estimatedCost: `$${totalCost.toFixed(2)}`,
+            successRate: `${successRate}%`,
+            successfulRequests,
+            failedRequests,
+            healthStatus,
+            providerStats,
+            recentLogs
+        });
+    } catch (error: any) {
+        console.error('Error fetching LLM metrics:', error);
+        res.status(500).json({ message: 'Error fetching LLM metrics' });
+    }
+};
+
+// @desc    Live test connection to an LLM provider/model
+// @route   POST /api/admin/llm/test
+export const testLLMConfig = async (req: Request, res: Response) => {
+    try {
+        const result = await llmService.testConnection(req.body);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            latencyMs: 0,
+            responseText: '',
+            tokensUsed: 0,
+            error: error.message || 'Failed to execute LLM test'
+        });
+    }
+};
+
+// @desc    Create or update dynamic feature LLM configuration
+// @route   POST /api/admin/llm/feature-config
+export const createOrUpdateLLMFeatureConfig = async (req: Request, res: Response) => {
+    try {
+        const { featureName, provider, model, apiKey, baseUrl, temperature, maxTokens, systemPrompt, description } = req.body;
+        
+        if (!featureName) {
+            return res.status(400).json({ message: 'Feature name is required' });
+        }
+
+        const normalizedKey = featureName.startsWith('LLM_CONFIG_') 
+            ? featureName.toUpperCase() 
+            : `LLM_CONFIG_${featureName.toUpperCase().replace(/\s+/g, '_')}`;
+
+        const valueObject = {
+            provider: provider || 'openai',
+            model: model || 'gpt-4o',
+            apiKey: apiKey || '',
+            baseUrl: baseUrl || '',
+            temperature: typeof temperature === 'number' ? temperature : 0.7,
+            maxTokens: typeof maxTokens === 'number' ? maxTokens : 4000,
+            systemPrompt: systemPrompt || ''
+        };
+
+        const config = await SystemConfig.findOneAndUpdate(
+            { key: normalizedKey },
+            { 
+                key: normalizedKey, 
+                value: valueObject, 
+                category: 'system', 
+                description: description || `LLM Endpoint Configuration for ${featureName}` 
+            },
+            { new: true, upsert: true }
+        );
+
+        res.json({ message: 'LLM Feature endpoint updated successfully', config });
+    } catch (error: any) {
+        console.error('Error saving LLM feature config:', error);
+        res.status(500).json({ message: 'Error saving LLM feature configuration' });
+    }
+};
+
 
 

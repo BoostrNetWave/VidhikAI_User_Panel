@@ -92,6 +92,14 @@ export default function AdminSettings() {
 
     // Actions
     const handleUpdateConfig = async (key: string, value: any) => {
+        if (key === 'REFRESH_ALL') {
+            if (Array.isArray(value)) setConfigs(value);
+            else {
+                const fresh = await adminService.getConfigs();
+                setConfigs(fresh);
+            }
+            return;
+        }
         const originalConfig = configs.find(c => c.key === key);
         let parsedValue = value;
         if (originalConfig && typeof originalConfig.value === 'number') {

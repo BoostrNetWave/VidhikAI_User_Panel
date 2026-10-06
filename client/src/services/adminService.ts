@@ -124,5 +124,20 @@ export const adminService = {
     async rejectConsultationPayout(id: string) {
         const response = await api.post(`/admin/consultations/${id}/reject-payout`);
         return response.data;
+    },
+
+    async getLLMMetrics() {
+        const response = await api.get('/admin/llm/metrics');
+        return response.data;
+    },
+
+    async testLLMConfig(configData: { provider: string; model: string; apiKey?: string; baseUrl?: string; temperature?: number; maxTokens?: number; systemPrompt?: string; prompt?: string }) {
+        const response = await api.post('/admin/llm/test', configData);
+        return response.data;
+    },
+
+    async createLLMFeatureConfig(featureData: any) {
+        const response = await api.post('/admin/llm/feature-config', featureData);
+        return response.data;
     }
 };

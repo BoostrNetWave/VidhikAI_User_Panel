@@ -25,7 +25,10 @@ import {
     toggleConsultantVisibility,
     getAllPayouts,
     approveConsultationPayout,
-    rejectConsultationPayout
+    rejectConsultationPayout,
+    getLLMMetrics,
+    testLLMConfig,
+    createOrUpdateLLMFeatureConfig
 } from '../controllers/adminController';
 import { protect, adminOnly } from '../middleware/authMiddleware';
 
@@ -35,6 +38,10 @@ const router = express.Router();
  * Admin Routes
  * Protected by 'protect' (JWT Check) and 'adminOnly' (Role Check)
  */
+
+router.get('/llm/metrics', protect, adminOnly, getLLMMetrics);
+router.post('/llm/test', protect, adminOnly, testLLMConfig);
+router.post('/llm/feature-config', protect, adminOnly, createOrUpdateLLMFeatureConfig);
 
 router.get('/config', protect, adminOnly, getConfigs);
 router.put('/config', protect, adminOnly, updateConfig);
