@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import SystemConfig from '../models/SystemConfig';
 import User from '../models/User';
 import Case from '../models/Case';
@@ -11,6 +12,49 @@ import { sendEmail } from '../utils/emailService';
 import CreditService, { PLAN_CREDIT_ALLOCATIONS } from '../services/creditService';
 import UsageRecord from '../models/UsageRecord';
 import Transaction from '../models/Transaction';
+
+// Helper to keep legacy websitecontents collection in sync with SystemConfig updates
+const syncToWebsiteContentCollection = async (key: string, value: any) => {
+    try {
+        const db = mongoose.connection.db;
+        if (!db) return;
+        const collection = db.collection('websitecontents');
+
+        const keyMap: Record<string, { section: string; key: string }> = {
+            'LANDING_HERO_TITLE': { section: 'hero', key: 'hero.headline' },
+            'LANDING_HERO_SUBTITLE': { section: 'hero', key: 'hero.subheadline' },
+            'LANDING_HERO_BADGE': { section: 'hero', key: 'hero.badge_text' },
+            'LANDING_HERO_PRIMARY_CTA_TEXT': { section: 'hero', key: 'hero.cta_primary_text' },
+            'LANDING_HERO_PRIMARY_CTA_LINK': { section: 'hero', key: 'hero.cta_primary_link' },
+            'LANDING_HERO_SECONDARY_CTA_TEXT': { section: 'hero', key: 'hero.cta_secondary_text' },
+            'LANDING_HERO_SECONDARY_CTA_LINK': { section: 'hero', key: 'hero.cta_secondary_link' },
+            'LANDING_HERO_IMAGE': { section: 'hero', key: 'hero.dashboard_image_url' },
+            'LANDING_PRICING_PLANS': { section: 'pricing', key: 'pricing.plans' },
+            'USER_PRICING_PLANS': { section: 'pricing', key: 'pricing.plans' },
+            'LANDING_FAQS': { section: 'faq', key: 'faq.items' }
+        };
+
+        const target = keyMap[key];
+        if (target) {
+            await collection.updateOne(
+                { key: target.key },
+                { 
+                    $set: { 
+                        value: value, 
+                        section: target.section, 
+                        page: 'landing', 
+                        isActive: true,
+                        updatedAt: new Date()
+                    } 
+                },
+                { upsert: true }
+            );
+        }
+    } catch (err) {
+        console.warn('Sync to websitecontents collection skipped:', err);
+    }
+};
+
 /**
  * Admin Controller
  * Handles all requests from the Super Admin Panel
@@ -43,6 +87,8 @@ export const updateConfig = async (req: Request, res: Response) => {
             { new: true, upsert: true }
         );
 
+        await syncToWebsiteContentCollection(key, value);
+
         res.json({ message: 'Configuration updated successfully', config });
     } catch (error) {
         res.status(500).json({ message: 'Error updating configuration' });
@@ -70,6 +116,7 @@ export const bulkUpdateConfigs = async (req: Request, res: Response) => {
                 updateDoc,
                 { new: true, upsert: true }
             );
+            await syncToWebsiteContentCollection(item.key, item.value);
             results.push(updated);
         }
 
