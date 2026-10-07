@@ -213,10 +213,7 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
         .select('-password -verificationOTP -otpExpires -subscriptionRenewsAt')
         .sort({ rating: -1, createdAt: -1 });
 
-        // Resolve avatar URLs: relative paths like /uploads/... → full URL via user-admin panel
-        const origin = `${req.protocol}://${req.get('host')}`;
-        const lawyerPanelBase = origin.replace(/:\d+/, '') + (process.env.NODE_ENV === 'production' ? '' : ':5025');
-
+        // Resolve avatar URLs: relative paths like /uploads/... → full URL via lawyer uploads endpoint
         const enriched = lawyers.map(l => {
             const obj = l.toObject() as any;
             if (obj.avatar && !obj.avatar.startsWith('http')) {
@@ -226,7 +223,7 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
                 } else if (filename.startsWith('/')) {
                     filename = filename.substring(1);
                 }
-                obj.avatar = `https://user.vidhikai.com/user/uploads/${filename}`;
+                obj.avatar = `https://lawyer.vidhikai.com/lawyer/uploads/${filename}`;
             }
             return obj;
         });
