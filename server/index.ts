@@ -219,10 +219,10 @@ mongoose.connect(MONGO_URI)
             // Auto-sync official v3.0 Landing Page section default configs if missing
             const defaultLandingConfigs = [
                 // Hero & Badges
-                { key: 'LANDING_HERO_TITLE', value: 'Legal work, drafted with intelligence.', category: 'landing', description: 'Main headline on the landing page' },
-                { key: 'LANDING_HERO_SUBTITLE', value: 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.', category: 'landing', description: 'Subtitle text under the main headline' },
-                { key: 'LANDING_HERO_BADGE', value: 'Get started with Vidhik AI', category: 'landing', description: 'Top badge tag text on hero section' },
-                { key: 'LANDING_HERO_PRIMARY_CTA_TEXT', value: 'Start Free Trial', category: 'landing', description: 'Primary CTA button label' },
+                { key: 'LANDING_HERO_TITLE', value: 'Affordable Legal Service', category: 'landing', description: 'Main headline on the landing page' },
+                { key: 'LANDING_HERO_SUBTITLE', value: 'Create legal documents, review contracts, and get legal help instantly using AI. Designed for startups, freelancers, and businesses.', category: 'landing', description: 'Subtitle text under the main headline' },
+                { key: 'LANDING_HERO_BADGE', value: 'AI-POWERED LEGAL PLATFORM', category: 'landing', description: 'Top badge tag text on hero section' },
+                { key: 'LANDING_HERO_PRIMARY_CTA_TEXT', value: 'Get Started Free', category: 'landing', description: 'Primary CTA button label' },
                 { key: 'LANDING_HERO_PRIMARY_CTA_LINK', value: '/user/auth?mode=register', category: 'landing', description: 'Primary CTA target link' },
                 { key: 'LANDING_HERO_SECONDARY_CTA_TEXT', value: 'Watch Demo', category: 'landing', description: 'Secondary CTA button label' },
                 { key: 'LANDING_HERO_SECONDARY_CTA_LINK', value: '#demo', category: 'landing', description: 'Secondary CTA target link' },
@@ -288,10 +288,13 @@ mongoose.connect(MONGO_URI)
                 { key: 'LANDING_FOOTER_STATUS_TEXT', value: 'All systems operational', category: 'landing', description: 'System status indicator copy' }
             ];
 
+            const { syncToWebsiteContentCollection } = await import('./controllers/adminController');
+
             for (const cfg of defaultLandingConfigs) {
                 const existing = await SystemConfig.findOne({ key: cfg.key });
-                if (!existing || existing.value === 'Affordable Legal Services') {
+                if (!existing || existing.value === 'Legal work, drafted with intelligence.' || existing.value === 'Get started with Vidhik AI' || existing.value === 'Start Free Trial') {
                     await SystemConfig.findOneAndUpdate({ key: cfg.key }, cfg, { upsert: true });
+                    await syncToWebsiteContentCollection(cfg.key, cfg.value);
                 }
             }
 

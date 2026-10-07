@@ -67,10 +67,10 @@ export function AdminConfigManager({
 
   // Local state for complex object editing
   const [heroData, setHeroData] = useState<any>({
-    title: 'Legal work, drafted with intelligence.',
-    subtitle: 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.',
-    badge: 'Get started with Vidhik AI',
-    primaryCtaText: 'Start Free Trial',
+    title: 'Affordable Legal Service',
+    subtitle: 'Create legal documents, review contracts, and get legal help instantly using AI. Designed for startups, freelancers, and businesses.',
+    badge: 'AI-POWERED LEGAL PLATFORM',
+    primaryCtaText: 'Get Started Free',
     primaryCtaLink: '/user/auth?mode=register',
     secondaryCtaText: 'Watch Demo',
     secondaryCtaLink: '#demo',
@@ -159,10 +159,10 @@ export function AdminConfigManager({
   // Sync state when configs array changes
   useEffect(() => {
     setHeroData({
-      title: getConfig('LANDING_HERO_TITLE', 'Legal work, drafted with intelligence.'),
-      subtitle: getConfig('LANDING_HERO_SUBTITLE', 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.'),
-      badge: getConfig('LANDING_HERO_BADGE', 'Get started with Vidhik AI'),
-      primaryCtaText: getConfig('LANDING_HERO_PRIMARY_CTA_TEXT', 'Start Free Trial'),
+      title: getConfig('LANDING_HERO_TITLE', 'Affordable Legal Service'),
+      subtitle: getConfig('LANDING_HERO_SUBTITLE', 'Create legal documents, review contracts, and get legal help instantly using AI. Designed for startups, freelancers, and businesses.'),
+      badge: getConfig('LANDING_HERO_BADGE', 'AI-POWERED LEGAL PLATFORM'),
+      primaryCtaText: getConfig('LANDING_HERO_PRIMARY_CTA_TEXT', 'Get Started Free'),
       primaryCtaLink: getConfig('LANDING_HERO_PRIMARY_CTA_LINK', '/user/auth?mode=register'),
       secondaryCtaText: getConfig('LANDING_HERO_SECONDARY_CTA_TEXT', 'Watch Demo'),
       secondaryCtaLink: getConfig('LANDING_HERO_SECONDARY_CTA_LINK', '#demo'),
