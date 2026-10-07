@@ -30,10 +30,36 @@ const syncToWebsiteContentCollection = async (key: string, value: any) => {
             'LANDING_HERO_PRIMARY_CTA_LINK': { section: 'hero', key: 'hero.cta_primary_link' },
             'LANDING_HERO_SECONDARY_CTA_TEXT': { section: 'hero', key: 'hero.cta_secondary_text' },
             'LANDING_HERO_SECONDARY_CTA_LINK': { section: 'hero', key: 'hero.cta_secondary_link' },
+            'LANDING_HERO_TRUST_TEXT': { section: 'hero', key: 'hero.trust_text' },
+            'LANDING_HERO_STAT_NUMBER': { section: 'hero', key: 'hero.stat_number' },
             'LANDING_HERO_IMAGE': { section: 'hero', key: 'hero.dashboard_image_url' },
+
+            'LANDING_WORKFLOW_TAG': { section: 'workflow', key: 'workflow.section_tag' },
+            'LANDING_WORKFLOW_TITLE': { section: 'workflow', key: 'workflow.headline' },
+            'LANDING_WORKFLOW_SUBTITLE': { section: 'workflow', key: 'workflow.subheadline' },
+            'LANDING_WORKFLOW_STEPS': { section: 'workflow', key: 'workflow.steps' },
+
+            'LANDING_AUDIENCE_TAG': { section: 'audience', key: 'audience.section_tag' },
+            'LANDING_AUDIENCE_TITLE': { section: 'audience', key: 'audience.headline' },
+            'LANDING_AUDIENCE_CARDS': { section: 'audience', key: 'audience.cards' },
+
+            'LANDING_TESTIMONIALS_TITLE': { section: 'testimonials', key: 'testimonials.headline' },
+            'LANDING_TESTIMONIALS_SUBTITLE': { section: 'testimonials', key: 'testimonials.subheadline' },
+            'LANDING_TESTIMONIALS_ITEMS': { section: 'testimonials', key: 'testimonials.items' },
+
+            'LANDING_PRICING_TITLE': { section: 'pricing', key: 'pricing.headline' },
+            'LANDING_PRICING_SUBTITLE': { section: 'pricing', key: 'pricing.subheadline' },
             'LANDING_PRICING_PLANS': { section: 'pricing', key: 'pricing.plans' },
             'USER_PRICING_PLANS': { section: 'pricing', key: 'pricing.plans' },
-            'LANDING_FAQS': { section: 'faq', key: 'faq.items' }
+
+            'LANDING_FAQ_TITLE': { section: 'faq', key: 'faq.headline' },
+            'LANDING_FAQS': { section: 'faq', key: 'faq.items' },
+
+            'LANDING_NAVBAR_BRAND': { section: 'navbar', key: 'navbar.brand_name' },
+            'LANDING_LOGO_URL': { section: 'navbar', key: 'navbar.logo_url' },
+            'LANDING_FOOTER_TAGLINE': { section: 'footer', key: 'footer.tagline' },
+            'LANDING_FOOTER_COPYRIGHT': { section: 'footer', key: 'footer.copyright' },
+            'LANDING_FOOTER_STATUS_TEXT': { section: 'footer', key: 'footer.status_text' }
         };
 
         const target = keyMap[key];

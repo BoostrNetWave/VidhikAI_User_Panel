@@ -216,25 +216,86 @@ mongoose.connect(MONGO_URI)
                 { upsert: true }
             );
 
-            // Auto-sync official v3.0 Hero Section default configs if missing or stale
-            const defaultHeroConfigs = [
+            // Auto-sync official v3.0 Landing Page section default configs if missing
+            const defaultLandingConfigs = [
+                // Hero & Badges
                 { key: 'LANDING_HERO_TITLE', value: 'Legal work, drafted with intelligence.', category: 'landing', description: 'Main headline on the landing page' },
                 { key: 'LANDING_HERO_SUBTITLE', value: 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.', category: 'landing', description: 'Subtitle text under the main headline' },
                 { key: 'LANDING_HERO_BADGE', value: 'Get started with Vidhik AI', category: 'landing', description: 'Top badge tag text on hero section' },
                 { key: 'LANDING_HERO_PRIMARY_CTA_TEXT', value: 'Start Free Trial', category: 'landing', description: 'Primary CTA button label' },
                 { key: 'LANDING_HERO_PRIMARY_CTA_LINK', value: '/user/auth?mode=register', category: 'landing', description: 'Primary CTA target link' },
                 { key: 'LANDING_HERO_SECONDARY_CTA_TEXT', value: 'Watch Demo', category: 'landing', description: 'Secondary CTA button label' },
-                { key: 'LANDING_HERO_SECONDARY_CTA_LINK', value: '#demo', category: 'landing', description: 'Secondary CTA target link' }
+                { key: 'LANDING_HERO_SECONDARY_CTA_LINK', value: '#demo', category: 'landing', description: 'Secondary CTA target link' },
+                { key: 'LANDING_HERO_TRUST_TEXT', value: 'Trusted by legal professionals', category: 'landing', description: 'Trust badge copy' },
+                { key: 'LANDING_HERO_STAT_NUMBER', value: '24', category: 'landing', description: 'Floating date stat badge' },
+                { key: 'LANDING_HERO_IMAGE', value: '', category: 'landing', description: 'Custom hero dashboard screenshot URL' },
+
+                // Workflow (How It Works)
+                { key: 'LANDING_WORKFLOW_TAG', value: 'Workflow', category: 'landing', description: 'Section pill tag for workflow' },
+                { key: 'LANDING_WORKFLOW_TITLE', value: 'From blank page to executed agreement in minutes.', category: 'landing', description: 'Workflow section title' },
+                { key: 'LANDING_WORKFLOW_SUBTITLE', value: 'Our intelligent workflow removes the friction from legal documentation, letting you focus on your actual business.', category: 'landing', description: 'Workflow section subtitle' },
+                { 
+                    key: 'LANDING_WORKFLOW_STEPS', 
+                    value: [
+                        { num: "01", title: "Choose a document", desc: "Select the legal document you need from our verified template library." },
+                        { num: "02", title: "Provide your details", desc: "Answer a few simple questions in plain English to customize your document." },
+                        { num: "03", title: "Generate and review", desc: "Our AI engine instantly drafts the contract. Review and edit as needed." },
+                        { num: "04", title: "Download or use", desc: "Export securely to PDF or Word, ready for signatures or filing." }
+                    ], 
+                    category: 'landing', 
+                    description: 'Workflow step cards array' 
+                },
+
+                // Audience (Who It Is For)
+                { key: 'LANDING_AUDIENCE_TAG', value: 'Who it is for', category: 'landing', description: 'Audience section tag' },
+                { key: 'LANDING_AUDIENCE_TITLE', value: 'Built for modern teams and professionals.', category: 'landing', description: 'Audience section title' },
+                { 
+                    key: 'LANDING_AUDIENCE_CARDS', 
+                    value: [
+                        { label: "Startups", desc: "Draft incorporation documents, founder agreements, NDAs, and equity structures instantly." },
+                        { label: "Freelancers", desc: "Protect your work with bulletproof service contracts, invoices, and IP assignments." },
+                        { label: "Small Businesses", desc: "Manage employment agreements, compliance checklists, and corporate policies." },
+                        { label: "Individuals", desc: "Handle personal legal matters like rental agreements, wills, and basic legal guidance." }
+                    ], 
+                    category: 'landing', 
+                    description: 'Audience cards array' 
+                },
+
+                // Testimonials
+                { key: 'LANDING_TESTIMONIALS_TITLE', value: 'Trusted by professionals navigating complex work.', category: 'landing', description: 'Testimonials title' },
+                { key: 'LANDING_TESTIMONIALS_SUBTITLE', value: 'Built for founders, businesses, legal teams, and professionals who need to move through complex legal work with clarity and confidence.', category: 'landing', description: 'Testimonials subtitle' },
+                { 
+                    key: 'LANDING_TESTIMONIALS_ITEMS', 
+                    value: [
+                        { id: "t1", name: "Priya Sharma", role: "Startup Founder", text: "Vidhik AI helped us draft all our incorporation documents in under an hour. The speed and precision is unmatched, letting us focus entirely on building our product.", avatar: "PS" },
+                        { id: "t2", name: "Anita Desai", role: "Director", company: "Desai Ventures", text: "The contract review feature is a game changer. It consistently catches clauses I would have missed and allows us to negotiate with absolute clarity and zero anxiety.", avatar: "AD", featured: true },
+                        { id: "t3", name: "Rahul Mehra", role: "Freelance Designer", text: "I finally have proper contracts for my clients. The AI assistant answered all my legal questions instantly. It's the best tool for protecting my independent business.", avatar: "RM" }
+                    ], 
+                    category: 'landing', 
+                    description: 'Customer reviews array' 
+                },
+
+                // Pricing & FAQ Title
+                { key: 'LANDING_PRICING_TITLE', value: 'Smart pricing for serious growth.', category: 'landing', description: 'Pricing section title' },
+                { key: 'LANDING_PRICING_SUBTITLE', value: 'Our plans are designed to give you everything you need to scale your legal operations securely.', category: 'landing', description: 'Pricing section subtitle' },
+                { key: 'LANDING_FAQ_TITLE', value: 'Frequently asked questions.', category: 'landing', description: 'FAQ section title' },
+
+                // Navbar & Footer
+                { key: 'LANDING_NAVBAR_BRAND', value: 'Vidhik AI', category: 'landing', description: 'Brand name displayed in navbar' },
+                { key: 'LANDING_LOGO_URL', value: '', category: 'landing', description: 'Logo image URL' },
+                { key: 'LANDING_FOOTER_TAGLINE', value: 'Intelligent legal drafting, contract review, and powerful tools for modern teams.', category: 'landing', description: 'Footer tagline subtext' },
+                { key: 'LANDING_FOOTER_COPYRIGHT', value: '© 2026 Vidhik AI. All rights reserved.', category: 'landing', description: 'Footer copyright statement' },
+                { key: 'LANDING_FOOTER_STATUS_TEXT', value: 'All systems operational', category: 'landing', description: 'System status indicator copy' }
             ];
 
-            for (const cfg of defaultHeroConfigs) {
+            for (const cfg of defaultLandingConfigs) {
                 const existing = await SystemConfig.findOne({ key: cfg.key });
                 if (!existing || existing.value === 'Affordable Legal Services') {
                     await SystemConfig.findOneAndUpdate({ key: cfg.key }, cfg, { upsert: true });
                 }
             }
 
-            console.log('✅ Official v3.0 Pricing Plans, Credit Packages, and Hero Section Configs synced to database');
+            console.log('✅ Official v3.0 Pricing Plans, Credit Packages, and Landing Section Configs synced to database');
         } catch (syncErr) {
             console.warn('⚠️ Config sync warning:', syncErr);
         }
