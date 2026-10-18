@@ -44,11 +44,12 @@ export default function MSAAgreement() {
             docxFilename="master-service-agreement.docx"
             sidebarDescription="Establish a robust legal foundation for ongoing B2B engagements using a Master Service Agreement (MSA)."
             sidebarTips={sidebarTips}
-            renderForm={(formData, handleInputChange, handleSelectChange) => (
+            renderForm={(formData, handleInputChange, handleSelectChange, setFormData) => (
                 <MSAForm
                     formData={formData}
                     handleInputChange={handleInputChange}
                     handleSelectChange={handleSelectChange}
+                    setFormData={setFormData}
                 />
             )}
         />

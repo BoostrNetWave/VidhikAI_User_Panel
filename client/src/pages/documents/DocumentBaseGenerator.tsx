@@ -30,9 +30,8 @@ interface DocumentBaseGeneratorProps {
     description: string;
     documentType: string;
     initialFormData: any;
-    renderForm: (formData: any, handleInputChange: (e: any) => void, handleSelectChange: (name: string, value: string) => void, setFormData?: (data: any) => void) => ReactNode;
-
-
+    renderForm: (formData: any, handleInputChange: (e: any) => void, handleSelectChange: (name: string, value: string) => void, setFormData?: (data: any) => void, validationErrors?: any) => ReactNode;
+    requiredFields?: any;
     sidebarTips: { title: string; content: string }[];
     sidebarDescription: string;
     docxFilename: string;
@@ -44,6 +43,7 @@ export default function DocumentBaseGenerator({
     documentType,
     initialFormData,
     renderForm,
+    requiredFields,
     sidebarTips,
     sidebarDescription,
     docxFilename

@@ -39,7 +39,7 @@ export interface ResidentialLeaseData {
     additionalClauses?: string;
 }
 
-export const generateResidentialLeasePrompt = (formData: ResidentialLeaseData): string => {
+export const generateResidentialLeasePrompt = (formData: any): string => {
     const data = {
         landlord_details: {
             name: formData.landlordName,
@@ -49,24 +49,24 @@ export const generateResidentialLeasePrompt = (formData: ResidentialLeaseData): 
         tenant_details: {
             name: formData.tenantName,
             address: formData.tenantAddress,
-            id: formData.tenantID
+            id: formData.tenantID || formData.tenantPAN
         },
         property_address: formData.propertyAddress,
-        property_description: formData.propertyDescription,
+        property_description: formData.propertyDescription || `${formData.propertyType || 'Residential Unit'} (${formData.leaseArea || ''})`,
         commencement_date: formData.commencementDate,
-        lease_duration: formData.leaseDuration,
+        lease_duration: formData.leaseDuration || formData.leaseTerm || '11 Months',
         monthly_rent: formData.monthlyRent,
-        rent_due_date: formData.rentDueDate,
-        escalation_terms: formData.escalationTerms,
-        security_deposit_amount: formData.securityDepositAmount,
-        notice_period: formData.noticePeriod,
-        lock_in_period: formData.lockInPeriod,
-        furnishing_details: formData.furnishingDetails,
-        parking_details: formData.parkingDetails,
-        society_rules_applicable: formData.societyRulesApplicable,
-        dispute_resolution_preference: formData.disputeResolutionPreference,
-        registration_responsibility: formData.registrationResponsibility,
-        additional_clauses: formData.additionalClauses
+        rent_due_date: formData.rentDueDate || 'On or before 5th of each calendar month',
+        escalation_terms: formData.escalationTerms || 'None during 11-month tenure',
+        security_deposit_amount: formData.securityDepositAmount || formData.securityDeposit,
+        notice_period: formData.noticePeriod || '1 Month',
+        lock_in_period: formData.lockInPeriod || 'None',
+        furnishing_details: formData.furnishingDetails || 'Semi-furnished with standard fixtures and fittings',
+        parking_details: formData.parkingDetails || '1 Dedicated car parking space',
+        society_rules_applicable: formData.societyRulesApplicable !== false,
+        dispute_resolution_preference: formData.disputeResolutionPreference || 'arbitration',
+        registration_responsibility: formData.registrationResponsibility || 'Stamp duty and registration expenses shared equally',
+        additional_clauses: formData.additionalClauses || (formData.maintenanceCharges ? `Maintenance charges: ${formData.maintenanceCharges} per month` : '')
     };
 
     return `${formatBasePrompt()}
@@ -80,7 +80,7 @@ APPLICABLE LAWS:
 - Indian Stamp Act, 1899
 
 INPUT DATA (JSON):
-${JSON.stringify(data, null, 2)}
+${JSON.stringify({ ...data, raw_inputs: formData }, null, 2)}
 
 Please generate the Residential Lease Agreement now based on this data and the provided system instructions.`;
 };

@@ -42,11 +42,12 @@ export default function CopyrightAssignmentAgreement() {
             docxFilename="copyright-assignment.docx"
             sidebarDescription="Generate legally binding copyright transfer agreements to secure intellectual property ownership for your company."
             sidebarTips={sidebarTips}
-            renderForm={(formData, handleInputChange, handleSelectChange) => (
+            renderForm={(formData, handleInputChange, handleSelectChange, setFormData) => (
                 <CopyrightAssignmentForm
                     formData={formData}
                     handleInputChange={handleInputChange}
                     handleSelectChange={handleSelectChange}
+                    setFormData={setFormData}
                 />
             )}
         />

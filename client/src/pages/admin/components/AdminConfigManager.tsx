@@ -74,9 +74,42 @@ export function AdminConfigManager({
     primaryCtaLink: '/user/auth?mode=register',
     secondaryCtaText: 'Watch Demo',
     secondaryCtaLink: '#demo',
-    trustText: 'Trusted by legal professionals',
+    trustText: 'Trusted by 100+ legal teams & founders',
+    trustRating: '5.0',
     statNumber: '24',
     imageUrl: '',
+  });
+
+  const [servicesData, setServicesData] = useState<any>({
+    tag: 'SERVICES',
+    title: 'Everything you need, in one place',
+    subtitle: 'From document drafting to contract review and legal guidance — Vidhik AI simplifies legal work for modern businesses.',
+    cards: [
+      { id: "doc-gen", category: "Drafting & Generation", titleLine1: "AI Document", titleLine2: "Generator", description: "Create legally sound documents in minutes, tailored to your business needs.", link: "/services" },
+      { id: "contract-review", category: "Risk Analysis", titleLine1: "AI Contract", titleLine2: "Review", description: "Identify risks, missing clauses and unfavorable terms before you sign.", link: "/services" },
+      { id: "legal-chat", category: "Instant Answers", titleLine1: "Legal AI", titleLine2: "Assistant", description: "Get reliable, plain-English answers to complex legal and compliance questions.", link: "/services" },
+      { id: "expert-consult", category: "Human-in-the-loop", titleLine1: "Expert Legal", titleLine2: "Consultation", description: "Connect with verified lawyers for specialized advice when you need human expertise.", link: "/services" },
+      { id: "case-management", category: "Workflow", titleLine1: "Smart Case", titleLine2: "Management", description: "Track documents, deadlines, and legal workflows in one unified dashboard.", link: "/services" },
+      { id: "secure-vault", category: "Confidential Storage", titleLine1: "Secure Document", titleLine2: "Vault", description: "Bank-grade encrypted storage ensuring your legal files remain confidential and protected.", link: "/services" }
+    ]
+  });
+
+  const [documentsData, setDocumentsData] = useState<any>({
+    title: 'Legal documents, verified.',
+    subtitle: 'Generate structured, legally sound agreements instantly. Choose from our library of intelligent templates.',
+    categories: ["Corporate", "Employment", "IP & Tech", "Commercial", "All"],
+    items: [
+      { title: "ESOP Plan", category: "Corporate", time: "5 min", verified: true },
+      { title: "Board Resolution", category: "Corporate", time: "2 min", verified: true },
+      { title: "Shareholder Resolution", category: "Corporate", time: "3 min", verified: true },
+      { title: "Employment Agreement", category: "Employment", time: "5 min", verified: true },
+      { title: "Consultant Agreement", category: "Employment", time: "4 min", verified: true },
+      { title: "HR Policy Manual", category: "Employment", time: "10 min", verified: false },
+      { title: "Non-Disclosure Agreement", category: "IP & Tech", time: "3 min", verified: true },
+      { title: "IP Assignment", category: "IP & Tech", time: "5 min", verified: true },
+      { title: "Software Development Agreement", category: "IP & Tech", time: "8 min", verified: true },
+      { title: "B2B Service Agreement", category: "Commercial", time: "6 min", verified: true },
+    ]
   });
 
   const [workflowData, setWorkflowData] = useState<any>({
@@ -166,9 +199,27 @@ export function AdminConfigManager({
       primaryCtaLink: getConfig('LANDING_HERO_PRIMARY_CTA_LINK', '/user/auth?mode=register'),
       secondaryCtaText: getConfig('LANDING_HERO_SECONDARY_CTA_TEXT', 'Watch Demo'),
       secondaryCtaLink: getConfig('LANDING_HERO_SECONDARY_CTA_LINK', '#demo'),
-      trustText: getConfig('LANDING_HERO_TRUST_TEXT', 'Trusted by legal professionals'),
+      trustText: getConfig('LANDING_HERO_TRUST_TEXT', 'Trusted by 100+ legal teams & founders'),
+      trustRating: getConfig('LANDING_HERO_TRUST_RATING', '5.0'),
       statNumber: getConfig('LANDING_HERO_STAT_NUMBER', '24'),
       imageUrl: getConfig('LANDING_HERO_IMAGE', '')
+    });
+
+    const sCards = getConfig('LANDING_SERVICES_CARDS');
+    setServicesData({
+      tag: getConfig('LANDING_SERVICES_TAG', 'SERVICES'),
+      title: getConfig('LANDING_SERVICES_TITLE', 'Everything you need, in one place'),
+      subtitle: getConfig('LANDING_SERVICES_SUBTITLE', 'From document drafting to contract review and legal guidance — Vidhik AI simplifies legal work for modern businesses.'),
+      cards: Array.isArray(sCards) ? sCards : servicesData.cards
+    });
+
+    const docCats = getConfig('LANDING_DOCUMENTS_CATEGORIES');
+    const docItems = getConfig('LANDING_DOCUMENTS_ITEMS');
+    setDocumentsData({
+      title: getConfig('LANDING_DOCUMENTS_TITLE', 'Legal documents, verified.'),
+      subtitle: getConfig('LANDING_DOCUMENTS_SUBTITLE', 'Generate structured, legally sound agreements instantly. Choose from our library of intelligent templates.'),
+      categories: Array.isArray(docCats) ? docCats : documentsData.categories,
+      items: Array.isArray(docItems) ? docItems : documentsData.items
     });
 
     const wfSteps = getConfig('LANDING_WORKFLOW_STEPS');
@@ -386,8 +437,19 @@ export function AdminConfigManager({
                   { key: 'LANDING_HERO_SECONDARY_CTA_TEXT', value: heroData.secondaryCtaText, category: 'landing', description: 'Secondary CTA label' },
                   { key: 'LANDING_HERO_SECONDARY_CTA_LINK', value: heroData.secondaryCtaLink, category: 'landing', description: 'Secondary CTA link' },
                   { key: 'LANDING_HERO_TRUST_TEXT', value: heroData.trustText, category: 'landing', description: 'Trust text copy' },
+                  { key: 'LANDING_HERO_TRUST_RATING', value: heroData.trustRating, category: 'landing', description: 'Hero trust rating score' },
                   { key: 'LANDING_HERO_STAT_NUMBER', value: heroData.statNumber, category: 'landing', description: 'Floating date stat badge' },
                   { key: 'LANDING_HERO_IMAGE', value: heroData.imageUrl, category: 'landing', description: 'Hero image URL' },
+
+                  { key: 'LANDING_SERVICES_TAG', value: servicesData.tag, category: 'landing', description: 'Services section tag' },
+                  { key: 'LANDING_SERVICES_TITLE', value: servicesData.title, category: 'landing', description: 'Services section headline' },
+                  { key: 'LANDING_SERVICES_SUBTITLE', value: servicesData.subtitle, category: 'landing', description: 'Services section subheadline' },
+                  { key: 'LANDING_SERVICES_CARDS', value: servicesData.cards, category: 'landing', description: 'Services cards array' },
+
+                  { key: 'LANDING_DOCUMENTS_TITLE', value: documentsData.title, category: 'landing', description: 'Document Explorer title' },
+                  { key: 'LANDING_DOCUMENTS_SUBTITLE', value: documentsData.subtitle, category: 'landing', description: 'Document Explorer subtitle' },
+                  { key: 'LANDING_DOCUMENTS_CATEGORIES', value: documentsData.categories, category: 'landing', description: 'Document Explorer categories' },
+                  { key: 'LANDING_DOCUMENTS_ITEMS', value: documentsData.items, category: 'landing', description: 'Document Explorer items array' },
 
                   { key: 'LANDING_WORKFLOW_TAG', value: workflowData.tag, category: 'landing', description: 'Workflow section tag' },
                   { key: 'LANDING_WORKFLOW_TITLE', value: workflowData.title, category: 'landing', description: 'Workflow section title' },
@@ -434,6 +496,22 @@ export function AdminConfigManager({
               }`}
             >
               Hero & Badges
+            </button>
+            <button
+              onClick={() => setSubTabLanding('services')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border whitespace-nowrap ${
+                subTabLanding === 'services' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface border-border text-muted-foreground'
+              }`}
+            >
+              Services Cards ({servicesData.cards?.length || 0})
+            </button>
+            <button
+              onClick={() => setSubTabLanding('documents')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border whitespace-nowrap ${
+                subTabLanding === 'documents' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface border-border text-muted-foreground'
+              }`}
+            >
+              Document Explorer ({documentsData.items?.length || 0})
             </button>
             <button
               onClick={() => setSubTabLanding('workflow')}
@@ -580,6 +658,33 @@ export function AdminConfigManager({
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">Floating Stat #</label>
+                      <Input
+                        value={heroData.statNumber}
+                        onChange={e => setHeroData({ ...heroData, statNumber: e.target.value })}
+                        placeholder="e.g. 24"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">Trust Rating</label>
+                      <Input
+                        value={heroData.trustRating}
+                        onChange={e => setHeroData({ ...heroData, trustRating: e.target.value })}
+                        placeholder="e.g. 5.0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">Trust Subtitle</label>
+                      <Input
+                        value={heroData.trustText}
+                        onChange={e => setHeroData({ ...heroData, trustText: e.target.value })}
+                        placeholder="Trusted by 100+ legal teams & founders"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-foreground">Custom Hero Image URL (Optional)</label>
                     <Input
@@ -620,6 +725,22 @@ export function AdminConfigManager({
                     {heroData.subtitle || 'Generate professional legal documents, review contracts, and move from legal questions to usable work — faster.'}
                   </p>
 
+                  {/* Trust Rating Pill */}
+                  <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 px-3.5 py-1 text-[11px] font-semibold text-slate-700 shadow-xs">
+                    <span className="text-amber-500 font-bold tracking-tighter">★★★★★</span>
+                    <span className="font-bold text-slate-900">{heroData.trustRating || '5.0'}</span>
+                    <span className="text-slate-300">•</span>
+                    <span>{heroData.trustText || 'Trusted by 100+ legal teams & founders'}</span>
+                  </div>
+
+                  {/* Floating Stat Pill Badge */}
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-xs">
+                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center font-mono text-[10px] font-bold">
+                      {heroData.statNumber || '24'}
+                    </span>
+                    <span>Legal Workspaces Active Today</span>
+                  </div>
+
                   {/* CTA Buttons */}
                   <div className="flex items-center gap-3 pt-2">
                     <button className="px-5 py-2.5 rounded-full bg-slate-900 text-white font-bold text-xs shadow-md">
@@ -638,6 +759,381 @@ export function AdminConfigManager({
                 </div>
               </Card>
             </div>
+          )}
+
+          {/* Services Section Editor (Screenshot 3) */}
+          {subTabLanding === 'services' && (
+            <Card className="border-border shadow-xs">
+              <CardHeader>
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4 text-primary" />
+                  Services Section ("Everything you need, in one place")
+                </CardTitle>
+                <CardDescription>
+                  Full dynamic control of section tag, headline, subheadline, and all 6 showcase service cards with luxury 3D visuals.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-foreground">Section Tag</label>
+                    <Input
+                      value={servicesData.tag}
+                      onChange={e => setServicesData({ ...servicesData, tag: e.target.value })}
+                      placeholder="e.g. SERVICES"
+                    />
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-xs font-bold text-foreground">Section Headline</label>
+                    <Input
+                      value={servicesData.title}
+                      onChange={e => setServicesData({ ...servicesData, title: e.target.value })}
+                      placeholder="e.g. Everything you need, in one place"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-foreground">Section Subheadline</label>
+                  <Textarea
+                    rows={2}
+                    value={servicesData.subtitle}
+                    onChange={e => setServicesData({ ...servicesData, subtitle: e.target.value })}
+                    placeholder="Describe services overview..."
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-border space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Service Cards ({servicesData.cards?.length || 0})
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        Each card renders with dynamic text, links, and dedicated glassmorphic 3D graphics.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs font-bold gap-1 text-primary"
+                      onClick={() => {
+                        const newCard = {
+                          id: `service-${Date.now()}`,
+                          category: 'Legal Solutions',
+                          titleLine1: 'New AI',
+                          titleLine2: 'Solution',
+                          description: 'Description of this legal feature and how it helps clients.',
+                          link: '/services'
+                        };
+                        setServicesData({
+                          ...servicesData,
+                          cards: [...(servicesData.cards || []), newCard]
+                        });
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Service Card
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {servicesData.cards?.map((card: any, cIdx: number) => (
+                      <div
+                        key={cIdx}
+                        className="p-4 border border-border rounded-2xl bg-surface/60 space-y-3 relative hover:border-primary/40 transition-colors"
+                      >
+                        <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                          <Badge variant="outline" className="font-mono text-[10px] font-bold">
+                            Card #{cIdx + 1}
+                          </Badge>
+                          <button
+                            className="text-muted-foreground hover:text-red-500 text-xs p-1 font-bold"
+                            onClick={() => {
+                              setServicesData({
+                                ...servicesData,
+                                cards: servicesData.cards.filter((_: any, i: number) => i !== cIdx)
+                              });
+                            }}
+                            title="Remove Card"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Category Monospace Tag</label>
+                          <Input
+                            value={card.category}
+                            onChange={e => {
+                              const updated = [...servicesData.cards];
+                              updated[cIdx].category = e.target.value;
+                              setServicesData({ ...servicesData, cards: updated });
+                            }}
+                            className="font-mono text-xs h-7"
+                            placeholder="e.g. Drafting & Generation"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase">Title Line 1</label>
+                            <Input
+                              value={card.titleLine1}
+                              onChange={e => {
+                                const updated = [...servicesData.cards];
+                                updated[cIdx].titleLine1 = e.target.value;
+                                setServicesData({ ...servicesData, cards: updated });
+                              }}
+                              className="font-bold text-xs h-7"
+                              placeholder="e.g. AI Document"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase">Title Line 2</label>
+                            <Input
+                              value={card.titleLine2}
+                              onChange={e => {
+                                const updated = [...servicesData.cards];
+                                updated[cIdx].titleLine2 = e.target.value;
+                                setServicesData({ ...servicesData, cards: updated });
+                              }}
+                              className="font-bold text-xs h-7"
+                              placeholder="e.g. Generator"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Card Description</label>
+                          <Textarea
+                            rows={2}
+                            value={card.description}
+                            onChange={e => {
+                              const updated = [...servicesData.cards];
+                              updated[cIdx].description = e.target.value;
+                              setServicesData({ ...servicesData, cards: updated });
+                            }}
+                            className="text-xs"
+                            placeholder="Card description text..."
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Target Link URL</label>
+                          <Input
+                            value={card.link}
+                            onChange={e => {
+                              const updated = [...servicesData.cards];
+                              updated[cIdx].link = e.target.value;
+                              setServicesData({ ...servicesData, cards: updated });
+                            }}
+                            className="text-xs h-7 font-mono"
+                            placeholder="e.g. /services"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Document Explorer Section Editor (Screenshot 4) */}
+          {subTabLanding === 'documents' && (
+            <Card className="border-border shadow-xs">
+              <CardHeader>
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Document Explorer ("Legal documents, verified.")
+                </CardTitle>
+                <CardDescription>
+                  Dynamically manage document categories, headings, and verified document rows shown on the landing page explorer.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">Section Title</label>
+                    <Input
+                      value={documentsData.title}
+                      onChange={e => setDocumentsData({ ...documentsData, title: e.target.value })}
+                      placeholder="e.g. Legal documents, verified."
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">Section Subtitle</label>
+                    <Textarea
+                      rows={2}
+                      value={documentsData.subtitle}
+                      onChange={e => setDocumentsData({ ...documentsData, subtitle: e.target.value })}
+                      placeholder="e.g. Generate structured, legally sound agreements instantly..."
+                    />
+                  </div>
+                </div>
+
+                {/* Categories Manager */}
+                <div className="p-4 border border-border rounded-xl bg-surface/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Category Tabs Filter
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">Pill filters displayed above the document table.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {documentsData.categories?.map((cat: string, catIdx: number) => (
+                      <div
+                        key={catIdx}
+                        className="inline-flex items-center gap-1.5 bg-background border border-border rounded-full px-3 py-1 text-xs font-medium"
+                      >
+                        <span>{cat}</span>
+                        <button
+                          onClick={() => {
+                            const updated = documentsData.categories.filter((_: any, i: number) => i !== catIdx);
+                            setDocumentsData({ ...documentsData, categories: updated });
+                          }}
+                          className="text-muted-foreground hover:text-red-500 font-bold ml-1"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-1">
+                      <Input
+                        id="new-doc-category-input"
+                        placeholder="Add category (press Enter)..."
+                        className="h-7 text-xs w-44"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = (e.target as HTMLInputElement).value.trim();
+                            if (val && !documentsData.categories.includes(val)) {
+                              setDocumentsData({
+                                ...documentsData,
+                                categories: [...documentsData.categories, val]
+                              });
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Document Items Table */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Document Templates List ({documentsData.items?.length || 0})
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">Rows rendered in the explorer table on the landing page.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs font-bold gap-1 text-primary"
+                      onClick={() => {
+                        const newDoc = {
+                          title: 'New Document Agreement',
+                          category: documentsData.categories?.[0] || 'Corporate',
+                          time: '5 min',
+                          verified: true
+                        };
+                        setDocumentsData({
+                          ...documentsData,
+                          items: [...(documentsData.items || []), newDoc]
+                        });
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Document
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {documentsData.items?.map((doc: any, dIdx: number) => (
+                      <div
+                        key={dIdx}
+                        className="p-3 border border-border rounded-xl bg-surface/50 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center hover:border-primary/40 transition-colors"
+                      >
+                        <div className="sm:col-span-5 space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase sm:hidden">Title</label>
+                          <Input
+                            value={doc.title}
+                            onChange={e => {
+                              const updated = [...documentsData.items];
+                              updated[dIdx].title = e.target.value;
+                              setDocumentsData({ ...documentsData, items: updated });
+                            }}
+                            className="font-medium text-xs h-8"
+                            placeholder="Document title"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-3 space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase sm:hidden">Category</label>
+                          <Input
+                            value={doc.category}
+                            onChange={e => {
+                              const updated = [...documentsData.items];
+                              updated[dIdx].category = e.target.value;
+                              setDocumentsData({ ...documentsData, items: updated });
+                            }}
+                            className="text-xs h-8"
+                            placeholder="Category"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2 space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase sm:hidden">Est. Time</label>
+                          <Input
+                            value={doc.time}
+                            onChange={e => {
+                              const updated = [...documentsData.items];
+                              updated[dIdx].time = e.target.value;
+                              setDocumentsData({ ...documentsData, items: updated });
+                            }}
+                            className="text-xs h-8 font-mono"
+                            placeholder="e.g. 5 min"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <Switch
+                              checked={doc.verified === true}
+                              onCheckedChange={checked => {
+                                const updated = [...documentsData.items];
+                                updated[dIdx].verified = checked;
+                                setDocumentsData({ ...documentsData, items: updated });
+                              }}
+                            />
+                            <span className="text-[10px] font-bold text-emerald-600">
+                              {doc.verified ? 'Verified' : 'Draft'}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setDocumentsData({
+                                ...documentsData,
+                                items: documentsData.items.filter((_: any, i: number) => i !== dIdx)
+                              });
+                            }}
+                            className="text-muted-foreground hover:text-red-500 p-1"
+                            title="Delete Document"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* 1.2 Workflow Section Editor */}
@@ -903,7 +1399,7 @@ export function AdminConfigManager({
             <Card className="border-border shadow-xs">
               <CardHeader>
                 <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <Layout className="h-4 w-4 text-primary" />
+                  <LayoutGrid className="h-4 w-4 text-primary" />
                   Navbar & Footer Branding Controls
                 </CardTitle>
                 <CardDescription>Edit brand name, custom logo URL, footer tagline, copyright statement, and status bar text.</CardDescription>

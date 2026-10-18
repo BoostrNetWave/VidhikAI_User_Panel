@@ -46,11 +46,12 @@ export default function ServiceAgreement() {
             docxFilename="service-agreement.docx"
             sidebarDescription="Generate legally robust B2B service contracts with clear commercial terms, IP protection, and liability limits."
             sidebarTips={sidebarTips}
-            renderForm={(formData, handleInputChange, handleSelectChange) => (
+            renderForm={(formData, handleInputChange, handleSelectChange, setFormData) => (
                 <ServiceAgreementForm
                     formData={formData}
                     handleInputChange={handleInputChange}
                     handleSelectChange={handleSelectChange}
+                    setFormData={setFormData}
                 />
             )}
         />

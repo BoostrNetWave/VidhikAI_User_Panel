@@ -41,7 +41,7 @@ export interface CommercialLeaseData {
     additionalClauses?: string;
 }
 
-export const generateCommercialLeasePrompt = (formData: CommercialLeaseData): string => {
+export const generateCommercialLeasePrompt = (formData: any): string => {
     const data = {
         lessor_details: {
             name: formData.lessorName,
@@ -51,27 +51,27 @@ export const generateCommercialLeasePrompt = (formData: CommercialLeaseData): st
         lessee_details: {
             name: formData.lesseeName,
             address: formData.lesseeAddress,
-            id: formData.lesseeID
+            id: formData.lesseeID || formData.lesseePAN
         },
         property_address: formData.propertyAddress,
-        unit_details: formData.unitDetails,
-        area: formData.area,
+        unit_details: formData.unitDetails || formData.propertyType || "Commercial Unit",
+        area: formData.area || formData.leaseArea,
         commencement_date: formData.commencementDate,
         lease_term: formData.leaseTerm,
         lock_in_period: formData.lockInPeriod,
         monthly_rent: formData.monthlyRent,
-        escalation_terms: formData.escalationTerms,
-        gst_applicable: formData.gstApplicable,
-        security_deposit_amount: formData.securityDepositAmount,
-        permitted_use: formData.permittedUse,
-        maintenance_structure: formData.maintenanceStructure,
-        termination_notice_period: formData.terminationNoticePeriod,
+        escalation_terms: formData.escalationTerms || formData.escalationRate || "5% annual increase",
+        gst_applicable: Boolean(formData.gstApplicable),
+        security_deposit_amount: formData.securityDepositAmount || formData.securityDeposit,
+        permitted_use: formData.permittedUse || "Commercial Office use",
+        maintenance_structure: formData.maintenanceStructure || (formData.maintenanceCharges ? `Monthly maintenance: ${formData.maintenanceCharges}` : "As per society/building terms"),
+        termination_notice_period: formData.terminationNoticePeriod || formData.noticePeriod || "3 Months",
         dispute_resolution_details: {
             method: "Arbitration",
-            arbitration_clause: formData.disputeResolutionDetails
+            arbitration_clause: formData.disputeResolutionDetails || "Arbitration in jurisdiction of the property"
         },
-        registration_responsibility: formData.registrationResponsibility,
-        additional_clauses: formData.additionalClauses
+        registration_responsibility: formData.registrationResponsibility || "Shared equally between Lessor and Lessee",
+        additional_clauses: formData.additionalClauses || ""
     };
 
     return `${formatBasePrompt()}
@@ -85,7 +85,7 @@ APPLICABLE LAWS:
 - GST Act, 2017
 
 INPUT DATA (JSON):
-${JSON.stringify(data, null, 2)}
+${JSON.stringify({ ...data, raw_inputs: formData }, null, 2)}
 
 Please generate the Commercial Lease Agreement now based on this data and the provided system instructions.`;
 };

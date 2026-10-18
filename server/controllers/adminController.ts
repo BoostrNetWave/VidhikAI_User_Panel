@@ -16,7 +16,7 @@ import LLMLog from '../models/LLMLog';
 import { llmService } from '../services/llmService';
 
 // Helper to keep legacy websitecontents collection in sync with SystemConfig updates
-const syncToWebsiteContentCollection = async (key: string, value: any) => {
+export const syncToWebsiteContentCollection = async (key: string, value: any) => {
     try {
         const db = mongoose.connection.db;
         if (!db) return;
@@ -31,8 +31,19 @@ const syncToWebsiteContentCollection = async (key: string, value: any) => {
             'LANDING_HERO_SECONDARY_CTA_TEXT': { section: 'hero', key: 'hero.cta_secondary_text' },
             'LANDING_HERO_SECONDARY_CTA_LINK': { section: 'hero', key: 'hero.cta_secondary_link' },
             'LANDING_HERO_TRUST_TEXT': { section: 'hero', key: 'hero.trust_text' },
+            'LANDING_HERO_TRUST_RATING': { section: 'hero', key: 'hero.trust_rating' },
             'LANDING_HERO_STAT_NUMBER': { section: 'hero', key: 'hero.stat_number' },
             'LANDING_HERO_IMAGE': { section: 'hero', key: 'hero.dashboard_image_url' },
+
+            'LANDING_SERVICES_TAG': { section: 'services', key: 'services.section_tag' },
+            'LANDING_SERVICES_TITLE': { section: 'services', key: 'services.headline' },
+            'LANDING_SERVICES_SUBTITLE': { section: 'services', key: 'services.subheadline' },
+            'LANDING_SERVICES_CARDS': { section: 'services', key: 'services.cards' },
+
+            'LANDING_DOCUMENTS_TITLE': { section: 'documents', key: 'documents.headline' },
+            'LANDING_DOCUMENTS_SUBTITLE': { section: 'documents', key: 'documents.subheadline' },
+            'LANDING_DOCUMENTS_CATEGORIES': { section: 'documents', key: 'documents.categories' },
+            'LANDING_DOCUMENTS_ITEMS': { section: 'documents', key: 'documents.items' },
 
             'LANDING_WORKFLOW_TAG': { section: 'workflow', key: 'workflow.section_tag' },
             'LANDING_WORKFLOW_TITLE': { section: 'workflow', key: 'workflow.headline' },

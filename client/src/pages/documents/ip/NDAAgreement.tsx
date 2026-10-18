@@ -35,11 +35,12 @@ export default function NDAAgreement() {
             docxFilename="non-disclosure-agreement.docx"
             sidebarDescription="An NDA is the first line of defense in any business discussion. It ensures that your shared ideas remain your property."
             sidebarTips={sidebarTips}
-            renderForm={(formData, handleInputChange, handleSelectChange) => (
+            renderForm={(formData, handleInputChange, handleSelectChange, setFormData) => (
                 <NDAForm
                     formData={formData}
                     handleInputChange={handleInputChange}
                     handleSelectChange={handleSelectChange}
+                    setFormData={setFormData}
                 />
             )}
         />

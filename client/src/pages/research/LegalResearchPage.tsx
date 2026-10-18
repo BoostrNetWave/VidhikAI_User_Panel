@@ -856,14 +856,14 @@ export default function LegalResearchPage() {
             const citations = extractCitations(assistantMsg?.content || "");
             const rawContent = (assistantMsg?.content || "").split('[CITATIONS]')[0].trim();
 
-            const contentHtml = rawContent.split(/\n{2,}/).map(block => {
+            const contentHtml = rawContent.split(/\n{2,}/).map((block: string) => {
                 const trimmed = block.trim();
                 if (!trimmed) return '';
                 if (trimmed.startsWith('### ')) return `<h3>${trimmed.slice(4)}</h3>`;
                 if (trimmed.startsWith('## ')) return `<h2>${trimmed.slice(3)}</h2>`;
                 if (trimmed.startsWith('# ')) return `<h1>${trimmed.slice(2)}</h1>`;
                 if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-                    const lis = trimmed.split('\n').map(l => `<li>${l.replace(/^[-*]\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('');
+                    const lis = trimmed.split('\n').map((l: string) => `<li>${l.replace(/^[-*]\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('');
                     return `<ul>${lis}</ul>`;
                 }
                 return `<p>${trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
@@ -906,14 +906,14 @@ export default function LegalResearchPage() {
                 } else if (messages[idx].role === 'assistant') {
                     const citations = extractCitations(messages[idx].content);
                     const rawContent = messages[idx].content.split('[CITATIONS]')[0].trim();
-                    const contentHtml = rawContent.split(/\n{2,}/).map(block => {
+                    const contentHtml = rawContent.split(/\n{2,}/).map((block: string) => {
                         const trimmed = block.trim();
                         if (!trimmed) return '';
                         if (trimmed.startsWith('### ')) return `<h3>${trimmed.slice(4)}</h3>`;
                         if (trimmed.startsWith('## ')) return `<h2>${trimmed.slice(3)}</h2>`;
                         if (trimmed.startsWith('# ')) return `<h1>${trimmed.slice(2)}</h1>`;
                         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-                            const lis = trimmed.split('\n').map(l => `<li>${l.replace(/^[-*]\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('');
+                            const lis = trimmed.split('\n').map((l: string) => `<li>${l.replace(/^[-*]\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('');
                             return `<ul>${lis}</ul>`;
                         }
                         return `<p>${trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
