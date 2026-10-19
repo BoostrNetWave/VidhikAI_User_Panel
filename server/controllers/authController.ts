@@ -3,7 +3,7 @@ import User from '../models/User';
 import LoginHistory from '../models/LoginHistory';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { sendEmail } from '../utils/emailService';
+import { sendEmail, sendVerificationOTPEmail } from '../utils/emailService';
 import CreditService from '../services/creditService';
 
 // Generate JWT Token
@@ -52,23 +52,8 @@ export const registerUser = async (req: Request, res: Response) => {
             console.log(`🔑 [USER REGISTER] OTP for ${email}: ${otp}`);
             console.log(`=========================================\n`);
 
-            // Send OTP via email
-            const emailSubject = 'Verify your email for Vidhik AI';
-            const emailHtml = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-                    <h2 style="color: #6a1b9a; text-align: center;">Welcome to Vidhik AI</h2>
-                    <p>Hello ${fullName},</p>
-                    <p>Thank you for registering. Please use the following One-Time Password (OTP) to verify your email address:</p>
-                    <div style="background-color: #f3e5f5; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; color: #4a148c; letter-spacing: 5px; border-radius: 5px; margin: 20px 0;">
-                        ${otp}
-                    </div>
-                    <p>This OTP is valid for 10 minutes. If you did not request this, please ignore this email.</p>
-                    <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;">
-                    <p style="font-size: 12px; color: #757575; text-align: center;">&copy; 2024 Vidhik AI. All rights reserved.</p>
-                </div>
-            `;
-
-            await sendEmail(email, emailSubject, emailHtml);
+            // Send OTP via email using branded template
+            await sendVerificationOTPEmail(email, fullName, otp);
 
             res.status(201).json({
                 message: 'Registration successful. Please check your email for verification code.',
@@ -278,7 +263,7 @@ export const resendOTP = async (req: Request, res: Response) => {
         console.log(`🔑 [USER RESEND] OTP for ${email}: ${otp}`);
         console.log(`=========================================\n`);
 
-        await sendEmail(email, 'Your new verification code', `Your OTP is ${otp}`);
+        await sendVerificationOTPEmail(email, user.fullName || 'User', otp);
 
         res.status(200).json({ message: 'OTP resent successfully' });
     } catch (error: any) {

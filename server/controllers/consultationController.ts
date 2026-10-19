@@ -3,7 +3,12 @@ import LiveConsultation from '../models/LiveConsultation';
 import User from '../models/User';
 import Transaction from '../models/Transaction';
 import razorpayService from '../services/razorpayService';
-import { sendEmail } from '../utils/emailService';
+import { 
+    sendEmail, 
+    notifyConsultationCreated, 
+    notifyConsultationConfirmed, 
+    notifyConsultationStatusChange 
+} from '../utils/emailService';
 import Signal from '../models/Signal';
 
 export const createConsultation = async (req: any, res: Response): Promise<void> => {
@@ -38,20 +43,18 @@ export const createConsultation = async (req: any, res: Response): Promise<void>
             documents: []
         });
 
-        // Send Email to Lawyer
-        await sendEmail(
-            lawyerUser.email,
-            `New Live Consultation Request: ${title}`,
-            `<h3>New Live Consultation Request</h3>
-             <p>Hello Adv. ${lawyerUser.fullName},</p>
-             <p>You have received a new live consultation request from <strong>${req.user.fullName}</strong>.</p>
-             <p><strong>Topic:</strong> ${title}</p>
-             <p><strong>Description:</strong> ${description}</p>
-             <p><strong>Proposed Date:</strong> ${new Date(scheduledDate).toLocaleDateString()}</p>
-             <p><strong>Proposed Time:</strong> ${scheduledTime}</p>
-             <p><strong>Fee:</strong> ₹${Number(totalFee).toLocaleString()}</p>
-             <p>Please log in to your lawyer dashboard under Live Consultations to approve or propose a new time.</p>`
-        );
+        // Send Email to Both Lawyer and Client
+        await notifyConsultationCreated({
+            clientEmail: req.user.email,
+            clientName: req.user.fullName || 'Client',
+            lawyerEmail: lawyerUser.email,
+            lawyerName: lawyerUser.fullName || 'Lawyer',
+            title,
+            description,
+            scheduledDate,
+            scheduledTime,
+            totalFee: Number(totalFee)
+        });
 
         res.status(201).json(consultation);
     } catch (error: any) {
@@ -112,16 +115,16 @@ export const acceptConsultation = async (req: any, res: Response): Promise<void>
 
         const lawyerUser = await User.findById(consultation.lawyer);
         if (lawyerUser) {
-            await sendEmail(
-                lawyerUser.email,
-                `Consultation Counter-Proposal Accepted: ${consultation.title}`,
-                `<h3>Counter-Proposal Accepted</h3>
-                 <p>Hello Adv. ${lawyerUser.fullName},</p>
-                 <p>The client <strong>${req.user.fullName}</strong> has accepted your proposed date and time for the consultation: <strong>${consultation.title}</strong>.</p>
-                 <p><strong>Scheduled Date:</strong> ${new Date(consultation.scheduledDate).toLocaleDateString()}</p>
-                 <p><strong>Scheduled Time:</strong> ${consultation.scheduledTime}</p>
-                 <p>The consultation status is now pending client payment. You will be notified once payment is confirmed.</p>`
-            );
+            await notifyConsultationStatusChange({
+                clientEmail: req.user.email,
+                clientName: req.user.fullName || 'Client',
+                lawyerEmail: lawyerUser.email,
+                lawyerName: lawyerUser.fullName || 'Lawyer',
+                title: consultation.title,
+                status: 'accepted_by_client',
+                scheduledDate: consultation.scheduledDate,
+                scheduledTime: consultation.scheduledTime
+            });
         }
 
         res.json(consultation);
@@ -155,16 +158,16 @@ export const proposeConsultationTime = async (req: any, res: Response): Promise<
 
         const lawyerUser = await User.findById(consultation.lawyer);
         if (lawyerUser) {
-            await sendEmail(
-                lawyerUser.email,
-                `New Date/Time Proposed for Consultation: ${consultation.title}`,
-                `<h3>Counter-Proposal from Client</h3>
-                 <p>Hello Adv. ${lawyerUser.fullName},</p>
-                 <p>The client <strong>${req.user.fullName}</strong> has proposed a new date and time for the consultation: <strong>${consultation.title}</strong>.</p>
-                 <p><strong>Proposed Date:</strong> ${new Date(scheduledDate).toLocaleDateString()}</p>
-                 <p><strong>Proposed Time:</strong> ${scheduledTime}</p>
-                 <p>Please log in to your dashboard to accept or propose a different slot.</p>`
-            );
+            await notifyConsultationStatusChange({
+                clientEmail: req.user.email,
+                clientName: req.user.fullName || 'Client',
+                lawyerEmail: lawyerUser.email,
+                lawyerName: lawyerUser.fullName || 'Lawyer',
+                title: consultation.title,
+                status: 'rescheduled_by_client',
+                scheduledDate: consultation.scheduledDate,
+                scheduledTime: consultation.scheduledTime
+            });
         }
 
         res.json(consultation);
@@ -283,33 +286,18 @@ export const payAndConfirmConsultation = async (req: any, res: Response): Promis
         consultation.payoutStatus = 'pending';
         await consultation.save();
 
-        // Send confirmation emails
-        if (consultation.lawyer) {
-            await sendEmail(
-                (consultation.lawyer as any).email,
-                `Live Consultation Payment Confirmed: ${consultation.title}`,
-                `<h3>Consultation Payment Confirmed</h3>
-                 <p>Hello Adv. ${(consultation.lawyer as any).fullName},</p>
-                 <p>The client <strong>${(consultation.client as any).fullName}</strong> has completed the payment for the live consultation: <strong>${consultation.title}</strong>.</p>
-                 <p><strong>Date:</strong> ${new Date(consultation.scheduledDate).toLocaleDateString()}</p>
-                 <p><strong>Time:</strong> ${consultation.scheduledTime}</p>
-                 <p><strong>Meeting Room Link:</strong> <a href="${consultation.meetingLink}">${consultation.meetingLink}</a></p>
-                 <p>Please log in to your lawyer dashboard at the scheduled time to join the video session.</p>`
-            );
-        }
-
-        if (consultation.client) {
-            await sendEmail(
-                (consultation.client as any).email,
-                `Live Consultation Scheduled & Confirmed: ${consultation.title}`,
-                `<h3>Consultation Confirmed</h3>
-                 <p>Hello ${(consultation.client as any).fullName},</p>
-                 <p>Your payment for the live consultation <strong>${consultation.title}</strong> with Advocate <strong>${(consultation.lawyer as any).fullName}</strong> was confirmed.</p>
-                 <p><strong>Date:</strong> ${new Date(consultation.scheduledDate).toLocaleDateString()}</p>
-                 <p><strong>Time:</strong> ${consultation.scheduledTime}</p>
-                 <p><strong>Meeting Room Link:</strong> <a href="${consultation.meetingLink}">${consultation.meetingLink}</a></p>
-                 <p>You can join the video conference directly from your Client Dashboard under Live Consultations.</p>`
-            );
+        // Send confirmation emails to both lawyer and client
+        if (consultation.lawyer && consultation.client) {
+            await notifyConsultationConfirmed({
+                clientEmail: (consultation.client as any).email,
+                clientName: (consultation.client as any).fullName || 'Client',
+                lawyerEmail: (consultation.lawyer as any).email,
+                lawyerName: (consultation.lawyer as any).fullName || 'Lawyer',
+                title: consultation.title,
+                scheduledDate: consultation.scheduledDate,
+                scheduledTime: consultation.scheduledTime,
+                meetingLink: consultation.meetingLink || ''
+            });
         }
 
         res.json(consultation);
@@ -364,13 +352,15 @@ export const cancelConsultation = async (req: any, res: Response): Promise<void>
 
         const lawyerUser = await User.findById(consultation.lawyer);
         if (lawyerUser) {
-            await sendEmail(
-                lawyerUser.email,
-                `Live Consultation Request Cancelled: ${consultation.title}`,
-                `<h3>Consultation Cancelled</h3>
-                 <p>Hello Adv. ${lawyerUser.fullName},</p>
-                 <p>The client <strong>${req.user.fullName}</strong> has cancelled the consultation request: <strong>${consultation.title}</strong>.</p>`
-            );
+            await notifyConsultationStatusChange({
+                clientEmail: req.user.email,
+                clientName: req.user.fullName || 'Client',
+                lawyerEmail: lawyerUser.email,
+                lawyerName: lawyerUser.fullName || 'Lawyer',
+                title: consultation.title,
+                status: 'cancelled',
+                cancelledBy: 'client'
+            });
         }
 
         res.json(consultation);

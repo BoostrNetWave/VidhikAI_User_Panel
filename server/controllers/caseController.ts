@@ -6,7 +6,7 @@ import UsageRecord from '../models/UsageRecord';
 import SystemConfig from '../models/SystemConfig';
 import Transaction from '../models/Transaction';
 import razorpayService from '../services/razorpayService';
-import { sendEmail } from '../utils/emailService';
+import { sendEmail, notifyCaseBookingCreated } from '../utils/emailService';
 
 export const getCasesForClient = async (req: any, res: Response): Promise<void> => {
     try {
@@ -151,20 +151,18 @@ export const bookLawyer = async (req: any, res: Response): Promise<void> => {
             milestones: []
         });
 
-        // Send Email to Lawyer
-        await sendEmail(
-            lawyerUser.email,
-            `New Case Consultation Request: ${title}`,
-            `<h3>New Case Booking Request</h3>
-             <p>Hello Adv. ${lawyerUser.fullName},</p>
-             <p>You have received a new consultation and case booking request from <strong>${req.user.fullName}</strong>.</p>
-             <p><strong>Topic:</strong> ${title}</p>
-             <p><strong>Description:</strong> ${description}</p>
-             <p><strong>Proposed Date:</strong> ${new Date(bookingDate).toLocaleDateString()}</p>
-             <p><strong>Proposed Time:</strong> ${bookingTime}</p>
-             <p><strong>Fee:</strong> ₹${Number(totalFee).toLocaleString()}</p>
-             <p>Please log in to your lawyer dashboard under Case Management to view and confirm this booking request.</p>`
-        );
+        // Send Email to Both Lawyer and Client
+        await notifyCaseBookingCreated({
+            clientEmail: req.user.email,
+            clientName: req.user.fullName || 'Client',
+            lawyerEmail: lawyerUser.email,
+            lawyerName: lawyerUser.fullName || 'Lawyer',
+            title,
+            description,
+            bookingDate,
+            bookingTime,
+            totalFee: Number(totalFee)
+        });
 
         // Log usage in UsageRecord
         await UsageRecord.create({
@@ -413,6 +411,20 @@ export const createCase = async (req: any, res: Response): Promise<void> => {
 
         const populated = await Case.findById(newCase._id)
             .populate('lawyer', 'fullName email phone location title expertise avatar');
+
+        if (populated && populated.lawyer) {
+            await notifyCaseBookingCreated({
+                clientEmail: req.user.email,
+                clientName: req.user.fullName || 'Client',
+                lawyerEmail: (populated.lawyer as any).email,
+                lawyerName: (populated.lawyer as any).fullName || 'Lawyer',
+                title: populated.title,
+                description: populated.description,
+                bookingDate: populated.bookingDate,
+                bookingTime: populated.bookingTime,
+                totalFee: Number(populated.totalFee) || 0
+            });
+        }
 
         res.status(201).json(populated);
     } catch (error: any) {

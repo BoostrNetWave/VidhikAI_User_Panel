@@ -21,6 +21,7 @@ import supportRoutes from './routes/supportRoutes';
 import consultationRoutes from './routes/consultationRoutes';
 import subscriptionRoutes from './routes/subscriptionRoutes';
 import SystemConfig from './models/SystemConfig';
+import { verifyEmailConfiguration } from './utils/emailService';
 
 const app = express();
 const PORT = process.env.PORT || 5003;
@@ -308,6 +309,11 @@ mongoose.connect(MONGO_URI)
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`👉 API URL: http://localhost:${PORT}/api`);
             console.log(`=================================================\n`);
+
+            // Verify SMTP configuration on startup
+            verifyEmailConfiguration().catch(err => {
+                console.error('[Startup] Email verification check error:', err);
+            });
         });
     })
     .catch((err) => {
