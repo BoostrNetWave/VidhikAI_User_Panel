@@ -220,16 +220,34 @@ class LLMService {
         }
 
         const client = new OpenAI(clientOptions);
-        const completion = await client.chat.completions.create({
-            model: model || 'gpt-4o',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                ...(request.history || []),
-                { role: 'user', content: request.userPrompt }
-            ],
-            temperature,
-            max_tokens: maxTokens,
-        });
+        const resolvedModel = model || 'gpt-4o';
+        const isReasoningModel = resolvedModel.startsWith('o1') || resolvedModel.startsWith('o3');
+
+        const messages: any[] = [];
+        if (systemPrompt && systemPrompt.trim()) {
+            messages.push({
+                role: isReasoningModel ? 'developer' : 'system',
+                content: systemPrompt.trim()
+            });
+        }
+        if (request.history && request.history.length > 0) {
+            messages.push(...request.history);
+        }
+        messages.push({ role: 'user', content: request.userPrompt });
+
+        const completionParams: any = {
+            model: resolvedModel,
+            messages
+        };
+
+        if (isReasoningModel) {
+            completionParams.max_completion_tokens = maxTokens || 1500;
+        } else {
+            completionParams.temperature = temperature;
+            completionParams.max_tokens = maxTokens;
+        }
+
+        const completion = await client.chat.completions.create(completionParams);
 
         const content = completion.choices[0]?.message?.content || '';
         const promptTokens = completion.usage?.prompt_tokens || 0;
@@ -238,7 +256,7 @@ class LLMService {
 
         return {
             content,
-            model: completion.model || model,
+            model: completion.model || resolvedModel,
             promptTokens,
             completionTokens,
             tokensUsed,
@@ -260,18 +278,33 @@ class LLMService {
         systemPrompt: string,
         providerName: string
     ): Promise<LLMResponse> {
+        let key = apiKey;
+        if (!key) {
+            if (providerName === 'groq') key = process.env.GROQ_API_KEY || '';
+            else if (providerName === 'deepseek') key = process.env.DEEPSEEK_API_KEY || '';
+            else if (providerName === 'custom') key = 'ollama';
+        }
+        if (!key && providerName !== 'custom') {
+            throw new Error(`${providerName.toUpperCase()} API key is missing. Please enter your API key in the configuration.`);
+        }
+
         const client = new OpenAI({
-            apiKey: apiKey || 'dummy-key',
+            apiKey: key || 'dummy-key',
             baseURL: baseUrl
         });
 
+        const messages: any[] = [];
+        if (systemPrompt && systemPrompt.trim()) {
+            messages.push({ role: 'system', content: systemPrompt.trim() });
+        }
+        if (request.history && request.history.length > 0) {
+            messages.push(...request.history);
+        }
+        messages.push({ role: 'user', content: request.userPrompt });
+
         const completion = await client.chat.completions.create({
             model: model,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                ...(request.history || []),
-                { role: 'user', content: request.userPrompt }
-            ],
+            messages,
             temperature,
             max_tokens: maxTokens,
         });
@@ -427,13 +460,8 @@ class LLMService {
         const geminiModel = model.startsWith('gemini') ? model : 'gemini-1.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
 
-        const contents = [];
-        if (systemPrompt) {
-            contents.push({ role: 'user', parts: [{ text: `System Instruction: ${systemPrompt}` }] });
-            contents.push({ role: 'model', parts: [{ text: 'Understood. I will strictly follow these instructions.' }] });
-        }
-
-        if (request.history) {
+        const contents: any[] = [];
+        if (request.history && request.history.length > 0) {
             for (const h of request.history) {
                 contents.push({
                     role: h.role === 'assistant' ? 'model' : 'user',
@@ -443,15 +471,23 @@ class LLMService {
         }
         contents.push({ role: 'user', parts: [{ text: request.userPrompt }] });
 
+        const requestBody: any = {
+            contents,
+            generationConfig: {
+                temperature,
+                maxOutputTokens: maxTokens
+            }
+        };
+
+        if (systemPrompt && systemPrompt.trim()) {
+            requestBody.systemInstruction = {
+                parts: [{ text: systemPrompt.trim() }]
+            };
+        }
+
         const res = await axios.post(
             url,
-            {
-                contents,
-                generationConfig: {
-                    temperature,
-                    maxOutputTokens: maxTokens
-                }
-            },
+            requestBody,
             {
                 headers: { 'Content-Type': 'application/json' },
                 timeout: 60000
@@ -460,6 +496,10 @@ class LLMService {
 
         const candidate = res.data.candidates?.[0];
         const content = candidate?.content?.parts?.[0]?.text || '';
+        if (!content && candidate?.finishReason && candidate.finishReason !== 'STOP') {
+            throw new Error(`Gemini generation stopped with status: ${candidate.finishReason}`);
+        }
+
         const promptTokens = res.data.usageMetadata?.promptTokenCount || 0;
         const completionTokens = res.data.usageMetadata?.candidatesTokenCount || 0;
         const tokensUsed = res.data.usageMetadata?.totalTokenCount || (promptTokens + completionTokens);
@@ -490,9 +530,38 @@ class LLMService {
         const startTime = Date.now();
         const promptText = config.prompt || "Hello! Respond concisely with: 'Vidhik AI LLM Service Connection Verified Successfully.'";
         
+        const provider = (config.provider || 'openai').toLowerCase().trim();
+        
+        // Default models per provider if none or invalid provided
+        const defaultModels: Record<string, string> = {
+            openai: 'gpt-4o',
+            openrouter: 'openai/gpt-4o',
+            anthropic: 'claude-3-5-sonnet-20241022',
+            gemini: 'gemini-1.5-flash',
+            groq: 'llama-3.3-70b-versatile',
+            deepseek: 'deepseek-chat',
+            custom: 'llama3'
+        };
+
+        let model = (config.model || '').trim();
+        if (!model || model === 'GPT-5.6 Luna') {
+            model = defaultModels[provider] || 'gpt-4o';
+        }
+
+        let apiKey = (config.apiKey || '').trim();
+        // Resolve fallback API key if not supplied in test config
+        if (!apiKey) {
+            if (provider === 'openai') apiKey = process.env.OPENAI_API_KEY || '';
+            else if (provider === 'openrouter') apiKey = process.env.OPENROUTER_API_KEY || '';
+            else if (provider === 'anthropic') apiKey = process.env.ANTHROPIC_API_KEY || process.env.OPENROUTER_API_KEY || '';
+            else if (provider === 'gemini') apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+            else if (provider === 'groq') apiKey = process.env.GROQ_API_KEY || '';
+            else if (provider === 'deepseek') apiKey = process.env.DEEPSEEK_API_KEY || '';
+        }
+
         try {
             const testReq: LLMRequest = {
-                model: config.model,
+                model,
                 systemPrompt: config.systemPrompt || "You are a test agent verifying system connectivity.",
                 userPrompt: promptText,
                 temperature: config.temperature ?? 0.3,
@@ -500,9 +569,6 @@ class LLMService {
             };
 
             let result: LLMResponse;
-            const provider = (config.provider || 'openai').toLowerCase();
-            const apiKey = config.apiKey || '';
-            const model = config.model || 'gpt-4o';
 
             if (provider === 'openrouter') {
                 result = await this.generateWithOpenRouter(testReq, model, apiKey, testReq.temperature!, testReq.maxTokens!, testReq.systemPrompt!);
@@ -522,6 +588,20 @@ class LLMService {
             }
 
             const latencyMs = Date.now() - startTime;
+
+            // Audit log this test to LLMLog
+            await LLMLog.create({
+                feature: 'test_connection',
+                provider: result.provider || provider,
+                model: result.model || model,
+                promptTokens: result.promptTokens || 0,
+                completionTokens: result.completionTokens || 0,
+                totalTokens: result.tokensUsed || 0,
+                estimatedCost: this.calculateCost(provider, model, result.tokensUsed || 0),
+                latencyMs,
+                status: 'success'
+            }).catch(e => console.warn('[LLM Service] Test log failed:', e.message));
+
             return {
                 success: true,
                 latencyMs,
@@ -532,14 +612,44 @@ class LLMService {
             };
         } catch (err: any) {
             const latencyMs = Date.now() - startTime;
-            const errorMsg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Connection failed';
+            
+            // Extract detailed error message
+            let errorMsg = 'Connection failed';
+            if (err.response?.data) {
+                if (typeof err.response.data === 'string') {
+                    errorMsg = err.response.data.slice(0, 300);
+                } else if (err.response.data.error?.message) {
+                    errorMsg = err.response.data.error.message;
+                } else if (typeof err.response.data.error === 'string') {
+                    errorMsg = err.response.data.error;
+                } else if (err.response.data.message) {
+                    errorMsg = err.response.data.message;
+                }
+            } else if (err.message) {
+                errorMsg = err.message;
+            }
+
+            // Audit log error to LLMLog
+            await LLMLog.create({
+                feature: 'test_connection',
+                provider: provider || 'unknown',
+                model: model || 'unknown',
+                promptTokens: 0,
+                completionTokens: 0,
+                totalTokens: 0,
+                estimatedCost: 0,
+                latencyMs,
+                status: 'error',
+                errorMessage: errorMsg
+            }).catch(e => console.warn('[LLM Service] Test error log failed:', e.message));
+
             return {
                 success: false,
                 latencyMs,
                 responseText: '',
                 tokensUsed: 0,
-                model: config.model,
-                provider: config.provider,
+                model: model || config.model,
+                provider: provider || config.provider,
                 error: errorMsg
             };
         }

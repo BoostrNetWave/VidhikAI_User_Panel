@@ -62,7 +62,7 @@ export const handleLegalResearch = async (req: any, res: Response) => {
         let result;
         try {
             result = await llmService.generate({
-                model: model || 'gpt-4o',
+                model: model || undefined,
                 systemPrompt: getResearchSystemPrompt(),
                 userPrompt: getResearchUserPrompt(query, isFollowUp),
                 history: formattedHistory,

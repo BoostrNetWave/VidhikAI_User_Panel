@@ -300,6 +300,90 @@ mongoose.connect(MONGO_URI)
             }
 
             console.log('✅ Official v3.0 Pricing Plans, Credit Packages, and Landing Section Configs synced to database');
+
+            // Auto-sync & heal core LLM Infrastructure configs
+            const defaultLLMConfigs = [
+                {
+                    key: 'LLM_CONFIG_DEFAULT',
+                    value: {
+                        provider: 'openai',
+                        model: 'gpt-4o',
+                        apiKey: '',
+                        baseUrl: '',
+                        temperature: 0.7,
+                        maxTokens: 4000,
+                        systemPrompt: 'You are Vidhik AI, an expert AI legal system assisting Indian legal professionals and citizens.'
+                    },
+                    category: 'llm',
+                    description: 'Default LLM configuration used across the Vidhik AI platform when no specific feature config matches.'
+                },
+                {
+                    key: 'LLM_CONFIG_CHATBOT',
+                    value: {
+                        provider: 'openai',
+                        model: 'gpt-4o-mini',
+                        apiKey: '',
+                        baseUrl: '',
+                        temperature: 0.7,
+                        maxTokens: 4000,
+                        systemPrompt: 'You are Vidhik AI Assistant, specialized in Indian legal queries, case research, IPC/BNS sections, and legal advice.'
+                    },
+                    category: 'llm',
+                    description: 'AI model configuration for the interactive Legal Research and Chatbot assistant.'
+                },
+                {
+                    key: 'LLM_CONFIG_DOC_GEN',
+                    value: {
+                        provider: 'openai',
+                        model: 'gpt-4o',
+                        apiKey: '',
+                        baseUrl: '',
+                        temperature: 0.5,
+                        maxTokens: 4000,
+                        systemPrompt: 'You are an elite legal drafting expert in Indian law. Generate exhaustive, legally binding documents formatted with clean semantic HTML.'
+                    },
+                    category: 'llm',
+                    description: 'AI model configuration for generating legal agreements, notices, and contracts.'
+                },
+                {
+                    key: 'LLM_CONFIG_DOC_REVIEW',
+                    value: {
+                        provider: 'openai',
+                        model: 'gpt-4o',
+                        apiKey: '',
+                        baseUrl: '',
+                        temperature: 0.2,
+                        maxTokens: 4000,
+                        systemPrompt: 'You are a meticulous contract auditor. Review legal documents for risks, missing clauses, and compliance under Indian laws.'
+                    },
+                    category: 'llm',
+                    description: 'AI model configuration for analyzing uploaded contracts, highlighting risks, and evaluating legal obligations.'
+                }
+            ];
+
+            for (const cfg of defaultLLMConfigs) {
+                const existing = await SystemConfig.findOne({ key: cfg.key });
+                if (!existing) {
+                    await SystemConfig.create(cfg);
+                } else {
+                    // Self-healing: if model is empty or invalid (e.g. 'GPT-5.6 Luna'), heal to valid model
+                    const val = existing.value || {};
+                    if (!val.model || val.model === 'GPT-5.6 Luna' || !val.provider) {
+                        await SystemConfig.findOneAndUpdate(
+                            { key: cfg.key },
+                            {
+                                $set: {
+                                    'value.model': cfg.value.model,
+                                    'value.provider': val.provider || cfg.value.provider,
+                                    category: 'llm',
+                                    description: cfg.description
+                                }
+                            }
+                        );
+                    }
+                }
+            }
+            console.log('✅ AI Infrastructure & LLM Engine configurations verified and operational');
         } catch (syncErr) {
             console.warn('⚠️ Config sync warning:', syncErr);
         }

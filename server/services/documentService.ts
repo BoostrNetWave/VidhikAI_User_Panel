@@ -139,7 +139,7 @@ FORMATTING RULES:
         console.log(`[Document Service] Starting ${isDeepScanEnabled ? 'DEEP' : 'STANDARD'} review for: ${filename}`);
 
         const llmRequest: LLMRequest = {
-            model: 'gpt-4o',
+            model: undefined,
             systemPrompt: getAnalysisSystemPrompt(isDeepScanEnabled),
             userPrompt: getAnalysisUserPrompt(text, filename),
             temperature: isDeepScanEnabled ? 0.2 : 0.3, // Even lower temperature for deep scan
