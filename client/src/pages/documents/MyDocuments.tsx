@@ -47,8 +47,36 @@ import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 import { DocumentPreview, formatToLegalHtml } from '@/components/documents/DocumentPreview';
 import { DigitalSignatureModal } from '@/components/documents/DigitalSignatureModal';
+import { applyOrReplaceSignature } from '@/lib/signatureUtils';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+
+// Register atomic BlockEmbed for Quill to preserve digital signatures without dismantling
+const Quill = (ReactQuill as any)?.Quill;
+if (Quill) {
+    try {
+        const BlockEmbed = Quill.import('blots/block/embed');
+        class SignatureBlockBlot extends BlockEmbed {
+            static create(value: any) {
+                const node = super.create(value);
+                node.setAttribute('class', value?.className || 'vidhik-signature-block align-right');
+                node.setAttribute('contenteditable', 'false');
+                node.innerHTML = typeof value === 'string' ? value : (value?.html || '');
+                return node;
+            }
+            static value(node: HTMLElement) {
+                return node.innerHTML;
+            }
+        }
+        SignatureBlockBlot.blotName = 'signatureBlock';
+        SignatureBlockBlot.tagName = 'div';
+        SignatureBlockBlot.className = 'vidhik-signature-block';
+        Quill.register(SignatureBlockBlot, true);
+    } catch {
+        // ignore if already registered
+    }
+}
+
 
 export default function MyDocuments() {
     const navigate = useNavigate();
@@ -257,26 +285,191 @@ export default function MyDocuments() {
         handleOpenDocument(doc, 'review');
     };
 
+    const handleDownloadPDF = async (doc: any) => {
+        let content = doc?.content || editContent || '';
+        if (quillRef.current && docModalMode === 'edit') {
+            try {
+                content = quillRef.current.getEditor().root.innerHTML;
+            } catch {
+                // use fallback
+            }
+        }
+        if (!content || !content.trim()) {
+            toast.error('No document content to download.');
+            return;
+        }
+
+        try {
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                const title = doc?.title || 'Legal Document';
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <title>${title}</title>
+                            <style>
+                                @page {
+                                    size: A4;
+                                    margin: 20mm 20mm 20mm 20mm;
+                                }
+                                body { 
+                                    font-family: 'Times New Roman', 'Lora', serif; 
+                                    padding: 24px; 
+                                    line-height: 1.6; 
+                                    color: #0f172a;
+                                    background: #fff;
+                                }
+                                h1 { font-size: 18pt; text-align: center; margin-bottom: 20px; font-weight: bold; }
+                                h2 { font-size: 14pt; margin-top: 18px; margin-bottom: 10px; font-weight: bold; }
+                                h3 { font-size: 12pt; margin-top: 14px; margin-bottom: 8px; font-weight: bold; }
+                                p { font-size: 11pt; margin-bottom: 12px; text-align: justify; }
+                                
+                                /* Digital Signature in PDF */
+                                .vidhik-signature-block {
+                                    display: block !important;
+                                    min-width: 250px !important;
+                                    max-width: 340px !important;
+                                    border-top: 1.5px solid #1e293b !important;
+                                    padding-top: 10px !important;
+                                    margin-top: 36px !important;
+                                    margin-bottom: 16px !important;
+                                    page-break-inside: avoid !important;
+                                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+                                }
+                                .vidhik-signature-block.align-right {
+                                    margin-left: auto !important;
+                                    margin-right: 0 !important;
+                                    text-align: left !important;
+                                }
+                                .vidhik-signature-block.align-center {
+                                    margin-left: auto !important;
+                                    margin-right: auto !important;
+                                    text-align: center !important;
+                                }
+                                .vidhik-signature-block.align-left {
+                                    margin-left: 0 !important;
+                                    margin-right: auto !important;
+                                    text-align: left !important;
+                                }
+                                .vidhik-signature-block img, .sig-img {
+                                    max-height: 65px !important;
+                                    max-width: 220px !important;
+                                    width: auto !important;
+                                    height: auto !important;
+                                    object-fit: contain !important;
+                                    display: block !important;
+                                    margin-bottom: 6px !important;
+                                }
+                                .vidhik-signature-block.align-center .sig-img,
+                                .vidhik-signature-block.align-center img {
+                                    margin-left: auto !important;
+                                    margin-right: auto !important;
+                                }
+                                .sig-typed {
+                                    font-size: 26px !important;
+                                    line-height: 1.3 !important;
+                                    color: #1e3a8a !important;
+                                    display: block !important;
+                                    margin-bottom: 4px !important;
+                                }
+                                .sig-org {
+                                    font-weight: 700 !important;
+                                    font-size: 13px !important;
+                                    color: #0f172a !important;
+                                    margin: 4px 0 2px 0 !important;
+                                    text-transform: uppercase !important;
+                                    letter-spacing: 0.5px !important;
+                                }
+                                .sig-name {
+                                    font-weight: 600 !important;
+                                    font-size: 13px !important;
+                                    color: #1e293b !important;
+                                    margin: 2px 0 !important;
+                                }
+                                .sig-title {
+                                    font-size: 11.5px !important;
+                                    color: #475569 !important;
+                                    margin: 2px 0 !important;
+                                    text-transform: uppercase !important;
+                                    letter-spacing: 0.3px !important;
+                                }
+                                .sig-date {
+                                    font-size: 11px !important;
+                                    color: #64748b !important;
+                                    margin: 2px 0 !important;
+                                }
+                                .sig-badge {
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    gap: 4px !important;
+                                    font-size: 9.5px !important;
+                                    color: #059669 !important;
+                                    background-color: #ecfdf5 !important;
+                                    border: 1px solid #a7f3d0 !important;
+                                    padding: 2px 6px !important;
+                                    border-radius: 4px !important;
+                                    margin-top: 6px !important;
+                                }
+                                @media print {
+                                    body { padding: 0; }
+                                    .vidhik-signature-block { page-break-inside: avoid; }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            ${content}
+                            <script>
+                                window.onload = function() { 
+                                    window.print();
+                                    setTimeout(function() { window.close(); }, 500);
+                                }
+                            </script>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            } else {
+                toast.error('Pop-up blocker prevented PDF generation. Please allow pop-ups for this site.');
+            }
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            toast.error('Failed to generate PDF.');
+        }
+    };
+
     const handleInsertSignature = async (signatureHtml: string) => {
+        let currentContent = selectedDoc?.content || editContent || '';
+        if (quillRef.current && docModalMode === 'edit') {
+            try {
+                currentContent = quillRef.current.getEditor().root.innerHTML;
+            } catch {
+                // use fallback
+            }
+        }
+
+        // Guarantees replacement without creating duplicate signatures
+        const updatedHtml = applyOrReplaceSignature(currentContent, signatureHtml);
+        setEditContent(updatedHtml);
+        setSelectedDoc((prev: any) => prev ? { ...prev, content: updatedHtml } : prev);
+
         if (quillRef.current && docModalMode === 'edit') {
             try {
                 const editor = quillRef.current.getEditor();
-                const range = editor.getSelection();
-                const index = range ? range.index : editor.getLength();
-                editor.clipboard.dangerouslyPasteHTML(index, signatureHtml);
-                const updatedHtml = editor.root.innerHTML;
-                setEditContent(updatedHtml);
-                setSelectedDoc((prev: any) => prev ? { ...prev, content: updatedHtml } : prev);
-                toast.success("Digital signature inserted into document!");
-                return;
+                const existingSig = editor.root.querySelector('.vidhik-signature-block');
+                if (existingSig) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = signatureHtml;
+                    const newEl = temp.firstElementChild;
+                    if (newEl) existingSig.replaceWith(newEl);
+                } else {
+                    editor.root.innerHTML = updatedHtml;
+                }
             } catch (e) {
-                console.error("Failed to insert signature into Quill editor, fallback to append:", e);
+                console.error("Failed to update Quill editor directly:", e);
             }
         }
-        const currentContent = selectedDoc?.content || editContent || '';
-        const updatedHtml = (currentContent ? currentContent + '\n' : '') + signatureHtml;
-        setEditContent(updatedHtml);
-        setSelectedDoc((prev: any) => prev ? { ...prev, content: updatedHtml } : prev);
 
         // Auto-save to backend so the signed document is immediately persisted
         if (selectedDoc?._id) {
@@ -287,7 +480,7 @@ export default function MyDocuments() {
                     status: selectedDoc.status || 'final'
                 });
                 fetchDocuments();
-                toast.success("Digital signature saved to document!");
+                toast.success("Digital signature applied & saved!");
             } catch (err) {
                 console.error("Auto-save signature failed:", err);
             }
@@ -854,6 +1047,15 @@ export default function MyDocuments() {
                                     >
                                         <Sparkles className="h-3.5 w-3.5" />
                                         Review with AI
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1.5 text-xs h-8 text-slate-700 hover:text-slate-900 border-slate-200"
+                                        onClick={() => handleDownloadPDF(selectedDoc)}
+                                    >
+                                        <Download className="h-3.5 w-3.5" />
+                                        Download PDF
                                     </Button>
                                     <Button
                                         variant="outline"

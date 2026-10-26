@@ -68,10 +68,11 @@ export default function DocumentReviewPage() {
     const [analysisData, setAnalysisData] = useState<any>(null);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
-    const [isDeepScanEnabled] = useState(false);
     const [activeHighlightIndex, setActiveHighlightIndex] = useState<number | null>(null);
+    const [pinnedClauseIndex, setPinnedClauseIndex] = useState<number | null>(null);
     const [selectedClauseIndex, setSelectedClauseIndex] = useState<number | null>(null);
     const [copiedClauseIdx, setCopiedClauseIdx] = useState<number | null>(null);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -79,6 +80,28 @@ export default function DocumentReviewPage() {
     const [logs, setLogs] = useState<{ msg: string, status: 'pending' | 'loading' | 'done' }[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleClauseMouseEnter = (index: number) => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        setActiveHighlightIndex(index);
+    };
+
+    const handleClauseMouseLeave = () => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+        }
+        hoverTimeoutRef.current = setTimeout(() => {
+            setActiveHighlightIndex(null);
+        }, 250);
+    };
+
+    const handleClauseClick = (index: number) => {
+        setSelectedClauseIndex(index);
+        setPinnedClauseIndex(prev => prev === index ? null : index);
+    };
 
     // Workspace Documents Integration State
     const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
@@ -1112,31 +1135,6 @@ export default function DocumentReviewPage() {
                     </div>
 
                     <div className="flex items-center gap-3 flex-wrap">
-                        {/* Save Directly to My Documents Workspace */}
-                        <Button
-                            variant="outline"
-                            className="rounded-xl h-11 border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary gap-2 font-bold px-5 shadow-sm transition-all"
-                            onClick={handleSaveToWorkspace}
-                            disabled={isSavingToWorkspace}
-                        >
-                            {isSavingToWorkspace ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Saving to Workspace...
-                                </>
-                            ) : isSavedToWorkspace ? (
-                                <>
-                                    <CheckCheck className="h-4 w-4 text-emerald-600" />
-                                    Saved in My Documents
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="h-4 w-4" />
-                                    Save to My Documents
-                                </>
-                            )}
-                        </Button>
-
                         {!id && (
                             <Button variant="outline" className="rounded-xl h-11 border-border gap-2 font-bold px-5 shadow-sm hover:bg-secondary" onClick={handleShare}>
                                 <Share2 className="h-4 w-4" />
@@ -1611,10 +1609,10 @@ export default function DocumentReviewPage() {
                                                             <span
                                                                 id={`highlight-clause-${seg.clauseIndex}`}
                                                                 key={`highlight-${seg.clauseIndex}`}
-                                                                className={`${theme.bg} ${theme.border} ${(theme as any).text || ''} px-2 py-0.5 rounded font-medium cursor-pointer transition-all duration-200 relative inline group/h mx-0.5 shadow-xs ${isSelected ? 'ring-2 ring-primary ring-offset-1 font-bold' : ''}`}
-                                                                onClick={() => setSelectedClauseIndex(seg.clauseIndex)}
-                                                                onMouseEnter={() => setActiveHighlightIndex(seg.clauseIndex)}
-                                                                onMouseLeave={() => setActiveHighlightIndex(null)}
+                                                                className={`${theme.bg} ${theme.border} ${(theme as any).text || ''} px-2 py-0.5 rounded font-medium cursor-pointer transition-all duration-200 relative inline group/h mx-0.5 shadow-xs ${isSelected || pinnedClauseIndex === seg.clauseIndex ? 'ring-2 ring-primary ring-offset-1 font-bold' : ''}`}
+                                                                onClick={() => handleClauseClick(seg.clauseIndex)}
+                                                                onMouseEnter={() => handleClauseMouseEnter(seg.clauseIndex)}
+                                                                onMouseLeave={handleClauseMouseLeave}
                                                             >
                                                                 {renderInlineText(seg.content, `hl-${seg.clauseIndex}`)}
 
@@ -1624,22 +1622,37 @@ export default function DocumentReviewPage() {
                                                                     {theme.tag}
                                                                 </span>
 
-                                                                {/* Floating Interactive Suggestion Box */}
-                                                                {activeHighlightIndex === seg.clauseIndex && (
+                                                                {/* Floating Interactive Suggestion Box with Hover Debounce & Pinning */}
+                                                                {(activeHighlightIndex === seg.clauseIndex || pinnedClauseIndex === seg.clauseIndex) && (
                                                                     <div 
-                                                                        className={`absolute left-1/2 -translate-x-1/2 ${isNearTop ? 'top-full mt-2' : '-top-3 -translate-y-full'} w-88 sm:w-96 p-0 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 text-sm normal-case animate-in fade-in zoom-in-95 duration-200 overflow-hidden pointer-events-auto cursor-default font-sans`}
-                                                                        onMouseEnter={() => setActiveHighlightIndex(seg.clauseIndex)}
+                                                                        className={`absolute left-1/2 -translate-x-1/2 ${isNearTop ? 'top-full mt-2' : '-top-3 -translate-y-full'} w-88 sm:w-96 max-w-[calc(100vw-32px)] p-0 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 text-sm normal-case animate-in fade-in zoom-in-95 duration-200 overflow-hidden pointer-events-auto cursor-default font-sans`}
+                                                                        onMouseEnter={() => handleClauseMouseEnter(seg.clauseIndex)}
+                                                                        onMouseLeave={handleClauseMouseLeave}
                                                                         onClick={(e) => e.stopPropagation()}
                                                                     >
-                                                                        {/* Header with Type & Index */}
+                                                                        {/* Header with Type & Index & Close Button */}
                                                                         <div className={`px-4 py-2.5 flex items-center justify-between ${theme.cardHeader} border-b border-border/70`}>
                                                                             <div className="flex items-center gap-2 font-bold text-xs">
                                                                                 <span className={`w-2.5 h-2.5 rounded-full ${theme.dot}`} />
                                                                                 <span>{theme.label}</span>
                                                                             </div>
-                                                                            <Badge className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 ${theme.badgeBg}`}>
-                                                                                Clause #{seg.clauseIndex + 1}
-                                                                            </Badge>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Badge className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 ${theme.badgeBg}`}>
+                                                                                    Clause #{seg.clauseIndex + 1}
+                                                                                </Badge>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setPinnedClauseIndex(null);
+                                                                                        setActiveHighlightIndex(null);
+                                                                                    }}
+                                                                                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-black/10 transition-colors"
+                                                                                    title="Close suggestion pop-up"
+                                                                                >
+                                                                                    <X className="h-3.5 w-3.5" />
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
 
                                                                         {/* Body: Issue + Suggestion */}
@@ -1898,9 +1911,15 @@ export default function DocumentReviewPage() {
                                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                                     <Button
                                         className="w-full sm:w-auto h-11 px-6 rounded-xl font-bold bg-primary hover:bg-primary text-sm gap-2 shadow-sm"
-                                        onClick={() => setViewMode('SUMMARY')}
+                                        onClick={() => {
+                                            setViewMode('DETAILED');
+                                            const target = document.getElementById('highlight-clause-0') || document.getElementById('clauses-container') || document.querySelector('.prose');
+                                            if (target) {
+                                                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            }
+                                        }}
                                     >
-                                        View Executive Dashboard
+                                        View Analysis
                                         <ArrowRight className="h-4 w-4" />
                                     </Button>
                                     <Button

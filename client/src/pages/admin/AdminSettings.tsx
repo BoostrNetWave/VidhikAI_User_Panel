@@ -17,6 +17,7 @@ import { AdminDocuments } from "./components/AdminDocuments";
 import { AdminLoginHistory } from "./components/AdminLoginHistory";
 import { AdminLLMConfig } from "./components/AdminLLMConfig";
 import { AdminPayments } from "./components/AdminPayments";
+import { AdminPagesManager } from "./components/AdminPagesManager";
 
 export default function AdminSettings() {
     const { tab } = useParams();
@@ -207,6 +208,8 @@ export default function AdminSettings() {
                 return <AdminOverview users={users} pendingLawyers={pendingLawyers} consultations={consultations} tickets={tickets} cases={cases} documents={documents} />;
             case 'content':
                 return <AdminConfigManager configs={configs} editingJsonConfig={editingJsonConfig} setEditingJsonConfig={setEditingJsonConfig} onUpdate={handleUpdateConfig} />;
+            case 'pages':
+                return <AdminPagesManager configs={configs} onUpdate={handleUpdateConfig} />;
             case 'llm-config':
                 return <AdminLLMConfig configs={configs} onUpdate={handleUpdateConfig} />;
             case 'users':

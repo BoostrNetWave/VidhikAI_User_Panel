@@ -244,93 +244,143 @@
 }
 
 /* --- Digital Signature Card in Document Preview & Editor --- */
-.vidhik-signature-block {
+.vidhik-signature-block,
+.ql-editor .vidhik-signature-block,
+.legal-preview-paper .vidhik-signature-block {
+    display: block !important;
+    min-width: 250px !important;
+    max-width: 340px !important;
+    border-top: 1.5px solid #1e293b !important;
+    padding-top: 10px !important;
+    margin-top: 32px !important;
+    margin-bottom: 16px !important;
+    page-break-inside: avoid !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    user-select: none !important;
+}
+
+.vidhik-signature-block.align-right,
+.ql-editor .vidhik-signature-block.align-right,
+.legal-preview-paper .vidhik-signature-block.align-right {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    text-align: left !important;
+}
+
+.vidhik-signature-block.align-center,
+.ql-editor .vidhik-signature-block.align-center,
+.legal-preview-paper .vidhik-signature-block.align-center {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: center !important;
+}
+
+.vidhik-signature-block.align-left,
+.ql-editor .vidhik-signature-block.align-left,
+.legal-preview-paper .vidhik-signature-block.align-left {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    text-align: left !important;
+}
+
+/* Image containment inside Quill & Legal preview paper */
+.ql-editor img,
+.legal-preview-paper img {
+    max-width: 240px !important;
+    max-height: 90px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
     display: inline-block;
-    min-width: 250px;
-    max-width: 360px;
-    border-top: 1.5px solid #1e293b;
-    padding-top: 10px;
-    margin-top: 28px;
-    margin-bottom: 16px;
-    text-align: left;
-    page-break-inside: avoid;
-    font-family: inherit;
 }
 
-.vidhik-signature-block.align-right {
-    display: block;
-    margin-left: auto;
-    margin-right: 0;
-    text-align: left;
+.vidhik-signature-block .sig-img,
+.ql-editor .vidhik-signature-block .sig-img,
+.legal-preview-paper .vidhik-signature-block .sig-img {
+    max-height: 65px !important;
+    max-width: 220px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    margin-bottom: 6px !important;
+    display: block !important;
 }
 
-.vidhik-signature-block.align-center {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
+.vidhik-signature-block.align-center .sig-img,
+.ql-editor .vidhik-signature-block.align-center .sig-img,
+.legal-preview-paper .vidhik-signature-block.align-center .sig-img {
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
-.vidhik-signature-block.align-left {
-    display: block;
-    margin-left: 0;
-    margin-right: auto;
-    text-align: left;
+.vidhik-signature-block .sig-typed,
+.ql-editor .vidhik-signature-block .sig-typed,
+.legal-preview-paper .vidhik-signature-block .sig-typed {
+    font-size: 28px !important;
+    line-height: 1.3 !important;
+    color: #1e3a8a !important;
+    margin-bottom: 4px !important;
+    display: block !important;
 }
 
-.vidhik-signature-block .sig-img {
-    max-height: 70px;
-    max-width: 220px;
-    object-fit: contain;
-    margin-bottom: 4px;
-    display: block;
+.vidhik-signature-block p,
+.ql-editor .vidhik-signature-block p,
+.legal-preview-paper .vidhik-signature-block p {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.35 !important;
 }
 
-.vidhik-signature-block.align-center .sig-img {
-    margin-left: auto;
-    margin-right: auto;
+.vidhik-signature-block .sig-org,
+.ql-editor .vidhik-signature-block .sig-org,
+.legal-preview-paper .vidhik-signature-block .sig-org {
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    color: #0f172a !important;
+    margin: 4px 0 2px 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
 }
 
-.vidhik-signature-block .sig-typed {
-    font-size: 28px;
-    line-height: 1.3;
-    color: #1e3a8a;
-    margin-bottom: 4px;
-    display: block;
+.vidhik-signature-block .sig-name,
+.ql-editor .vidhik-signature-block .sig-name,
+.legal-preview-paper .vidhik-signature-block .sig-name {
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    color: #1e293b !important;
+    margin: 2px 0 !important;
 }
 
-.vidhik-signature-block .sig-name {
-    font-weight: 700;
-    font-size: 14px;
-    color: #0f172a;
-    line-height: 1.3;
-    margin: 0;
+.vidhik-signature-block .sig-title,
+.ql-editor .vidhik-signature-block .sig-title,
+.legal-preview-paper .vidhik-signature-block .sig-title {
+    font-size: 11.5px !important;
+    color: #475569 !important;
+    margin: 2px 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
 }
 
-.vidhik-signature-block .sig-title {
-    font-size: 12px;
-    color: #475569;
-    line-height: 1.3;
-    margin: 0;
+.vidhik-signature-block .sig-date,
+.ql-editor .vidhik-signature-block .sig-date,
+.legal-preview-paper .vidhik-signature-block .sig-date {
+    font-size: 11px !important;
+    color: #64748b !important;
+    margin: 2px 0 !important;
 }
 
-.vidhik-signature-block .sig-date {
-    font-size: 11px;
-    color: #64748b;
-    margin-top: 2px;
-    line-height: 1.3;
-}
-
-.vidhik-signature-block .sig-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    color: #059669;
-    background-color: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-top: 6px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+.vidhik-signature-block .sig-badge,
+.ql-editor .vidhik-signature-block .sig-badge,
+.legal-preview-paper .vidhik-signature-block .sig-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 10px !important;
+    color: #059669 !important;
+    background-color: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    margin-top: 6px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }

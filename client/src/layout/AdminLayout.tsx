@@ -70,6 +70,7 @@ export default function AdminLayout({ children, userNav }: AdminLayoutProps) {
     const adminLinks = [
         { path: '/admin', label: 'Admin Overview', icon: LayoutDashboard },
         { path: '/admin/content', label: 'Website Content', icon: Globe },
+        { path: '/admin/pages', label: 'Footer & Legal Pages', icon: FileText },
         { path: '/admin/lawyers', label: 'Lawyer Approval', icon: Gavel },
         { path: '/admin/cases', label: 'Case Management', icon: Briefcase },
         { path: '/admin/consultations', label: 'Live Consultations', icon: Video },

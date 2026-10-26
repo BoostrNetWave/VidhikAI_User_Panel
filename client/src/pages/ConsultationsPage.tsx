@@ -8,10 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
     Video, Calendar, Clock, AlertCircle, CheckCircle, 
     ArrowRight, MessageSquare, Plus, RefreshCcw, 
-    Coins, DollarSign, X, FileText, ExternalLink, User
+    Coins, DollarSign, X, FileText, ExternalLink, User,
+    Search, ShieldCheck, Star, MapPin, ArrowLeft, Briefcase, Award, Languages
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { consultationService, IConsultation } from '@/services/consultationService';
@@ -28,11 +30,36 @@ export default function ConsultationsPage() {
     const [showNewRequest, setShowNewRequest] = useState(false);
     const [selectedLawyer, setSelectedLawyer] = useState<any>(null);
     const [lawyers, setLawyers] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("All");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [scheduledDate, setScheduledDate] = useState("");
     const [scheduledTime, setScheduledTime] = useState("");
     const [submitting, setSubmitting] = useState(false);
+
+    const categories = ["All", "Corporate", "Criminal", "Family", "Civil", "IP Law", "Taxation"];
+    const timeSlots = ["09:30 AM", "11:00 AM", "02:30 PM", "04:00 PM"];
+
+    const getNext7Days = () => {
+        const days = [];
+        for (let i = 1; i <= 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            days.push(d);
+        }
+        return days;
+    };
+
+    const filteredLawyers = lawyers.filter(l => {
+        const matchesSearch = 
+            (l.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (l.expertise || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (l.location || "").toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === "All" ||
+            (l.expertise || "").toLowerCase().includes(selectedCategory.toLowerCase());
+        return matchesSearch && matchesCategory;
+    });
 
     // Counter Proposal State
     const [counterConsultation, setCounterConsultation] = useState<IConsultation | null>(null);
@@ -237,26 +264,362 @@ export default function ConsultationsPage() {
                             Schedule direct one-off video consultations and coordinate slots with advocates.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Button 
-                            onClick={fetchConsultations} 
-                            variant="outline" 
-                            className="rounded-xl h-11 border-slate-200"
-                        >
-                            <RefreshCcw className="h-4 w-4 mr-2" />
-                            Refresh
-                        </Button>
-                        <Button 
-                            onClick={() => setShowNewRequest(true)} 
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold h-11 shadow-sm"
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Book Consultation
-                        </Button>
-                    </div>
+                    {!showNewRequest && (
+                        <div className="flex items-center gap-3">
+                            <Button 
+                                onClick={fetchConsultations} 
+                                variant="outline" 
+                                className="rounded-xl h-11 border-slate-200"
+                            >
+                                <RefreshCcw className="h-4 w-4 mr-2" />
+                                Refresh
+                            </Button>
+                            <Button 
+                                onClick={() => {
+                                    setShowNewRequest(true);
+                                    setSelectedLawyer(null);
+                                }} 
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold h-11 shadow-sm"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Book Consultation
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
-                {loading ? (
+                {showNewRequest ? (
+                    /* STEPPED FLOW: LAWYER DISCOVERY CARD -> SCHEDULING DETAILS */
+                    <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
+                        <div className="flex items-center justify-between border-b border-border pb-4">
+                            <button 
+                                onClick={() => {
+                                    if (selectedLawyer) {
+                                        setSelectedLawyer(null);
+                                    } else {
+                                        setShowNewRequest(false);
+                                    }
+                                }}
+                                className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 group"
+                            >
+                                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                                {selectedLawyer ? "Back to Lawyer List" : "Cancel & Back to Consultations"}
+                            </button>
+                            <h2 className="text-xl font-black text-slate-900">
+                                {selectedLawyer ? "Schedule Video Consultation" : "Choose Your Legal Specialist"}
+                            </h2>
+                        </div>
+
+                        {!selectedLawyer ? (
+                            /* STEP 1: LAWYER LIST SECTION CARDS */
+                            <div className="space-y-6">
+                                {/* Search Box */}
+                                <div className="relative group max-w-3xl mx-auto">
+                                    <div className="relative bg-slate-50 border border-border rounded-2xl p-3 shadow-inner flex flex-col sm:flex-row items-center gap-3">
+                                        <div className="flex-1 flex items-center gap-3 w-full">
+                                            <Search className="h-5 w-5 text-muted-foreground ml-2" />
+                                            <Input 
+                                                className="flex-1 bg-transparent border-none focus-visible:ring-0 text-base font-semibold placeholder:text-muted-foreground/60"
+                                                placeholder="Search lawyers by name, specialization, or location..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Category Filters */}
+                                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-border">
+                                    {categories.map((cat) => (
+                                        <Button
+                                            key={cat}
+                                            variant={selectedCategory === cat ? "default" : "outline"}
+                                            className={`rounded-xl font-bold h-9 px-4 text-xs whitespace-nowrap transition-all ${
+                                                selectedCategory === cat 
+                                                ? "bg-primary text-white hover:bg-violet-800 shadow-sm" 
+                                                : "border-border text-muted-foreground hover:bg-slate-50"
+                                            }`}
+                                            onClick={() => setSelectedCategory(cat)}
+                                        >
+                                            {cat}
+                                        </Button>
+                                    ))}
+                                </div>
+
+                                {/* Grid of Lawyers */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {filteredLawyers.length > 0 ? (
+                                        filteredLawyers.map((lawyer) => (
+                                            <Card key={lawyer._id || lawyer.id} className="rounded-2xl border border-border bg-white hover:shadow-md transition-all duration-300 overflow-hidden">
+                                                <CardContent className="p-6">
+                                                    <div className="flex gap-4">
+                                                        <div className="relative shrink-0">
+                                                            <Avatar className="h-16 w-16 rounded-2xl border border-border shrink-0">
+                                                                <AvatarImage 
+                                                                    src={lawyer.avatar ? (lawyer.avatar.startsWith('http') ? lawyer.avatar : (lawyer.avatar.startsWith('/') ? `/lawyer${lawyer.avatar}` : `/lawyer/${lawyer.avatar}`)) : ""} 
+                                                                    alt={lawyer.fullName} 
+                                                                    className="object-cover"
+                                                                />
+                                                                <AvatarFallback className="rounded-2xl bg-slate-100 text-slate-400">
+                                                                    <User className="h-8 w-8" />
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="absolute -bottom-1 -right-1 h-4.5 w-4.5 rounded-full border-2 border-white bg-green-500"></div>
+                                                        </div>
+                                                        <div className="flex-1 space-y-3">
+                                                            <div className="flex items-start justify-between">
+                                                                <div>
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <h3 className="font-extrabold text-slate-900 text-base">{lawyer.fullName}</h3>
+                                                                        {lawyer.isVerified && <ShieldCheck className="h-4.5 w-4.5 text-primary" />}
+                                                                    </div>
+                                                                    <p className="text-[10px] text-primary font-extrabold uppercase tracking-wider">{lawyer.expertise || "General Practice"}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-border text-xs font-bold">
+                                                                    <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                                                                    <span>{lawyer.rating || "5.0"}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-4 text-slate-500 text-xs font-semibold">
+                                                                <div className="flex items-center gap-1"><Clock size={13} /> {lawyer.experience || "10+ Yrs"} exp</div>
+                                                                <div className="flex items-center gap-1"><MapPin size={13} /> {lawyer.location || "Delhi"}</div>
+                                                            </div>
+                                                            <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
+                                                                <div>
+                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Consultation Fee</p>
+                                                                    <p className="text-base font-black text-slate-900 mt-1">₹{(lawyer.hourlyRate || 1000).toLocaleString()}/hr</p>
+                                                                </div>
+                                                                <Button 
+                                                                    onClick={() => setSelectedLawyer(lawyer)}
+                                                                    className="bg-primary text-white hover:bg-violet-800 rounded-xl font-bold text-xs h-9 px-4 flex items-center gap-1.5 shadow-sm"
+                                                                >
+                                                                    <span>Book Now</span>
+                                                                    <ArrowRight size={13} />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full py-16 text-center text-slate-400">
+                                            <Briefcase size={36} className="mx-auto mb-2 text-slate-350" />
+                                            <p className="font-bold text-sm">No lawyers found matching your filters</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            /* STEP 2: SCHEDULING DETAILS & FORM */
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                {/* Left Side: Lawyer Info */}
+                                <div className="lg:col-span-4 space-y-6 bg-slate-50/50 border border-border p-6 rounded-3xl">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-16 w-16 rounded-2xl border border-border shrink-0">
+                                            <AvatarImage 
+                                                src={selectedLawyer.avatar ? (selectedLawyer.avatar.startsWith('http') ? selectedLawyer.avatar : (selectedLawyer.avatar.startsWith('/') ? `/lawyer${selectedLawyer.avatar}` : `/lawyer/${selectedLawyer.avatar}`)) : ""} 
+                                                alt={selectedLawyer.fullName} 
+                                                className="object-cover"
+                                            />
+                                            <AvatarFallback className="rounded-2xl bg-slate-50 text-slate-400">
+                                                <User className="h-8 w-8" />
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <h3 className="font-extrabold text-slate-900 text-base leading-none">{selectedLawyer.fullName}</h3>
+                                                {selectedLawyer.isVerified && <ShieldCheck className="h-4 w-4 text-primary" />}
+                                            </div>
+                                            <p className="text-xs text-primary font-extrabold uppercase tracking-widest mt-0.5">{selectedLawyer.expertise || "General Practice"}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <Separator />
+                                    
+                                    <div className="space-y-4 text-xs font-semibold text-slate-650">
+                                        <div className="grid grid-cols-3 gap-2 py-1 bg-white border border-slate-150 rounded-xl p-3 shadow-sm text-center">
+                                            <div className="space-y-0.5">
+                                                <span className="text-[8px] uppercase font-bold text-slate-400">Rating</span>
+                                                <p className="text-slate-900 font-black flex items-center justify-center gap-1">
+                                                    <Star size={11} className="text-amber-500 fill-amber-500" />
+                                                    {selectedLawyer.rating || "5.0"}
+                                                </p>
+                                            </div>
+                                            <div className="space-y-0.5 border-x border-slate-100">
+                                                <span className="text-[8px] uppercase font-bold text-slate-400">Experience</span>
+                                                <p className="text-slate-900 font-black flex items-center justify-center gap-1">
+                                                    <Clock size={11} className="text-primary" />
+                                                    {selectedLawyer.experience || "10+"}
+                                                </p>
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <span className="text-[8px] uppercase font-bold text-slate-400">Location</span>
+                                                <p className="text-slate-900 font-black flex items-center justify-center gap-1 truncate max-w-[80px] mx-auto">
+                                                    <MapPin size={11} className="text-primary" />
+                                                    {selectedLawyer.location || "Remote"}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Advocate Biography</span>
+                                            <p className="text-xs text-slate-600 leading-relaxed bg-white border border-slate-150 p-3.5 rounded-xl font-medium">{selectedLawyer.bio || "No professional biography provided."}</p>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Practice Areas</span>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {(selectedLawyer.practiceAreas || ["Legal Consult", "Case Representation"]).map((tag: string) => (
+                                                    <Badge key={tag} variant="secondary" className="bg-slate-100 text-slate-600 border-none font-semibold text-[8px] px-2 rounded-md uppercase tracking-wider">
+                                                        {tag}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block flex items-center gap-1"><Award size={12} className="text-primary" /> Bar Memberships</span>
+                                            <div className="flex flex-col gap-1.5 text-slate-700 font-medium bg-white border border-slate-150 p-3.5 rounded-xl">
+                                                <span className="flex items-center gap-1.5">✓ Bar Council of India</span>
+                                                <span className="flex items-center gap-1.5">✓ High Court Bar Association</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block flex items-center gap-1"><Languages size={12} className="text-primary" /> Languages</span>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {(selectedLawyer.languages && selectedLawyer.languages.length > 0 ? selectedLawyer.languages : ["English", "Hindi"]).map((l: string) => (
+                                                    <Badge key={l} variant="outline" className="font-semibold text-[10px]">{l}</Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Side: Schedule & Details Form */}
+                                <div className="lg:col-span-8 space-y-6">
+                                    <Card className="rounded-3xl border border-border">
+                                        <CardContent className="p-6 md:p-8 space-y-6">
+                                            <h3 className="text-lg font-bold text-slate-900 border-b border-border pb-3">Consultation Form</h3>
+                                            <form onSubmit={handleCreateRequest} className="space-y-5">
+                                                <div className="space-y-2">
+                                                    <label htmlFor="consultation-topic" className="font-bold text-xs text-slate-700">Consultation Topic / Subject</label>
+                                                    <Input 
+                                                        id="consultation-topic"
+                                                        placeholder="e.g. Legal Advisory on Founder Agreement, Employment Contract Audit"
+                                                        value={title}
+                                                        onChange={(e) => setTitle(e.target.value)}
+                                                        required
+                                                        className="h-11 rounded-xl"
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label htmlFor="consultation-desc" className="font-bold text-xs text-slate-700">Inquiry details / Description</label>
+                                                    <Textarea 
+                                                        id="consultation-desc"
+                                                        rows={3}
+                                                        placeholder="Explain your legal situation and questions you want addressed during the call..."
+                                                        value={description}
+                                                        onChange={(e) => setDescription(e.target.value)}
+                                                        required
+                                                        className="rounded-xl p-3 text-sm min-h-[90px]"
+                                                    />
+                                                </div>
+
+                                                {/* Calendar Date Picker */}
+                                                <div className="space-y-2">
+                                                    <label className="font-bold text-xs text-slate-700">Select Date</label>
+                                                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                                        {getNext7Days().map((day, idx) => {
+                                                            const isSelected = scheduledDate === day.toISOString().split('T')[0];
+                                                            return (
+                                                                <button
+                                                                    key={idx}
+                                                                    type="button"
+                                                                    onClick={() => setScheduledDate(day.toISOString().split('T')[0])}
+                                                                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center shrink-0 w-16 transition-all ${
+                                                                        isSelected 
+                                                                        ? "border-primary bg-secondary text-primary ring-1 ring-violet-700" 
+                                                                        : "border-border hover:border-slate-350 bg-white"
+                                                                    }`}
+                                                                >
+                                                                    <span className="text-[10px] uppercase font-bold text-slate-400 leading-none">
+                                                                        {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                                                                    </span>
+                                                                    <span className="text-lg font-black mt-1 leading-none">
+                                                                        {day.getDate()}
+                                                                    </span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                {/* Time Slots Selector */}
+                                                <div className="space-y-2">
+                                                    <label className="font-bold text-xs text-slate-700">Available Slots</label>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                        {timeSlots.map((slot) => {
+                                                            const isSelected = scheduledTime === slot;
+                                                            return (
+                                                                <button
+                                                                    key={slot}
+                                                                    type="button"
+                                                                    onClick={() => setScheduledTime(slot)}
+                                                                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
+                                                                        isSelected 
+                                                                        ? "border-primary bg-secondary text-primary ring-1 ring-violet-700" 
+                                                                        : "border-border hover:border-slate-350 bg-white"
+                                                                    }`}
+                                                                >
+                                                                    {slot}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                {/* Price Details */}
+                                                <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 space-y-2 text-xs font-semibold text-slate-500">
+                                                    <div className="flex justify-between">
+                                                        <span>Consultation Fee (1 hr)</span>
+                                                        <span className="text-slate-900 font-bold">₹{(selectedLawyer.hourlyRate || 1000).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Vidhik Platform Fee</span>
+                                                        <span className="text-slate-900 font-bold">₹150</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Taxes (GST 18%)</span>
+                                                        <span className="text-slate-900 font-bold">₹{((selectedLawyer.hourlyRate || 1000) * 0.18).toFixed(2)}</span>
+                                                    </div>
+                                                    <Separator />
+                                                    <div className="flex justify-between text-sm font-black text-slate-900 pt-1">
+                                                        <span>Total Amount</span>
+                                                        <span className="text-primary">
+                                                            ₹{Math.round((selectedLawyer.hourlyRate || 1000) + 150 + ((selectedLawyer.hourlyRate || 1000) * 0.18)).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    type="submit"
+                                                    disabled={submitting}
+                                                    className="w-full h-12 bg-primary text-white hover:bg-violet-800 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm"
+                                                >
+                                                    <Calendar className="w-4 h-4" />
+                                                    {submitting ? "Submitting Request..." : "Send Request to Advocate"}
+                                                </Button>
+                                            </form>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : loading ? (
                     <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
                         <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                         <p className="text-muted-foreground font-semibold">Loading consultations...</p>
@@ -467,111 +830,7 @@ export default function ConsultationsPage() {
                 )}
             </div>
 
-            {/* Modal: Create Consultation Request */}
-            {showNewRequest && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden border border-slate-200 shadow-2xl flex flex-col max-h-[90vh]">
-                        <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Request Live Consultation</h3>
-                                <p className="text-xs text-slate-500 font-semibold">Book a private video conference session with an advocate.</p>
-                            </div>
-                            <Button 
-                                onClick={() => { setShowNewRequest(false); setSelectedLawyer(null); }}
-                                variant="ghost" 
-                                size="icon" 
-                                className="rounded-full"
-                            >
-                                <X className="h-5 w-5" />
-                            </Button>
-                        </div>
 
-                        <form onSubmit={handleCreateRequest} className="p-6 space-y-4 overflow-y-auto flex-1">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Select Lawyer</label>
-                                <select 
-                                    className="w-full h-11 rounded-xl border border-slate-200 px-3.5 text-sm font-semibold focus:outline-none"
-                                    value={selectedLawyer ? (selectedLawyer._id || selectedLawyer.id) : ""}
-                                    onChange={(e) => {
-                                        const lawyerObj = lawyers.find(l => (l._id || l.id) === e.target.value);
-                                        setSelectedLawyer(lawyerObj);
-                                    }}
-                                    required
-                                >
-                                    <option value="" disabled>-- Choose Advocate --</option>
-                                    {lawyers.map(l => (
-                                        <option key={l._id || l.id} value={l._id || l.id}>
-                                            Adv. {l.fullName} ({l.expertise || 'Expert'} • ₹{l.hourlyRate || 1000}/hr)
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Consultation Topic</label>
-                                <Input 
-                                    type="text"
-                                    placeholder="e.g. Initial Consultation for Partnership Agreement Review"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    required
-                                    className="rounded-xl h-11 border-slate-200"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Inquiry details / Description</label>
-                                <Textarea 
-                                    placeholder="Explain your legal situation and questions you want addressed during the call..."
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    required
-                                    className="rounded-2xl border-slate-200 min-h-[100px]"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Select Date</label>
-                                    <Input 
-                                        type="date"
-                                        value={scheduledDate}
-                                        onChange={(e) => setScheduledDate(e.target.value)}
-                                        required
-                                        className="rounded-xl h-11 border-slate-200"
-                                        min={new Date().toISOString().split('T')[0]}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Select Time</label>
-                                    <Input 
-                                        type="time"
-                                        value={scheduledTime}
-                                        onChange={(e) => setScheduledTime(e.target.value)}
-                                        required
-                                        className="rounded-xl h-11 border-slate-200"
-                                    />
-                                </div>
-                            </div>
-
-                            {selectedLawyer && (
-                                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between text-xs font-bold text-slate-700 mt-2">
-                                    <span className="uppercase text-slate-400">Total Consultation Fee</span>
-                                    <span className="text-lg text-slate-900">₹{(selectedLawyer.hourlyRate || 1000).toLocaleString()}</span>
-                                </div>
-                            )}
-
-                            <Button 
-                                type="submit" 
-                                disabled={submitting}
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 rounded-2xl shadow-sm transition-all"
-                            >
-                                {submitting ? "Submitting..." : "Send Request to Advocate"}
-                            </Button>
-                        </form>
-                    </div>
-                </div>
-            )}
 
             {/* Modal: Pay & Checkout */}
             {isPayingId && (

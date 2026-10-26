@@ -215,10 +215,10 @@ export default function AILawyerList() {
                                                      <p className="text-base font-bold text-foreground">₹{lawyer.hourlyRate || "1000"}/hr</p>
                                                  </div>
                                                  <Button 
-                                                     className="rounded-xl h-10 px-5 bg-primary text-white hover:bg-violet-800 font-bold gap-2 transition-all"
-                                                  onClick={() => navigate(`/lawyers/${lawyer._id}`)}
+                                                     className="rounded-xl h-10 px-5 bg-primary text-white hover:bg-violet-800 font-bold gap-2 transition-all shadow-sm"
+                                                     onClick={() => navigate('/consultations', { state: { showNewRequest: true, startConsultationWithLawyer: lawyer } })}
                                                  >
-                                                     View Profile
+                                                     <span>Book Now</span>
                                                      <ArrowRight className="h-4 w-4" />
                                                  </Button>
                                              </div>

@@ -245,15 +245,17 @@ export const DigitalSignatureModal: React.FC<DigitalSignatureModalProps> = ({
                 return;
             }
             const dataUrl = canvasRef.current.toDataURL('image/png');
-            signatureGraphicHtml = `<img src="${dataUrl}" class="sig-img" alt="Digital Signature" style="max-height: 65px; max-width: 220px; object-fit: contain; margin-bottom: 4px; display: block;" />`;
+            const imgAlignStyle = alignment === 'center' ? 'margin-left: auto; margin-right: auto;' : '';
+            signatureGraphicHtml = `<img src="${dataUrl}" class="sig-img" alt="Digital Signature" width="220" style="max-height: 65px; max-width: 220px; width: auto; height: auto; object-fit: contain; margin-bottom: 6px; display: block; ${imgAlignStyle}" />`;
         } else if (mode === 'type') {
-            signatureGraphicHtml = `<span class="sig-typed" style="font-family: ${selectedFont}; font-size: 30px; line-height: 1.3; color: ${penColor}; display: block; margin-bottom: 4px;">${signatoryName.trim()}</span>`;
+            signatureGraphicHtml = `<span class="sig-typed" style="font-family: ${selectedFont}; font-size: 28px; line-height: 1.3; color: ${penColor}; display: block; margin-bottom: 4px;">${signatoryName.trim()}</span>`;
         } else if (mode === 'upload') {
             if (!uploadedImageUrl) {
                 toast.error("Please upload a signature image first");
                 return;
             }
-            signatureGraphicHtml = `<img src="${uploadedImageUrl}" class="sig-img" alt="Digital Signature" style="max-height: 65px; max-width: 220px; object-fit: contain; margin-bottom: 4px; display: block;" />`;
+            const imgAlignStyle = alignment === 'center' ? 'margin-left: auto; margin-right: auto;' : '';
+            signatureGraphicHtml = `<img src="${uploadedImageUrl}" class="sig-img" alt="Digital Signature" width="220" style="max-height: 65px; max-width: 220px; width: auto; height: auto; object-fit: contain; margin-bottom: 6px; display: block; ${imgAlignStyle}" />`;
         }
 
         const verificationId = generateVerificationId();
@@ -272,12 +274,17 @@ export const DigitalSignatureModal: React.FC<DigitalSignatureModalProps> = ({
                 ? 'margin-left: auto; margin-right: auto; text-align: center;' 
                 : 'margin-left: 0; margin-right: auto; text-align: left;';
 
+        const orgHtml = organization.trim() 
+            ? `<p class="sig-org" style="font-weight: 700; font-size: 13px; color: #0f172a; line-height: 1.35; margin: 4px 0 2px 0; text-transform: uppercase; letter-spacing: 0.5px;">${organization.trim()}</p>`
+            : '';
+
         const signatureBlockHtml = `
-            <div class="vidhik-signature-block ${alignmentClass}" style="display: block; min-width: 250px; max-width: 360px; border-top: 1.5px solid #1e293b; padding-top: 10px; margin-top: 32px; margin-bottom: 16px; ${wrapperAlignStyle} page-break-inside: avoid;">
+            <div id="digital-signature-block" class="vidhik-signature-block ${alignmentClass}" contenteditable="false" style="display: block; min-width: 250px; max-width: 340px; border-top: 1.5px solid #1e293b; padding-top: 10px; margin-top: 32px; margin-bottom: 16px; ${wrapperAlignStyle} page-break-inside: avoid; user-select: none;">
                 ${signatureGraphicHtml}
-                <p class="sig-name" style="font-weight: 700; font-size: 14px; color: #0f172a; line-height: 1.3; margin: 0;">${signatoryName.trim()}</p>
-                <p class="sig-title" style="font-size: 12px; color: #475569; line-height: 1.3; margin: 0;">${designation.trim()}${organization.trim() ? ` &bull; ${organization.trim()}` : ''}</p>
-                <p class="sig-date" style="font-size: 11px; color: #64748b; margin-top: 2px; line-height: 1.3;">Date: ${signingDate}</p>
+                ${orgHtml}
+                <p class="sig-name" style="font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.35; margin: 2px 0;">${signatoryName.trim()}</p>
+                <p class="sig-title" style="font-size: 11.5px; color: #475569; line-height: 1.35; margin: 2px 0; text-transform: uppercase; letter-spacing: 0.3px;">${designation.trim()}</p>
+                <p class="sig-date" style="font-size: 11px; color: #64748b; line-height: 1.35; margin: 2px 0;">DATE: ${signingDate.toUpperCase()}</p>
                 ${verificationBadgeHtml}
             </div>
         `;
