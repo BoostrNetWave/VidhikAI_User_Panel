@@ -32,7 +32,6 @@ import { launchRazorpayCheckout, createSimulatedTestResponse } from '@/services/
 export default function LawyerBooking() {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking'>('card');
     
     // Lawyer & Booking State
     const [lawyer, setLawyer] = useState<any>(null);
@@ -59,10 +58,7 @@ export default function LawyerBooking() {
 
     const timeSlots = ["09:30 AM", "11:00 AM", "02:30 PM", "04:00 PM"];
     
-    // Form States (Bypassed but kept for UI visual fidelity)
-    const [cardData, setCardData] = useState({ name: '', number: '', expiryMonth: '', expiryYear: '', cvv: '' });
-    const [upiId, setUpiId] = useState('');
-    const [selectedBank, setSelectedBank] = useState('State Bank of India');
+    // Form Validation Errors
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
@@ -448,152 +444,51 @@ export default function LawyerBooking() {
                             </CardContent>
                         </Card>
 
-                        {/* Payment Selection Layout */}
-                        <Card className="rounded-2xl border-border bg-card shadow-sm opacity-95">
-                            <CardContent className="p-6 md:p-8">
-                                <h2 className="text-xl font-bold text-foreground mb-8">Select Payment Method (Simulation)</h2>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                                    <button 
-                                        type="button"
-                                        onClick={() => setPaymentMethod('card')}
-                                        className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${paymentMethod === 'card' ? 'border-violet-605 border-primary bg-secondary/40 ring-1 ring-violet-700' : 'border-border bg-card hover:bg-accent'}`}
-                                    >
-                                        <CreditCard className={`w-5 h-5 ${paymentMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <span className={`text-sm font-bold ${paymentMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>Card</span>
-                                    </button>
-                                    <button 
-                                        type="button"
-                                        onClick={() => setPaymentMethod('upi')}
-                                        className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${paymentMethod === 'upi' ? 'border-violet-650 border-primary bg-secondary/40 ring-1 ring-violet-700' : 'border-border bg-card hover:bg-accent'}`}
-                                    >
-                                        <Smartphone className={`w-5 h-5 ${paymentMethod === 'upi' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <span className={`text-sm font-bold ${paymentMethod === 'upi' ? 'text-primary' : 'text-foreground'}`}>UPI</span>
-                                    </button>
-                                    <button 
-                                        type="button"
-                                        onClick={() => setPaymentMethod('netbanking')}
-                                        className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${paymentMethod === 'netbanking' ? 'border-violet-650 border-primary bg-secondary/40 ring-1 ring-violet-700' : 'border-border bg-card hover:bg-accent'}`}
-                                    >
-                                        <Building2 className={`w-5 h-5 ${paymentMethod === 'netbanking' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <span className={`text-sm font-bold ${paymentMethod === 'netbanking' ? 'text-primary' : 'text-foreground'}`}>Net Banking</span>
-                                    </button>
+                        {/* Official Razorpay Gateway Indicator Card */}
+                        <Card className="rounded-2xl border-border bg-card shadow-sm">
+                            <CardContent className="p-6 md:p-8 space-y-6">
+                                <div className="flex items-center gap-3 pb-4 border-b border-border">
+                                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                        <Lock className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-foreground">Razorpay Secure Checkout</h2>
+                                        <p className="text-xs text-muted-foreground">Direct instant redirection to official Razorpay payment modal.</p>
+                                    </div>
                                 </div>
 
-                                {paymentMethod === 'card' && (
-                                    <div className="space-y-6 animate-in fade-in duration-300">
-                                        <div className="space-y-2">
-                                            <Label className="font-bold">Cardholder Name</Label>
-                                            <Input 
-                                                placeholder="John Doe" 
-                                                className="h-12 rounded-xl focus-visible:ring-primary"
-                                                value={cardData.name}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
-                                                    setCardData({...cardData, name: val});
-                                                }}
-                                            />
-                                        </div>
+                                <div className="space-y-4">
+                                    <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                                        Clicking <strong>Pay & Confirm</strong> directly launches the official Razorpay payment gateway modal. You can choose any payment method securely:
+                                    </p>
 
-                                        <div className="space-y-2">
-                                            <Label className="font-bold">Card Number</Label>
-                                            <div className="relative">
-                                                <Input 
-                                                    placeholder="4111 2222 3333 4444" 
-                                                    className="h-12 rounded-xl pr-12 focus-visible:ring-primary"
-                                                    maxLength={19}
-                                                    value={cardData.number}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
-                                                        setCardData({...cardData, number: val});
-                                                    }}
-                                                />
-                                                <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                            </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-background/50 text-center gap-1.5">
+                                            <Smartphone className="w-5 h-5 text-primary" />
+                                            <span className="text-xs font-bold">UPI / QR</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium">GPay, PhonePe, Paytm</span>
                                         </div>
-
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <Label className="font-bold">Expiry Date</Label>
-                                                <div className="flex gap-2">
-                                                    <select 
-                                                        className="flex-1 h-12 bg-background border border-input rounded-xl px-3 text-sm font-medium outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                                                        value={cardData.expiryMonth}
-                                                        onChange={(e) => setCardData({...cardData, expiryMonth: e.target.value})}
-                                                    >
-                                                        <option value="" disabled>MM</option>
-                                                        {Array.from({ length: 12 }, (_, i) => {
-                                                            const m = (i + 1).toString().padStart(2, '0');
-                                                            return <option key={m} value={m}>{m}</option>;
-                                                        })}
-                                                    </select>
-                                                    <select 
-                                                        className="flex-1 h-12 bg-background border border-input rounded-xl px-3 text-sm font-medium outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                                                        value={cardData.expiryYear}
-                                                        onChange={(e) => setCardData({...cardData, expiryYear: e.target.value})}
-                                                    >
-                                                        <option value="" disabled>YYYY</option>
-                                                        <option value="2026">2026</option>
-                                                        <option value="2027">2027</option>
-                                                        <option value="2028">2028</option>
-                                                        <option value="2029">2029</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="font-bold">CVV</Label>
-                                                <Input 
-                                                    placeholder="123" 
-                                                    type="password" 
-                                                    maxLength={3}
-                                                    className="h-12 rounded-xl focus-visible:ring-primary"
-                                                    value={cardData.cvv}
-                                                    onChange={(e) => setCardData({...cardData, cvv: e.target.value.replace(/\D/g, '')})}
-                                                />
-                                            </div>
+                                        <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-background/50 text-center gap-1.5">
+                                            <CreditCard className="w-5 h-5 text-primary" />
+                                            <span className="text-xs font-bold">Cards</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium">Credit & Debit Cards</span>
+                                        </div>
+                                        <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-background/50 text-center gap-1.5">
+                                            <Building2 className="w-5 h-5 text-primary" />
+                                            <span className="text-xs font-bold">Net Banking</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium">50+ Indian Banks</span>
+                                        </div>
+                                        <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-background/50 text-center gap-1.5">
+                                            <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                                            <span className="text-xs font-bold">Wallets</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium">PayLater & Wallets</span>
                                         </div>
                                     </div>
-                                )}
 
-                                {paymentMethod === 'upi' && (
-                                    <div className="space-y-6 animate-in fade-in duration-300">
-                                        <div className="space-y-2">
-                                            <Label className="font-bold">Enter UPI ID</Label>
-                                            <Input 
-                                                placeholder="username@upi" 
-                                                className="h-12 rounded-xl focus-visible:ring-primary"
-                                                value={upiId}
-                                                onChange={(e) => setUpiId(e.target.value)}
-                                            />
-                                            <p className="text-[10px] text-muted-foreground font-medium">Payment simulations will automatically complete.</p>
-                                        </div>
+                                    <div className="p-3 bg-secondary/50 border border-border rounded-xl flex items-center gap-2.5 text-xs text-muted-foreground font-medium">
+                                        <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                                        <span>End-to-end 256-bit bank grade encryption & RBI compliance.</span>
                                     </div>
-                                )}
-
-                                {paymentMethod === 'netbanking' && (
-                                    <div className="space-y-6 animate-in fade-in duration-300">
-                                        <div className="space-y-2">
-                                            <Label className="font-bold">Select Bank</Label>
-                                            <select 
-                                                className="w-full h-12 bg-background border border-input rounded-xl px-4 text-sm font-medium outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                                                value={selectedBank}
-                                                onChange={(e) => setSelectedBank(e.target.value)}
-                                            >
-                                                <option>State Bank of India</option>
-                                                <option>HDFC Bank</option>
-                                                <option>ICICI Bank</option>
-                                                <option>Axis Bank</option>
-                                                <option>Kotak Mahindra Bank</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="mt-8 flex items-center space-x-3">
-                                    <Checkbox id="save-payment" className="rounded-sm" defaultChecked />
-                                    <label htmlFor="save-payment" className="text-sm font-medium text-muted-foreground leading-none cursor-pointer">
-                                        Save billing details for quick booking
-                                    </label>
                                 </div>
                             </CardContent>
                         </Card>

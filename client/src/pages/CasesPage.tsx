@@ -65,11 +65,6 @@ export default function CasesPage() {
     const [submittingBooking, setSubmittingBooking] = useState(false);
 
     // Checkout Payment States
-    const [isPayingForCaseId, setIsPayingForCaseId] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking'>('card');
-    const [cardData, setCardData] = useState({ name: '', number: '', expiryMonth: '', expiryYear: '', cvv: '' });
-    const [upiId, setUpiId] = useState('');
-    const [selectedBank, setSelectedBank] = useState('State Bank of India');
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     const categories = ["All", "Corporate", "Criminal", "Family", "Civil", "IP Law", "Taxation"];
@@ -184,9 +179,9 @@ export default function CasesPage() {
             const hourlyRate = selectedLawyer.hourlyRate || 1000;
             const serviceFee = 150;
             const gst = hourlyRate * 0.18;
-            const totalAmount = hourlyRate + serviceFee + gst;
+            const totalAmount = Math.round(hourlyRate + serviceFee + gst);
 
-            await caseService.bookLawyer({
+            const newCase = await caseService.bookLawyer({
                 lawyerId: selectedLawyer._id,
                 title: caseTitle.trim(),
                 description: caseDesc.trim(),
@@ -195,14 +190,74 @@ export default function CasesPage() {
                 totalFee: totalAmount
             });
 
-            toast.success("Booking request sent successfully! Awaiting lawyer's response.");
-            setShowNewCaseFlow(false);
-            setSelectedLawyer(null);
-            setCaseTitle("");
-            setCaseDesc("");
-            setBookingDate(null);
-            setBookingTime("");
-            fetchCases();
+            toast.info("Booking created! Opening secure Razorpay checkout...");
+
+            // Launch Razorpay Checkout directly (matching Video Consultation flow)
+            try {
+                const orderRes = await caseService.createPaymentOrder(newCase._id);
+                const { order } = orderRes;
+
+                const launched = await launchRazorpayCheckout({
+                    order,
+                    onSuccess: async (paymentResp) => {
+                        try {
+                            await caseService.payAndConfirm(newCase._id, paymentResp);
+                            toast.success("Payment completed & Case Confirmed!");
+                        } catch (err: any) {
+                            console.error("Payment confirmation error:", err);
+                            toast.error(err.response?.data?.message || "Failed to confirm payment on server.");
+                        }
+                        setShowNewCaseFlow(false);
+                        setSelectedLawyer(null);
+                        setCaseTitle("");
+                        setCaseDesc("");
+                        setBookingDate(null);
+                        setBookingTime("");
+                        fetchCases();
+                    },
+                    onError: (err) => {
+                        console.error("Razorpay error:", err);
+                        toast.error(err?.message || "Razorpay payment encountered an error.");
+                        setShowNewCaseFlow(false);
+                        setSelectedLawyer(null);
+                        setCaseTitle("");
+                        setCaseDesc("");
+                        setBookingDate(null);
+                        setBookingTime("");
+                        fetchCases();
+                    },
+                    onDismiss: () => {
+                        toast.info("Booking saved under Pending Payment. You can pay anytime from your cases list.");
+                        setShowNewCaseFlow(false);
+                        setSelectedLawyer(null);
+                        setCaseTitle("");
+                        setCaseDesc("");
+                        setBookingDate(null);
+                        setBookingTime("");
+                        fetchCases();
+                    }
+                });
+
+                if (!launched) {
+                    setShowNewCaseFlow(false);
+                    setSelectedLawyer(null);
+                    setCaseTitle("");
+                    setCaseDesc("");
+                    setBookingDate(null);
+                    setBookingTime("");
+                    fetchCases();
+                }
+            } catch (orderErr: any) {
+                console.error("Order creation error:", orderErr);
+                toast.success("Booking request sent! You can complete payment anytime from your cases list.");
+                setShowNewCaseFlow(false);
+                setSelectedLawyer(null);
+                setCaseTitle("");
+                setCaseDesc("");
+                setBookingDate(null);
+                setBookingTime("");
+                fetchCases();
+            }
         } catch (error: any) {
             console.error("Booking error:", error);
             toast.error(error.response?.data?.message || "Failed to submit booking request.");
@@ -211,23 +266,23 @@ export default function CasesPage() {
         }
     };
 
-    const handleCheckoutPayment = async (simulateDirect = false) => {
-        if (!isPayingForCaseId) return;
+    const handleCheckoutPayment = async (targetCaseId?: string, simulateDirect = false) => {
+        if (!targetCaseId) return;
         setIsProcessingPayment(true);
         try {
-            const orderRes = await caseService.createPaymentOrder(isPayingForCaseId);
+            const orderRes = await caseService.createPaymentOrder(targetCaseId);
             const { order } = orderRes;
 
             const completeCasePayment = async (paymentResp: any) => {
-                await caseService.payAndConfirm(isPayingForCaseId, paymentResp);
+                await caseService.payAndConfirm(targetCaseId, paymentResp);
                 toast.success("Payment completed & Booking Confirmed!");
-                setIsPayingForCaseId(null);
                 fetchCases();
             };
 
             if (simulateDirect) {
                 const simResp = createSimulatedTestResponse(order.id);
                 await completeCasePayment(simResp);
+                setIsProcessingPayment(false);
                 return;
             }
 
@@ -235,6 +290,7 @@ export default function CasesPage() {
                 order,
                 onSuccess: async (paymentResp) => {
                     await completeCasePayment(paymentResp);
+                    setIsProcessingPayment(false);
                 },
                 onError: (err) => {
                     console.error("Razorpay error:", err);
@@ -269,7 +325,7 @@ export default function CasesPage() {
                             Track case progress, verify lawyer roadmaps, monitor milestone payments, or schedule a new case consultation.
                         </p>
                     </div>
-                    {!showNewCaseFlow && !isPayingForCaseId && (
+                    {!showNewCaseFlow && (
                         <Button 
                             onClick={() => {
                                 setShowNewCaseFlow(true);
@@ -604,10 +660,13 @@ export default function CasesPage() {
                                             <Button
                                                 onClick={handleSendBookingRequest}
                                                 disabled={submittingBooking}
-                                                className="w-full h-12 bg-primary text-white hover:bg-violet-800 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                                                className="w-full h-12 bg-primary text-white hover:bg-violet-800 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all"
                                             >
-                                                <Calendar className="w-4 h-4" />
-                                                {submittingBooking ? "Sending Request..." : "Send Booking Request"}
+                                                <Lock className="w-4 h-4" />
+                                                {submittingBooking 
+                                                    ? "Opening Razorpay..." 
+                                                    : `Pay ₹${Math.round((selectedLawyer.hourlyRate || 1000) + 150 + ((selectedLawyer.hourlyRate || 1000) * 0.18)).toLocaleString()} & Book`
+                                                }
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -615,188 +674,6 @@ export default function CasesPage() {
                             </div>
                         )}
                     </div>
-                ) : isPayingForCaseId ? (
-                    /* WIZARD FOR SECURE CONSULTATION PAYMENT */
-                    (() => {
-                        const targetCase = cases.find(c => c._id === isPayingForCaseId);
-                        if (!targetCase) return null;
-                        const baseFee = targetCase.totalFee - 150;
-                        const subtotal = baseFee / 1.18;
-                        const gstAmount = subtotal * 0.18;
-
-                        return (
-                            <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300 max-w-5xl mx-auto">
-                                <div className="flex items-center justify-between border-b border-border pb-4">
-                                    <button 
-                                        onClick={() => setIsPayingForCaseId(null)}
-                                        className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 group"
-                                    >
-                                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                                        Back to Case Details
-                                    </button>
-                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                        <Lock className="w-4 h-4 text-primary" />
-                                        Secure Checkout
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                                    {/* Checkout Form */}
-                                    <div className="md:col-span-7 space-y-6">
-                                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 flex items-start gap-4">
-                                            <AlertCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">Simulated Checkout Active</p>
-                                                <p className="text-[11px] text-amber-700/90 mt-1 font-semibold leading-relaxed">
-                                                    Enter any dummy credentials below to proceed. Clicking pay will immediately write verification and activate the case.
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <h3 className="font-extrabold text-slate-900 text-sm uppercase tracking-wider">Select Payment Option</h3>
-                                            <div className="grid grid-cols-3 gap-3">
-                                                <button
-                                                    onClick={() => setPaymentMethod('card')}
-                                                    className={`p-3.5 border rounded-2xl flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
-                                                        paymentMethod === 'card' 
-                                                        ? 'border-primary bg-secondary text-primary ring-1 ring-violet-700' 
-                                                        : 'border-border bg-white hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    <CreditCard size={18} />
-                                                    <span>Card</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => setPaymentMethod('upi')}
-                                                    className={`p-3.5 border rounded-2xl flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
-                                                        paymentMethod === 'upi' 
-                                                        ? 'border-primary bg-secondary text-primary ring-1 ring-violet-700' 
-                                                        : 'border-border bg-white hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    <Smartphone size={18} />
-                                                    <span>UPI</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => setPaymentMethod('netbanking')}
-                                                    className={`p-3.5 border rounded-2xl flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
-                                                        paymentMethod === 'netbanking' 
-                                                        ? 'border-primary bg-secondary text-primary ring-1 ring-violet-700' 
-                                                        : 'border-border bg-white hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    <Building2 size={18} />
-                                                    <span>Net Banking</span>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {paymentMethod === 'card' && (
-                                            <div className="space-y-4 animate-in fade-in duration-300">
-                                                <div className="space-y-1.5">
-                                                    <Label className="font-bold text-xs">Cardholder Name</Label>
-                                                    <Input placeholder="John Doe" value={cardData.name} onChange={(e) => setCardData({...cardData, name: e.target.value})} className="h-11 rounded-xl" />
-                                                </div>
-                                                <div className="space-y-1.5">
-                                                    <Label className="font-bold text-xs">Card Number</Label>
-                                                    <Input placeholder="4111 2222 3333 4444" value={cardData.number} onChange={(e) => setCardData({...cardData, number: e.target.value})} className="h-11 rounded-xl" />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-1.5">
-                                                        <Label className="font-bold text-xs">Expiry Date</Label>
-                                                        <Input placeholder="MM/YY" value={cardData.expiryMonth} onChange={(e) => setCardData({...cardData, expiryMonth: e.target.value})} className="h-11 rounded-xl" />
-                                                    </div>
-                                                    <div className="space-y-1.5">
-                                                        <Label className="font-bold text-xs">CVV</Label>
-                                                        <Input placeholder="123" type="password" value={cardData.cvv} onChange={(e) => setCardData({...cardData, cvv: e.target.value})} className="h-11 rounded-xl" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {paymentMethod === 'upi' && (
-                                            <div className="space-y-4 animate-in fade-in duration-300">
-                                                <div className="space-y-1.5">
-                                                    <Label className="font-bold text-xs">UPI ID</Label>
-                                                    <Input placeholder="username@upi" value={upiId} onChange={(e) => setUpiId(e.target.value)} className="h-11 rounded-xl" />
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {paymentMethod === 'netbanking' && (
-                                            <div className="space-y-4 animate-in fade-in duration-300">
-                                                <div className="space-y-1.5">
-                                                    <Label className="font-bold text-xs">Select Bank</Label>
-                                                    <select value={selectedBank} onChange={(e) => setSelectedBank(e.target.value)} className="w-full h-11 bg-background border border-input rounded-xl px-3 text-sm font-semibold outline-none focus:ring-1 focus:ring-ring">
-                                                        <option>State Bank of India</option>
-                                                        <option>HDFC Bank</option>
-                                                        <option>ICICI Bank</option>
-                                                        <option>Axis Bank</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Order Summary */}
-                                    <div className="md:col-span-5 bg-slate-50 border border-slate-200 p-6 rounded-3xl space-y-6">
-                                        <h3 className="font-extrabold text-slate-900 text-sm uppercase tracking-wider">Booking Summary</h3>
-                                        <div className="flex gap-3">
-                                            <Avatar className="h-12 w-12 rounded-xl border border-border shrink-0">
-                                                <AvatarImage 
-                                                    src={targetCase.lawyer?.avatar ? `/lawyer${targetCase.lawyer.avatar}` : ""} 
-                                                    alt={targetCase.lawyer?.fullName || "Avatar"} 
-                                                    className="object-cover"
-                                                />
-                                                <AvatarFallback className="rounded-xl bg-white text-slate-400">
-                                                    <User className="h-6 w-6" />
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <h4 className="font-extrabold text-slate-900 text-sm leading-tight">{targetCase.lawyer?.fullName}</h4>
-                                                <p className="text-[10px] text-violet-750 font-extrabold uppercase mt-0.5">{targetCase.lawyer?.expertise || "General Practice"}</p>
-                                                {targetCase.bookingDate && (
-                                                    <p className="text-[10px] text-slate-500 font-bold mt-1">
-                                                        {new Date(targetCase.bookingDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {targetCase.bookingTime}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <Separator />
-                                        <div className="space-y-2 text-xs font-semibold text-slate-500">
-                                            <div className="flex justify-between">
-                                                <span>Consultation Fee</span>
-                                                <span className="text-slate-900">₹{Math.round(subtotal).toLocaleString()}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span>Platform Booking Fee</span>
-                                                <span className="text-slate-900">₹150</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span>Taxes (GST 18%)</span>
-                                                <span className="text-slate-900">₹{Math.round(gstAmount).toLocaleString()}</span>
-                                            </div>
-                                            <Separator />
-                                            <div className="flex justify-between text-sm font-black text-slate-900 pt-1">
-                                                <span>Total Price</span>
-                                                <span className="text-violet-750">₹{targetCase.totalFee.toLocaleString()}</span>
-                                            </div>
-                                        </div>
-
-                                        <Button
-                                            onClick={() => handleCheckoutPayment()}
-                                            disabled={isProcessingPayment}
-                                            className="w-full h-12 bg-violet-705 text-white hover:bg-violet-800 bg-primary rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-                                        >
-                                            <Lock size={14} />
-                                            {isProcessingPayment ? "Processing..." : "Pay & Confirm Booking"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })()
                 ) : (
                     /* CASES LIST & DETAIL VIEWS */
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1038,13 +915,11 @@ export default function CasesPage() {
                                                 <div className="flex flex-wrap justify-end gap-3 pt-2">
                                                     <Button 
                                                         disabled={isProcessingPayment}
-                                                        onClick={() => {
-                                                            setIsPayingForCaseId(selectedCase._id);
-                                                            handleCheckoutPayment(false);
-                                                        }}
-                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl px-6 py-2.5 shadow-md shadow-emerald-100 text-xs"
+                                                        onClick={() => handleCheckoutPayment(selectedCase._id, false)}
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl px-6 py-2.5 shadow-md shadow-emerald-100 text-xs flex items-center gap-2"
                                                     >
-                                                        Pay ₹{selectedCase.totalFee.toLocaleString()}
+                                                        <Lock className="w-3.5 h-3.5" />
+                                                        {isProcessingPayment ? "Opening Razorpay..." : `Pay ₹${selectedCase.totalFee.toLocaleString()}`}
                                                     </Button>
                                                 </div>
                                             </div>
