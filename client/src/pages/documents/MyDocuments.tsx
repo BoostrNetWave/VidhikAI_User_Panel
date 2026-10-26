@@ -59,7 +59,7 @@ if (Quill) {
         class SignatureBlockBlot extends BlockEmbed {
             static create(value: any) {
                 const node = super.create(value);
-                node.setAttribute('class', value?.className || 'vidhik-signature-block align-right');
+                node.setAttribute('class', value?.className || 'vidhik-signature-block align-left');
                 node.setAttribute('contenteditable', 'false');
                 node.innerHTML = typeof value === 'string' ? value : (value?.html || '');
                 return node;
@@ -331,10 +331,13 @@ export default function MyDocuments() {
                                     display: block !important;
                                     min-width: 250px !important;
                                     max-width: 340px !important;
-                                    border-top: 1.5px solid #1e293b !important;
-                                    padding-top: 10px !important;
-                                    margin-top: 36px !important;
+                                    border-top: none !important;
+                                    padding-top: 6px !important;
+                                    margin-top: 24px !important;
                                     margin-bottom: 16px !important;
+                                    margin-left: 0 !important;
+                                    margin-right: auto !important;
+                                    text-align: left !important;
                                     page-break-inside: avoid !important;
                                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
                                 }

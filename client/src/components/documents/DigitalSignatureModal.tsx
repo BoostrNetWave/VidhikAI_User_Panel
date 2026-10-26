@@ -67,7 +67,7 @@ export const DigitalSignatureModal: React.FC<DigitalSignatureModalProps> = ({
         });
     });
     const [includeVerification, setIncludeVerification] = useState(true);
-    const [alignment, setAlignment] = useState<'right' | 'center' | 'left'>('right');
+    const [alignment, setAlignment] = useState<'right' | 'center' | 'left'>('left');
 
     // Drawing Canvas States
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -279,7 +279,7 @@ export const DigitalSignatureModal: React.FC<DigitalSignatureModalProps> = ({
             : '';
 
         const signatureBlockHtml = `
-            <div id="digital-signature-block" class="vidhik-signature-block ${alignmentClass}" contenteditable="false" style="display: block; min-width: 250px; max-width: 340px; border-top: 1.5px solid #1e293b; padding-top: 10px; margin-top: 32px; margin-bottom: 16px; ${wrapperAlignStyle} page-break-inside: avoid; user-select: none;">
+            <div id="digital-signature-block" class="vidhik-signature-block ${alignmentClass}" contenteditable="false" style="display: block; min-width: 250px; max-width: 340px; padding-top: 6px; margin-top: 24px; margin-bottom: 16px; ${wrapperAlignStyle} page-break-inside: avoid; user-select: none;">
                 ${signatureGraphicHtml}
                 ${orgHtml}
                 <p class="sig-name" style="font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.35; margin: 2px 0;">${signatoryName.trim()}</p>
@@ -561,7 +561,7 @@ export const DigitalSignatureModal: React.FC<DigitalSignatureModalProps> = ({
                                 type="button"
                                 onClick={() => setAlignment('left')}
                                 className={`p-1.5 rounded border text-xs ${alignment === 'left' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                                title="Align Left"
+                                title="Align Left (Standard)"
                             >
                                 <AlignLeft className="h-3.5 w-3.5" />
                             </button>
@@ -577,7 +577,7 @@ export const DigitalSignatureModal: React.FC<DigitalSignatureModalProps> = ({
                                 type="button"
                                 onClick={() => setAlignment('right')}
                                 className={`p-1.5 rounded border text-xs ${alignment === 'right' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                                title="Align Right (Standard)"
+                                title="Align Right"
                             >
                                 <AlignRight className="h-3.5 w-3.5" />
                             </button>
