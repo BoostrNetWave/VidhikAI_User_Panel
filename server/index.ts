@@ -20,6 +20,7 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import supportRoutes from './routes/supportRoutes';
 import consultationRoutes from './routes/consultationRoutes';
 import subscriptionRoutes from './routes/subscriptionRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import SystemConfig from './models/SystemConfig';
 import { verifyEmailConfiguration } from './utils/emailService';
 
@@ -56,6 +57,7 @@ registerRoute('/subscription', subscriptionRoutes);
 registerRoute('/subscriptions', subscriptionRoutes);
 registerRoute('/payment', subscriptionRoutes);
 registerRoute('/payments', subscriptionRoutes);
+registerRoute('/notifications', notificationRoutes);
 
 // Basic Route
 app.get('/api/health', (_req, res) => {

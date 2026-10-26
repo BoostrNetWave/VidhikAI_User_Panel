@@ -117,6 +117,10 @@ export const consultationService = {
         return response.data;
     },
 
+    async joinMeeting(id: string): Promise<IConsultation> {
+        return this.joinConsultation(id);
+    },
+
     async endConsultation(id: string, data?: { meetingNotes?: string; meetingSummary?: string }): Promise<IConsultation> {
         const response = await api.post(`/consultations/${id}/end`, data || {});
         return response.data;
