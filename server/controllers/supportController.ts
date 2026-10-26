@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import SupportTicket from '../models/SupportTicket';
+import { saveFileToGridFS } from '../utils/gridfsStorage';
 
 /**
  * Create a new support ticket (with optional attachment)
@@ -24,6 +25,7 @@ export const createSupportTicket = async (req: any, res: Response) => {
         if (req.file) {
             attachment = `/uploads/${req.file.filename}`;
             attachmentName = req.file.originalname;
+            await saveFileToGridFS(req.file.filename, req.file.path, req.file.mimetype);
         }
 
         // Generate a clean ticket ID like TKT-829104
@@ -184,6 +186,7 @@ export const replyToTicketAsCustomer = async (req: any, res: Response) => {
         if (req.file) {
             attachment = `/uploads/${req.file.filename}`;
             attachmentName = req.file.originalname;
+            await saveFileToGridFS(req.file.filename, req.file.path, req.file.mimetype);
         }
 
         const newReply = {

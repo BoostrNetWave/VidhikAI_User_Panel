@@ -149,7 +149,7 @@ export function processNode(node: Node, styles: InheritedStyles): Paragraph[] {
                                 width: 170,
                                 height: 50
                             }
-                        })],
+                        } as any)],
                         alignment: getAlignment(effectiveAlign) || AlignmentType.LEFT
                     })];
                 }

@@ -15,10 +15,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const getUploadPath = () => {
-    const lawyerUploadsPath = path.join(__dirname, '../../../lawyer-admin-main/backend/uploads');
-    if (fs.existsSync(lawyerUploadsPath)) {
-        return lawyerUploadsPath;
-    }
     const localUploadsPath = path.join(__dirname, '../uploads');
     if (!fs.existsSync(localUploadsPath)) {
         fs.mkdirSync(localUploadsPath, { recursive: true });

@@ -7,9 +7,10 @@ import { caseService, ICase } from '@/services/caseService';
 import { 
     Video, Mic, MicOff, VideoOff, ScreenShare, PhoneOff, 
     FileText, ArrowLeft, Download, ShieldCheck, Clock, ExternalLink,
-    Lock, RefreshCcw
+    Lock, RefreshCcw, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getFileUrl, isImageFile, isPdfFile } from '@/lib/fileUtils';
 
 export default function ConsultationMeeting() {
     const { id } = useParams<{ id: string }>();
@@ -22,6 +23,8 @@ export default function ConsultationMeeting() {
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const processedCandidatesRef = useRef<Set<string>>(new Set());
+    const processedDocSignalsRef = useRef<Set<string>>(new Set());
+    const pollTickCountRef = useRef<number>(0);
     const lastAnsweredOfferSdp = useRef<string | null>(null);
 
     // Case Details States
@@ -86,6 +89,24 @@ export default function ConsultationMeeting() {
             console.error("Error refreshing case data:", err);
         }
     };
+
+    const fetchCaseDetailsSilent = useCallback(async () => {
+        try {
+            const data = await caseService.getCaseById(id!);
+            if (data) {
+                setCaseData(prev => {
+                    if (!prev) return data;
+                    if (data.meetingSummaryUrl !== prev.meetingSummaryUrl || data.status !== prev.status) {
+                        if (!prev.meetingSummaryUrl && data.meetingSummaryUrl) {
+                            toast.success("Advocate uploaded the meeting summary brief!");
+                        }
+                        return { ...prev, ...data };
+                    }
+                    return prev;
+                });
+            }
+        } catch (_err) {}
+    }, [id]);
 
     // Initialize media stream
     const startLocalStream = async () => {
@@ -257,6 +278,22 @@ export default function ConsultationMeeting() {
                             console.error("Error adding client ICE candidate:", iceErr);
                         }
                     }
+                }
+
+                // 3. Process Real-Time Document Updates from Lawyer
+                const docSignals = remoteSignals.filter(s => s.type === 'document_update');
+                for (const signal of docSignals) {
+                    if (signal._id && !processedDocSignalsRef.current.has(signal._id)) {
+                        processedDocSignalsRef.current.add(signal._id);
+                        fetchCaseDetailsSilent();
+                        toast.info("Advocate uploaded a case document or summary brief");
+                    }
+                }
+
+                // 4. Periodic background sync of case details (every 3 seconds)
+                pollTickCountRef.current = (pollTickCountRef.current || 0) + 1;
+                if (pollTickCountRef.current % 2 === 0) {
+                    fetchCaseDetailsSilent();
                 }
             } catch (err) {
                 console.error("Error in client signaling poll:", err);
@@ -766,7 +803,7 @@ export default function ConsultationMeeting() {
                                                     The lawyer has submitted the official consultation briefing summary. It is now securely archived in the registry.
                                                 </p>
                                                 <a
-                                                    href={`/lawyer${caseData.meetingSummaryUrl}`}
+                                                    href={getFileUrl(caseData.meetingSummaryUrl)}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
@@ -817,7 +854,7 @@ export default function ConsultationMeeting() {
                                                 </div>
                                             </div>
                                             <a
-                                                href={`/lawyer${caseData.meetingSummaryUrl}`}
+                                                href={getFileUrl(caseData.meetingSummaryUrl)}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className="h-8 w-8 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-secondary text-violet-750 hover:text-primary shrink-0 transition-colors"
@@ -845,7 +882,7 @@ export default function ConsultationMeeting() {
                                                     </div>
                                                 </div>
                                                 <a
-                                                    href={`/lawyer${doc.url}`}
+                                                    href={getFileUrl(doc.url)}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-500 hover:text-slate-900 shrink-0 transition-colors"

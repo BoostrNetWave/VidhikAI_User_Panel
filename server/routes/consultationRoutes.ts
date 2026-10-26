@@ -25,13 +25,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure multer storage pointing to lawyer backend uploads directory
+// Configure multer storage pointing to local uploads directory
 const getUploadPath = () => {
-    const lawyerUploadsPath = path.join(__dirname, '../../../lawyer-admin-main/backend/uploads');
-    if (fs.existsSync(lawyerUploadsPath)) {
-        return lawyerUploadsPath;
-    }
-    // Fallback/create local uploads if lawyer uploads doesn't exist
     const localUploadsPath = path.join(__dirname, '../uploads');
     if (!fs.existsSync(localUploadsPath)) {
         fs.mkdirSync(localUploadsPath, { recursive: true });

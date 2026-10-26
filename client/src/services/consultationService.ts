@@ -5,6 +5,7 @@ export interface IConsultationDoc {
     url: string;
     uploadedBy: 'client' | 'lawyer';
     uploadedAt: string;
+    size?: number;
 }
 
 export interface IConsultation {
@@ -74,6 +75,10 @@ export const consultationService = {
     async acceptConsultation(id: string): Promise<IConsultation> {
         const response = await api.post(`/consultations/${id}/accept`);
         return response.data;
+    },
+
+    async acceptProposal(id: string): Promise<IConsultation> {
+        return this.acceptConsultation(id);
     },
 
     async proposeNewTime(id: string, data: { scheduledDate: string; scheduledTime: string }): Promise<IConsultation> {

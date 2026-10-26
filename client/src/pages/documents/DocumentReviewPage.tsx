@@ -1611,7 +1611,7 @@ export default function DocumentReviewPage() {
                                                             <span
                                                                 id={`highlight-clause-${seg.clauseIndex}`}
                                                                 key={`highlight-${seg.clauseIndex}`}
-                                                                className={`${theme.bg} ${theme.border} ${theme.text} px-2 py-0.5 rounded font-medium cursor-pointer transition-all duration-200 relative inline group/h mx-0.5 shadow-xs ${isSelected ? 'ring-2 ring-primary ring-offset-1 font-bold' : ''}`}
+                                                                className={`${theme.bg} ${theme.border} ${(theme as any).text || ''} px-2 py-0.5 rounded font-medium cursor-pointer transition-all duration-200 relative inline group/h mx-0.5 shadow-xs ${isSelected ? 'ring-2 ring-primary ring-offset-1 font-bold' : ''}`}
                                                                 onClick={() => setSelectedClauseIndex(seg.clauseIndex)}
                                                                 onMouseEnter={() => setActiveHighlightIndex(seg.clauseIndex)}
                                                                 onMouseLeave={() => setActiveHighlightIndex(null)}

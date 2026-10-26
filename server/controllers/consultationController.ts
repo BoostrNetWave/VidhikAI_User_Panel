@@ -10,6 +10,7 @@ import {
     notifyConsultationStatusChange 
 } from '../utils/emailService';
 import Signal from '../models/Signal';
+import { saveFileToGridFS } from '../utils/gridfsStorage';
 
 export const createConsultation = async (req: any, res: Response): Promise<void> => {
     try {
@@ -323,6 +324,10 @@ export const uploadConsultationDocument = async (req: any, res: Response): Promi
         }
 
         const docUrl = `/uploads/${file.filename}`;
+        
+        // Save to central MongoDB GridFS for seamless cross-server access
+        await saveFileToGridFS(file.filename, file.path, file.mimetype);
+
         consultation.documents.push({
             name: file.originalname,
             url: docUrl,
