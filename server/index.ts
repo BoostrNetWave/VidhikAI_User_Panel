@@ -323,7 +323,7 @@ mongoose.connect(MONGO_URI)
                 { key: 'LANDING_HERO_BADGE', value: 'AI-POWERED LEGAL PLATFORM', category: 'landing', description: 'Top badge tag text on hero section' },
                 { key: 'LANDING_HERO_PRIMARY_CTA_TEXT', value: 'Get Started Free', category: 'landing', description: 'Primary CTA button label' },
                 { key: 'LANDING_HERO_PRIMARY_CTA_LINK', value: '/user/auth?mode=register', category: 'landing', description: 'Primary CTA target link' },
-                { key: 'LANDING_HERO_SECONDARY_CTA_TEXT', value: 'Watch Demo', category: 'landing', description: 'Secondary CTA button label' },
+                { key: 'LANDING_HERO_SECONDARY_CTA_TEXT', value: 'Log In', category: 'landing', description: 'Secondary CTA button label' },
                 { key: 'LANDING_HERO_SECONDARY_CTA_LINK', value: '#demo', category: 'landing', description: 'Secondary CTA target link' },
                 { key: 'LANDING_HERO_TRUST_TEXT', value: 'Trusted by legal professionals', category: 'landing', description: 'Trust badge copy' },
                 { key: 'LANDING_HERO_STAT_NUMBER', value: '24', category: 'landing', description: 'Floating date stat badge' },
@@ -391,7 +391,7 @@ mongoose.connect(MONGO_URI)
 
             for (const cfg of defaultLandingConfigs) {
                 const existing = await SystemConfig.findOne({ key: cfg.key });
-                if (!existing || existing.value === 'Legal work, drafted with intelligence.' || existing.value === 'Get started with Vidhik AI' || existing.value === 'Start Free Trial') {
+                if (!existing || existing.value === 'Watch Demo' || existing.value === 'Watch Now' || existing.value === 'Legal work, drafted with intelligence.' || existing.value === 'Get started with Vidhik AI' || existing.value === 'Start Free Trial') {
                     await SystemConfig.findOneAndUpdate({ key: cfg.key }, cfg, { upsert: true });
                     await syncToWebsiteContentCollection(cfg.key, cfg.value);
                 }

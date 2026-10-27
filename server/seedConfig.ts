@@ -36,7 +36,7 @@ const seedData = [
     },
     {
         key: 'LANDING_HERO_SECONDARY_CTA_TEXT',
-        value: 'Watch Demo',
+        value: 'Log In',
         category: 'landing',
         description: 'Secondary CTA button label'
     },

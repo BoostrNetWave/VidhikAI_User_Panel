@@ -72,7 +72,7 @@ export function AdminConfigManager({
     badge: 'AI-POWERED LEGAL PLATFORM',
     primaryCtaText: 'Get Started Free',
     primaryCtaLink: '/user/auth?mode=register',
-    secondaryCtaText: 'Watch Demo',
+    secondaryCtaText: 'Log In',
     secondaryCtaLink: '#demo',
     trustText: 'Trusted by 100+ legal teams & founders',
     trustRating: '5.0',
@@ -197,7 +197,7 @@ export function AdminConfigManager({
       badge: getConfig('LANDING_HERO_BADGE', 'AI-POWERED LEGAL PLATFORM'),
       primaryCtaText: getConfig('LANDING_HERO_PRIMARY_CTA_TEXT', 'Get Started Free'),
       primaryCtaLink: getConfig('LANDING_HERO_PRIMARY_CTA_LINK', '/user/auth?mode=register'),
-      secondaryCtaText: getConfig('LANDING_HERO_SECONDARY_CTA_TEXT', 'Watch Demo'),
+      secondaryCtaText: (/watch\s*(demo|now)/i.test(getConfig('LANDING_HERO_SECONDARY_CTA_TEXT', ''))) ? 'Log In' : getConfig('LANDING_HERO_SECONDARY_CTA_TEXT', 'Log In'),
       secondaryCtaLink: getConfig('LANDING_HERO_SECONDARY_CTA_LINK', '#demo'),
       trustText: getConfig('LANDING_HERO_TRUST_TEXT', 'Trusted by 100+ legal teams & founders'),
       trustRating: getConfig('LANDING_HERO_TRUST_RATING', '5.0'),
@@ -645,7 +645,7 @@ export function AdminConfigManager({
                       <Input
                         value={heroData.secondaryCtaText}
                         onChange={e => setHeroData({ ...heroData, secondaryCtaText: e.target.value })}
-                        placeholder="e.g. Watch Demo"
+                        placeholder="e.g. Log In"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -748,7 +748,7 @@ export function AdminConfigManager({
                     </button>
                     <button className="px-5 py-2.5 rounded-full bg-white text-slate-900 font-bold text-xs border border-slate-200 shadow-xs flex items-center gap-1.5">
                       <span className="text-[10px]">▷</span>
-                      <span>{heroData.secondaryCtaText || 'Watch Demo'}</span>
+                      <span>{heroData.secondaryCtaText || 'Log In'}</span>
                     </button>
                   </div>
                 </CardContent>
