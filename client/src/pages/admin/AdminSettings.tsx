@@ -226,7 +226,7 @@ export default function AdminSettings() {
             case 'lawyers':
                 return <AdminLawyers pendingLawyers={pendingLawyers} onApprove={handleApproveLawyer} />;
             case 'cases':
-                return <AdminCases cases={cases} />;
+                return <AdminCases cases={cases} onRefresh={fetchData} />;
             case 'payments':
             case 'payouts':
                 return <AdminPayments onRefreshOverview={fetchData} />;

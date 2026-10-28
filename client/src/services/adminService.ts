@@ -41,6 +41,11 @@ export const adminService = {
         return response.data;
     },
 
+    async recommendLawyer(caseId: string, lawyerId: string, note?: string) {
+        const response = await api.post(`/admin/cases/${caseId}/recommend-lawyer`, { lawyerId, note });
+        return response.data;
+    },
+
     async approvePayout(caseId: string, milestoneIndex: number) {
         const response = await api.post(`/admin/cases/${caseId}/milestones/${milestoneIndex}/approve-payout`);
         return response.data;

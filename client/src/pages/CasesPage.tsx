@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
     Briefcase, 
@@ -8,23 +8,24 @@ import {
     Coins, 
     FileText, 
     ExternalLink,
-    ShieldAlert,
-    Search,
-    Calendar,
-    MapPin,
-    Award,
-    ShieldCheck,
-    CreditCard,
-    Smartphone,
-    Building2,
-    ArrowRight,
-    Star,
-    ArrowLeft,
-    Lock,
-    Video,
-    Download,
-    CheckCircle2,
-    Languages
+    Search, 
+    Calendar, 
+    MapPin, 
+    ShieldCheck, 
+    ArrowRight, 
+    Star, 
+    ArrowLeft, 
+    Lock, 
+    Video, 
+    Download, 
+    CheckCircle2, 
+    Sparkles, 
+    Upload, 
+    X, 
+    HelpCircle,
+    Check,
+    ChevronRight,
+    Send
 } from "lucide-react";
 import DashboardLayout from "@/layout/DashboardLayout";
 import { UserNav } from "@/components/dashboard/UserNav";
@@ -37,7 +38,6 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { caseService, ICase } from "@/services/caseService";
-import { lawyerService } from "@/services/lawyerService";
 import { launchRazorpayCheckout, createSimulatedTestResponse } from "@/services/razorpayHelper";
 import { toast } from "sonner";
 import { getFileUrl, isImageFile, isPdfFile } from "@/lib/fileUtils";
@@ -45,6 +45,8 @@ import { getFileUrl, isImageFile, isPdfFile } from "@/lib/fileUtils";
 export default function CasesPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [cases, setCases] = useState<ICase[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedCase, setSelectedCase] = useState<ICase | null>(null);
@@ -52,33 +54,30 @@ export default function CasesPage() {
 
     // Start New Case Flow States
     const [showNewCaseFlow, setShowNewCaseFlow] = useState<boolean>(false);
-    const [lawyers, setLawyers] = useState<any[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All");
-    const [selectedLawyer, setSelectedLawyer] = useState<any>(null);
-
-    // Scheduling States
     const [caseTitle, setCaseTitle] = useState("");
-    const [caseDesc, setCaseDesc] = useState("");
-    const [bookingDate, setBookingDate] = useState<Date | null>(null);
-    const [bookingTime, setBookingTime] = useState<string>("");
-    const [submittingBooking, setSubmittingBooking] = useState(false);
+    const [caseCategory, setCaseCategory] = useState("Corporate");
+    const [casePriority, setCasePriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
+    const [targetBudget, setTargetBudget] = useState("");
+    const [caseDescription, setCaseDescription] = useState("");
+    const [courtName, setCourtName] = useState("");
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [isSubmittingCase, setIsSubmittingCase] = useState(false);
 
-    // Checkout Payment States
+    // Selection & Action states
+    const [isSelectingLawyer, setIsSelectingLawyer] = useState(false);
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-    const categories = ["All", "Corporate", "Criminal", "Family", "Civil", "IP Law", "Taxation"];
-    const timeSlots = ["09:30 AM", "11:00 AM", "02:30 PM", "04:00 PM"];
-
-    const getNext7Days = () => {
-        const days = [];
-        for (let i = 1; i <= 7; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() + i);
-            days.push(d);
-        }
-        return days;
-    };
+    const categories = [
+        "Corporate",
+        "Criminal",
+        "Family & Divorce",
+        "Civil Litigation",
+        "Real Estate & Property",
+        "IP & Copyright",
+        "Taxation",
+        "Labor & Employment",
+        "General Legal"
+    ];
 
     const fetchCases = useCallback(async (isSilent = false) => {
         if (!isSilent) setLoading(true);
@@ -86,7 +85,9 @@ export default function CasesPage() {
             const data = await caseService.getClientCases();
             setCases(data);
             setSelectedCase(prevSelected => {
-                if (!prevSelected) return null;
+                if (!prevSelected) {
+                    return data.length > 0 ? data[0] : null;
+                }
                 const updated = data.find(c => c._id === prevSelected._id);
                 return updated || prevSelected;
             });
@@ -100,182 +101,121 @@ export default function CasesPage() {
         }
     }, []);
 
-    const fetchLawyers = async () => {
-        try {
-            const data = await lawyerService.getPublicLawyers();
-            setLawyers(data);
-        } catch (error) {
-            console.error("Failed to fetch lawyers", error);
-            toast.error("Failed to load lawyers list");
-        }
-    };
-
     useEffect(() => {
         fetchCases();
-        fetchLawyers();
-
         const interval = setInterval(() => {
             fetchCases(true);
-        }, 5000);
-
+        }, 4000);
         return () => clearInterval(interval);
     }, [fetchCases]);
 
     useEffect(() => {
-        if (location.state) {
-            if (location.state.startBookingWithLawyer) {
-                setSelectedLawyer(location.state.startBookingWithLawyer);
-                setShowNewCaseFlow(true);
-                setSelectedCase(null);
-                window.history.replaceState({}, document.title);
-            } else if (location.state.startBookingFlow) {
-                setSelectedLawyer(null);
-                setShowNewCaseFlow(true);
-                setSelectedCase(null);
-                window.history.replaceState({}, document.title);
-            }
+        if (location.state?.startBookingFlow) {
+            setShowNewCaseFlow(true);
+            setSelectedCase(null);
+            window.history.replaceState({}, document.title);
         }
     }, [location.state]);
 
-    const handleApprovePlan = async () => {
-        if (!selectedCase) return;
-
-        try {
-            const updated = await caseService.approvePlan(selectedCase._id);
-            toast.success("Roadmap approved successfully! Work can now begin.");
-            fetchCases();
-            setSelectedCase(updated);
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || "Failed to approve plan");
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const filesArray = Array.from(e.target.files);
+            const validFiles = filesArray.filter(f => f.size <= 25 * 1024 * 1024);
+            if (validFiles.length < filesArray.length) {
+                toast.error("Some files exceeded the 25MB limit and were skipped.");
+            }
+            setSelectedFiles(prev => [...prev, ...validFiles].slice(0, 5));
         }
     };
 
-    const filteredLawyers = lawyers.filter(lawyer => {
-        const matchesSearch = 
-            (lawyer.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (lawyer.expertise || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (lawyer.location || "").toLowerCase().includes(searchQuery.toLowerCase());
-        
-        const matchesCategory = selectedCategory === "All" || 
-            (lawyer.expertise || "").toLowerCase().includes(selectedCategory.toLowerCase());
+    const handleRemoveFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
 
-        return matchesSearch && matchesCategory;
-    });
-
-    const filteredCases = cases.filter(c => 
-        (c.title || "").toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
-        (c.lawyer?.fullName || "").toLowerCase().includes(caseSearchQuery.toLowerCase())
-    );
-
-    const handleSendBookingRequest = async () => {
-        if (!selectedLawyer) return;
-        if (!caseTitle.trim() || !caseDesc.trim() || !bookingDate || !bookingTime) {
-            toast.error("Please fill in all details, choose a date, and select a time slot.");
+    const handleCreateCaseSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!caseTitle.trim()) {
+            toast.error("Please enter a case title");
+            return;
+        }
+        if (!caseDescription.trim() && selectedFiles.length === 0) {
+            toast.error("Please provide either a case brief or upload case documents.");
             return;
         }
 
-        setSubmittingBooking(true);
+        setIsSubmittingCase(true);
         try {
-            const hourlyRate = selectedLawyer.hourlyRate || 1000;
-            const serviceFee = 150;
-            const gst = hourlyRate * 0.18;
-            const totalAmount = Math.round(hourlyRate + serviceFee + gst);
+            const formData = new FormData();
+            formData.append("title", caseTitle.trim());
+            formData.append("description", caseDescription.trim() || "Brief uploaded in attached documents.");
+            formData.append("category", caseCategory);
+            formData.append("priority", casePriority);
+            if (targetBudget) formData.append("budget", targetBudget);
+            if (courtName) formData.append("court", courtName.trim());
 
-            const newCase = await caseService.bookLawyer({
-                lawyerId: selectedLawyer._id,
-                title: caseTitle.trim(),
-                description: caseDesc.trim(),
-                bookingDate: bookingDate.toISOString(),
-                bookingTime,
-                totalFee: totalAmount
+            selectedFiles.forEach(file => {
+                formData.append("documents", file);
             });
 
-            toast.info("Booking created! Opening secure Razorpay checkout...");
+            toast.info("Analyzing brief with AI & broadcasting to lawyers...");
+            const created = await caseService.createCaseWithFiles(formData);
 
-            // Launch Razorpay Checkout directly (matching Video Consultation flow)
-            try {
-                const orderRes = await caseService.createPaymentOrder(newCase._id);
-                const { order } = orderRes;
-
-                const launched = await launchRazorpayCheckout({
-                    order,
-                    onSuccess: async (paymentResp) => {
-                        try {
-                            await caseService.payAndConfirm(newCase._id, paymentResp);
-                            toast.success("Payment completed & Case Confirmed!");
-                        } catch (err: any) {
-                            console.error("Payment confirmation error:", err);
-                            toast.error(err.response?.data?.message || "Failed to confirm payment on server.");
-                        }
-                        setShowNewCaseFlow(false);
-                        setSelectedLawyer(null);
-                        setCaseTitle("");
-                        setCaseDesc("");
-                        setBookingDate(null);
-                        setBookingTime("");
-                        fetchCases();
-                    },
-                    onError: (err) => {
-                        console.error("Razorpay error:", err);
-                        toast.error(err?.message || "Razorpay payment encountered an error.");
-                        setShowNewCaseFlow(false);
-                        setSelectedLawyer(null);
-                        setCaseTitle("");
-                        setCaseDesc("");
-                        setBookingDate(null);
-                        setBookingTime("");
-                        fetchCases();
-                    },
-                    onDismiss: () => {
-                        toast.info("Booking saved under Pending Payment. You can pay anytime from your cases list.");
-                        setShowNewCaseFlow(false);
-                        setSelectedLawyer(null);
-                        setCaseTitle("");
-                        setCaseDesc("");
-                        setBookingDate(null);
-                        setBookingTime("");
-                        fetchCases();
-                    }
-                });
-
-                if (!launched) {
-                    setShowNewCaseFlow(false);
-                    setSelectedLawyer(null);
-                    setCaseTitle("");
-                    setCaseDesc("");
-                    setBookingDate(null);
-                    setBookingTime("");
-                    fetchCases();
-                }
-            } catch (orderErr: any) {
-                console.error("Order creation error:", orderErr);
-                toast.success("Booking request sent! You can complete payment anytime from your cases list.");
-                setShowNewCaseFlow(false);
-                setSelectedLawyer(null);
-                setCaseTitle("");
-                setCaseDesc("");
-                setBookingDate(null);
-                setBookingTime("");
-                fetchCases();
-            }
-        } catch (error: any) {
-            console.error("Booking error:", error);
-            toast.error(error.response?.data?.message || "Failed to submit booking request.");
+            toast.success("Case posted successfully! Lawyers can now review and approve.");
+            setShowNewCaseFlow(false);
+            setCaseTitle("");
+            setCaseDescription("");
+            setTargetBudget("");
+            setCourtName("");
+            setSelectedFiles([]);
+            await fetchCases();
+            setSelectedCase(created);
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.response?.data?.message || "Failed to submit case.");
         } finally {
-            setSubmittingBooking(false);
+            setIsSubmittingCase(false);
+        }
+    };
+
+    const handleSelectLawyer = async (lawyerId: string, lawyerName: string) => {
+        if (!selectedCase) return;
+        setIsSelectingLawyer(true);
+        try {
+            const updated = await caseService.selectLawyer(selectedCase._id, lawyerId);
+            toast.success(`Approval request sent to Adv. ${lawyerName}! Awaiting confirmation.`);
+            setSelectedCase(updated);
+            fetchCases(true);
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.response?.data?.message || "Failed to select lawyer");
+        } finally {
+            setIsSelectingLawyer(false);
+        }
+    };
+
+    const handleApprovePlan = async () => {
+        if (!selectedCase) return;
+        try {
+            const updated = await caseService.approvePlan(selectedCase._id);
+            toast.success("Action Roadmap approved! Work has commenced.");
+            setSelectedCase(updated);
+            fetchCases(true);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || "Failed to approve roadmap");
         }
     };
 
     const handleCheckoutPayment = async (targetCaseId?: string, simulateDirect = false) => {
-        if (!targetCaseId) return;
+        const cId = targetCaseId || selectedCase?._id;
+        if (!cId) return;
         setIsProcessingPayment(true);
         try {
-            const orderRes = await caseService.createPaymentOrder(targetCaseId);
+            const orderRes = await caseService.createPaymentOrder(cId);
             const { order } = orderRes;
 
             const completeCasePayment = async (paymentResp: any) => {
-                await caseService.payAndConfirm(targetCaseId, paymentResp);
-                toast.success("Payment completed & Booking Confirmed!");
+                await caseService.payAndConfirm(cId, paymentResp);
+                toast.success("Payment completed & Engagement Confirmed!");
                 fetchCases();
             };
 
@@ -294,35 +234,45 @@ export default function CasesPage() {
                 },
                 onError: (err) => {
                     console.error("Razorpay error:", err);
-                    toast.error(err?.message || "Razorpay payment encountered an error.");
+                    toast.error(err?.message || "Payment encountered an error.");
                     setIsProcessingPayment(false);
                 },
                 onDismiss: () => {
                     setIsProcessingPayment(false);
-                    toast.info("Payment was cancelled.");
+                    toast.info("Payment was dismissed. You can pay anytime from your case view.");
                 }
             });
 
             if (!launched) {
                 setIsProcessingPayment(false);
             }
-
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.message || error.message || "Payment processing failed.");
+            toast.error(error.response?.data?.message || "Payment processing failed.");
             setIsProcessingPayment(false);
         }
     };
 
+    const filteredCases = cases.filter(c => 
+        (c.title || "").toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
+        (c.category || "").toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
+        (c.lawyer?.fullName || "").toLowerCase().includes(caseSearchQuery.toLowerCase())
+    );
+
     return (
         <DashboardLayout userNav={<UserNav />}>
-            <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
+            <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Case Management</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Case Management</h1>
+                            <span className="bg-primary/10 text-primary text-[10px] font-black uppercase px-2.5 py-1 rounded-full border border-primary/20">
+                                AI-Powered Open Marketplace
+                            </span>
+                        </div>
                         <p className="text-slate-500 text-sm mt-1">
-                            Track case progress, verify lawyer roadmaps, monitor milestone payments, or schedule a new case consultation.
+                            Upload your legal case brief, get instant AI analysis, receive lawyer approvals in real-time, and track execution milestones.
                         </p>
                     </div>
                     {!showNewCaseFlow && (
@@ -331,358 +281,213 @@ export default function CasesPage() {
                                 setShowNewCaseFlow(true);
                                 setSelectedCase(null);
                             }}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold px-6 py-5 shadow-sm flex items-center gap-2 transition-all duration-200"
+                            className="bg-primary hover:bg-primary/90 text-white rounded-xl font-bold px-6 py-5 shadow-sm flex items-center gap-2 transition-all duration-200"
                         >
-                            <span>+ Start New Case</span>
+                            <Upload className="w-4 h-4" />
+                            <span>+ Post New Case with Documents</span>
                         </Button>
                     )}
                 </div>
 
                 {showNewCaseFlow ? (
-                    /* WIZARD FOR STARTING A NEW CASE */
-                    <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
+                    /* POST NEW CASE WIZARD */
+                    <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-8 animate-in fade-in duration-300">
                         <div className="flex items-center justify-between border-b border-border pb-4">
                             <button 
-                                onClick={() => {
-                                    if (selectedLawyer) {
-                                        setSelectedLawyer(null);
-                                    } else {
-                                        setShowNewCaseFlow(false);
-                                    }
-                                }}
+                                onClick={() => setShowNewCaseFlow(false)}
                                 className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 group"
                             >
                                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                                {selectedLawyer ? "Back to Lawyer List" : "Cancel & Back to Cases"}
+                                Cancel & Back to Cases
                             </button>
-                            <h2 className="text-xl font-black text-slate-900">
-                                {selectedLawyer ? "Schedule Case Consultation" : "Choose Your Legal Specialist"}
-                            </h2>
+                            <div className="text-right">
+                                <h2 className="text-xl font-black text-slate-900">Post Case to Legal Marketplace</h2>
+                                <p className="text-xs text-slate-400 font-semibold">Upload documentation for automatic AI summarization</p>
+                            </div>
                         </div>
 
-                        {!selectedLawyer ? (
-                            /* STEP 1: LAWYER LIST & DISCOVERY GRID */
-                            <div className="space-y-6">
-                                {/* Search Box */}
-                                <div className="relative group max-w-3xl mx-auto">
-                                    <div className="relative bg-slate-50 border border-border rounded-2xl p-3 shadow-inner flex flex-col sm:flex-row items-center gap-3">
-                                        <div className="flex-1 flex items-center gap-3 w-full">
-                                            <Search className="h-5 w-5 text-muted-foreground ml-2" />
-                                            <Input 
-                                                className="flex-1 bg-transparent border-none focus-visible:ring-0 text-base font-semibold placeholder:text-muted-foreground/60"
-                                                placeholder="Search lawyers by name, specialization, or location..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
+                        <form onSubmit={handleCreateCaseSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Title */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Case Title *</Label>
+                                    <Input 
+                                        required
+                                        value={caseTitle}
+                                        onChange={(e) => setCaseTitle(e.target.value)}
+                                        placeholder="e.g., Commercial Contract Breach & Recovery or Property Partition Dispute"
+                                        className="h-11 rounded-xl text-sm font-semibold bg-slate-50/50"
+                                    />
                                 </div>
 
-                                {/* Filters */}
-                                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-border">
-                                    {categories.map((cat) => (
-                                        <Button
-                                            key={cat}
-                                            variant={selectedCategory === cat ? "default" : "outline"}
-                                            className={`rounded-xl font-bold h-9 px-4 text-xs whitespace-nowrap transition-all ${
-                                                selectedCategory === cat 
-                                                ? "bg-primary text-white hover:bg-violet-800 shadow-sm" 
-                                                : "border-border text-muted-foreground hover:bg-slate-50"
-                                            }`}
-                                            onClick={() => setSelectedCategory(cat)}
-                                        >
-                                            {cat}
-                                        </Button>
-                                    ))}
+                                {/* Category */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Legal Category</Label>
+                                    <select
+                                        value={caseCategory}
+                                        onChange={(e) => setCaseCategory(e.target.value)}
+                                        className="w-full h-11 rounded-xl border border-input bg-slate-50/50 px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                    >
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
-                                {/* Grid of Lawyers */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {filteredLawyers.length > 0 ? (
-                                        filteredLawyers.map((lawyer) => (
-                                            <Card key={lawyer._id} className="rounded-2xl border border-border bg-white hover:shadow-md transition-all duration-300 overflow-hidden">
-                                                <CardContent className="p-6">
-                                                    <div className="flex gap-4">
-                                                        <div className="relative shrink-0">
-                                                            <Avatar className="h-16 w-16 rounded-2xl border border-border shrink-0">
-                                                                <AvatarImage 
-                                                                    src={lawyer.avatar ? `/lawyer${lawyer.avatar}` : ""} 
-                                                                    alt={lawyer.fullName} 
-                                                                    className="object-cover"
-                                                                />
-                                                                <AvatarFallback className="rounded-2xl bg-slate-100 text-slate-400">
-                                                                    <User className="h-8 w-8" />
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                            <div className="absolute -bottom-1 -right-1 h-4.5 w-4.5 rounded-full border-2 border-white bg-green-500"></div>
-                                                        </div>
-                                                        <div className="flex-1 space-y-3">
-                                                            <div className="flex items-start justify-between">
-                                                                <div>
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <h3 className="font-extrabold text-slate-900 text-base">{lawyer.fullName}</h3>
-                                                                        {lawyer.isVerified && <ShieldCheck className="h-4.5 w-4.5 text-primary" />}
-                                                                    </div>
-                                                                    <p className="text-[10px] text-primary font-extrabold uppercase tracking-wider">{lawyer.expertise || "General Practice"}</p>
-                                                                </div>
-                                                                <div className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-border text-xs font-bold">
-                                                                    <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                                                                    <span>{lawyer.rating || "5.0"}</span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-4 text-slate-500 text-xs font-semibold">
-                                                                <div className="flex items-center gap-1"><Clock size={13} /> {lawyer.experience || "10+ Yrs"} exp</div>
-                                                                <div className="flex items-center gap-1"><MapPin size={13} /> {lawyer.location || "Delhi"}</div>
-                                                            </div>
-                                                            <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
-                                                                <div>
-                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Consultation Fee</p>
-                                                                    <p className="text-base font-black text-slate-900 mt-1">₹{(lawyer.hourlyRate || 1000).toLocaleString()}/hr</p>
-                                                                </div>
-                                                                <Button 
-                                                                    onClick={() => setSelectedLawyer(lawyer)}
-                                                                    className="bg-primary text-white hover:bg-violet-800 rounded-xl font-bold text-xs h-9 px-4 flex items-center gap-1.5"
-                                                                >
-                                                                    <span>Book Now</span>
-                                                                    <ArrowRight size={13} />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full py-16 text-center text-slate-400">
-                                            <Briefcase size={36} className="mx-auto mb-2 text-slate-350" />
-                                            <p className="font-bold text-sm">No lawyers found matching your filters</p>
-                                        </div>
-                                    )}
+                                {/* Priority */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Urgency Level</Label>
+                                    <select
+                                        value={casePriority}
+                                        onChange={(e) => setCasePriority(e.target.value as any)}
+                                        className="w-full h-11 rounded-xl border border-input bg-slate-50/50 px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                    >
+                                        <option value="low">Standard / Low</option>
+                                        <option value="medium">Medium Priority</option>
+                                        <option value="high">High Priority</option>
+                                        <option value="urgent">Urgent / Immediate Hearing</option>
+                                    </select>
+                                </div>
+
+                                {/* Estimated Budget */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Estimated Budget (₹)</Label>
+                                    <Input 
+                                        type="number"
+                                        value={targetBudget}
+                                        onChange={(e) => setTargetBudget(e.target.value)}
+                                        placeholder="e.g. 5000"
+                                        className="h-11 rounded-xl text-sm font-semibold bg-slate-50/50"
+                                    />
+                                </div>
+
+                                {/* Court / Forum */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Jurisdiction / Court (Optional)</Label>
+                                    <Input 
+                                        value={courtName}
+                                        onChange={(e) => setCourtName(e.target.value)}
+                                        placeholder="e.g. District Court Bangalore or High Court Delhi"
+                                        className="h-11 rounded-xl text-sm font-semibold bg-slate-50/50"
+                                    />
                                 </div>
                             </div>
-                        ) : (
-                            /* STEP 2: SCHEDULING DETAILS & SLOTS SELECTION */
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                                {/* Left Side: Lawyer Info */}
-                                <div className="lg:col-span-4 space-y-6 bg-slate-50/50 border border-border p-6 rounded-3xl">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar className="h-16 w-16 rounded-2xl border border-border shrink-0">
-                                            <AvatarImage 
-                                                src={selectedLawyer.avatar ? `/lawyer${selectedLawyer.avatar}` : ""} 
-                                                alt={selectedLawyer.fullName} 
-                                                className="object-cover"
-                                            />
-                                            <AvatarFallback className="rounded-2xl bg-slate-50 text-slate-400">
-                                                <User className="h-8 w-8" />
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-1.5">
-                                                <h3 className="font-extrabold text-slate-900 text-base leading-none">{selectedLawyer.fullName}</h3>
-                                                {selectedLawyer.isVerified && <ShieldCheck className="h-4 w-4 text-violet-750" />}
-                                            </div>
-                                            <p className="text-xs text-primary font-extrabold uppercase tracking-widest mt-0.5">{selectedLawyer.expertise || "General Practice"}</p>
-                                        </div>
+
+                            {/* Description / Summary Input */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    Case Summary / Background Details
+                                </Label>
+                                <textarea
+                                    rows={4}
+                                    value={caseDescription}
+                                    onChange={(e) => setCaseDescription(e.target.value)}
+                                    placeholder="Describe the background of your dispute, key timeline events, specific legal relief sought, or opposing parties..."
+                                    className="w-full rounded-2xl border border-input bg-slate-50/50 p-4 text-sm font-medium leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                />
+                            </div>
+
+                            {/* Document Upload Area */}
+                            <div className="space-y-3">
+                                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <FileText className="w-3.5 h-3.5 text-primary" />
+                                    Upload Case Documents (PDF, Word DOCX/DOC, TXT)
+                                </Label>
+                                
+                                <div 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="border-2 border-dashed border-primary/30 hover:border-primary rounded-2xl p-8 text-center bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer space-y-2"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                                        <Upload className="w-6 h-6" />
                                     </div>
-                                    
-                                    <Separator />
-                                    
-                                    <div className="space-y-4 text-xs font-semibold text-slate-650">
-                                        {/* Core Ratings & Metadata */}
-                                        <div className="grid grid-cols-3 gap-2 py-1 bg-white border border-slate-150 rounded-xl p-3 shadow-sm text-center">
-                                            <div className="space-y-0.5">
-                                                <span className="text-[8px] uppercase font-bold text-slate-400">Rating</span>
-                                                <p className="text-slate-900 font-black flex items-center justify-center gap-1">
-                                                    <Star size={11} className="text-amber-500 fill-amber-500" />
-                                                    {selectedLawyer.rating || "5.0"}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-0.5 border-x border-slate-100">
-                                                <span className="text-[8px] uppercase font-bold text-slate-400">Experience</span>
-                                                <p className="text-slate-900 font-black flex items-center justify-center gap-1">
-                                                    <Clock size={11} className="text-primary" />
-                                                    {selectedLawyer.experience || "10+"}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <span className="text-[8px] uppercase font-bold text-slate-400">Location</span>
-                                                <p className="text-slate-900 font-black flex items-center justify-center gap-1 truncate max-w-[80px] mx-auto">
-                                                    <MapPin size={11} className="text-primary" />
-                                                    {selectedLawyer.location || "Remote"}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Biography */}
-                                        <div className="space-y-1">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Advocate Biography</span>
-                                            <p className="text-xs text-slate-600 leading-relaxed bg-white border border-slate-150 p-3.5 rounded-xl font-medium">{selectedLawyer.bio || "No professional biography provided."}</p>
-                                        </div>
-
-                                        {/* Practice Areas / Tags */}
-                                        <div className="space-y-1.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Practice Areas</span>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {(selectedLawyer.practiceAreas || ["Legal Consult", "Case Representation"]).map((tag: string) => (
-                                                    <Badge key={tag} variant="secondary" className="bg-slate-100 text-slate-600 border-none font-semibold text-[8px] px-2 rounded-md uppercase tracking-wider">
-                                                        {tag}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Bar Council & Memberships */}
-                                        <div className="space-y-1.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block flex items-center gap-1"><Award size={12} className="text-violet-750" /> Bar Memberships</span>
-                                            <div className="flex flex-col gap-1.5 text-slate-700 font-medium bg-white border border-slate-150 p-3.5 rounded-xl">
-                                                <span className="flex items-center gap-1.5">✓ Bar Council of India</span>
-                                                <span className="flex items-center gap-1.5">✓ Supreme Court Bar Association</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Languages */}
-                                        <div className="space-y-1.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block flex items-center gap-1"><Languages size={12} className="text-violet-750" /> Languages</span>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {(selectedLawyer.languages && selectedLawyer.languages.length > 0 ? selectedLawyer.languages : ["English", "Hindi"]).map((l: string) => (
-                                                    <Badge key={l} variant="outline" className="font-semibold text-[10px]">{l}</Badge>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <p className="text-sm font-extrabold text-slate-900">
+                                        Click to browse or drag & drop case briefs or contracts
+                                    </p>
+                                    <p className="text-xs text-slate-500 font-semibold">
+                                        PDF, Word (.docx, .doc), or text documents up to 25MB each (Max 5 files)
+                                    </p>
+                                    <input 
+                                        ref={fileInputRef}
+                                        type="file" 
+                                        multiple 
+                                        accept=".pdf,.doc,.docx,.txt,image/*" 
+                                        className="hidden" 
+                                        onChange={handleFileChange}
+                                    />
                                 </div>
 
-                                {/* Right Side: Schedule & Details Form */}
-                                <div className="lg:col-span-8 space-y-6">
-                                    <Card className="rounded-3xl border border-border">
-                                        <CardContent className="p-6 md:p-8 space-y-6">
-                                            <h3 className="text-lg font-bold text-slate-900 border-b border-border pb-3">Consultation Form</h3>
-                                            <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="case-title" className="font-bold text-xs text-slate-700">Case Title / Legal Topic</Label>
-                                                    <Input 
-                                                        id="case-title"
-                                                        placeholder="e.g. Property Dispute Plot 442-B, NDA Drafting, Trademark Search"
-                                                        value={caseTitle}
-                                                        onChange={(e) => setCaseTitle(e.target.value)}
-                                                        className="h-11 rounded-xl"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="case-desc" className="font-bold text-xs text-slate-700">Brief Description of Legal Needs</Label>
-                                                    <textarea 
-                                                        id="case-desc"
-                                                        rows={3}
-                                                        placeholder="Describe the details of your legal problem, background context, or specific questions you need answered..."
-                                                        value={caseDesc}
-                                                        onChange={(e) => setCaseDesc(e.target.value)}
-                                                        className="w-full border border-input rounded-xl p-3 text-sm focus:ring-1 focus:ring-ring outline-none min-h-[90px]"
-                                                    />
-                                                </div>
-
-                                                {/* Calendar Date Picker */}
-                                                <div className="space-y-2">
-                                                    <Label className="font-bold text-xs text-slate-700">Select Date</Label>
-                                                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                                                        {getNext7Days().map((day, idx) => {
-                                                            const isSelected = bookingDate && bookingDate.toDateString() === day.toDateString();
-                                                            return (
-                                                                <button
-                                                                    key={idx}
-                                                                    type="button"
-                                                                    onClick={() => setBookingDate(day)}
-                                                                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center shrink-0 w-16 transition-all ${
-                                                                        isSelected 
-                                                                        ? "border-primary bg-secondary text-primary ring-1 ring-violet-700" 
-                                                                        : "border-border hover:border-slate-350"
-                                                                    }`}
-                                                                >
-                                                                    <span className="text-[10px] uppercase font-bold text-slate-400 leading-none">
-                                                                        {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                                                                    </span>
-                                                                    <span className="text-lg font-black mt-1 leading-none">
-                                                                        {day.getDate()}
-                                                                    </span>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-
-                                                {/* Time Slots Selector */}
-                                                <div className="space-y-2">
-                                                    <Label className="font-bold text-xs text-slate-700">Available Slots</Label>
-                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                        {timeSlots.map((slot) => {
-                                                            const isSelected = bookingTime === slot;
-                                                            return (
-                                                                <button
-                                                                    key={slot}
-                                                                    type="button"
-                                                                    onClick={() => setBookingTime(slot)}
-                                                                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
-                                                                        isSelected 
-                                                                        ? "border-primary bg-secondary text-primary ring-1 ring-violet-700" 
-                                                                        : "border-border hover:border-slate-350 bg-white"
-                                                                    }`}
-                                                                >
-                                                                    {slot}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Price Details */}
-                                            <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 space-y-2 text-xs font-semibold text-slate-500">
-                                                <div className="flex justify-between">
-                                                    <span>Consultation Fee (1 hr)</span>
-                                                    <span className="text-slate-900 font-bold">₹{(selectedLawyer.hourlyRate || 1000).toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Vidhik Service Fee</span>
-                                                    <span className="text-slate-900 font-bold">₹150</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Taxes (GST 18%)</span>
-                                                    <span className="text-slate-900 font-bold">₹{((selectedLawyer.hourlyRate || 1000) * 0.18).toFixed(2)}</span>
-                                                </div>
-                                                <Separator />
-                                                <div className="flex justify-between text-sm font-black text-slate-900 pt-1">
-                                                    <span>Total Amount</span>
-                                                    <span className="text-primary">
-                                                        ₹{Math.round((selectedLawyer.hourlyRate || 1000) + 150 + ((selectedLawyer.hourlyRate || 1000) * 0.18)).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <Button
-                                                onClick={handleSendBookingRequest}
-                                                disabled={submittingBooking}
-                                                className="w-full h-12 bg-primary text-white hover:bg-violet-800 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all"
+                                {/* Selected files list */}
+                                {selectedFiles.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 pt-2">
+                                        {selectedFiles.map((file, idx) => (
+                                            <div 
+                                                key={idx}
+                                                className="bg-white border border-slate-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-xs text-xs font-bold text-slate-800"
                                             >
-                                                <Lock className="w-4 h-4" />
-                                                {submittingBooking 
-                                                    ? "Opening Razorpay..." 
-                                                    : `Pay ₹${Math.round((selectedLawyer.hourlyRate || 1000) + 150 + ((selectedLawyer.hourlyRate || 1000) * 0.18)).toLocaleString()} & Book`
-                                                }
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
+                                                <FileText className="w-4 h-4 text-primary shrink-0" />
+                                                <span className="truncate max-w-[200px]">{file.name}</span>
+                                                <span className="text-[10px] text-slate-400 font-medium">({(file.size / 1024).toFixed(0)} KB)</span>
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => handleRemoveFile(idx)}
+                                                    className="text-slate-400 hover:text-red-500 ml-1"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* AI Processing Note */}
+                            <div className="bg-gradient-to-r from-primary/10 via-indigo-50 to-secondary/30 border border-primary/20 rounded-2xl p-4 flex items-start gap-3">
+                                <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                                <div className="text-xs text-slate-700 leading-relaxed">
+                                    <span className="font-extrabold text-slate-900 block">AI Automated Case Summarization & Lawyer Matching</span>
+                                    Upon submission, Vidhik AI will securely parse your uploaded document, generate an executive legal analysis, and highlight the case to verified advocates. Multiple lawyers will review and submit their approval.
                                 </div>
                             </div>
-                        )}
+
+                            {/* Submit */}
+                            <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowNewCaseFlow(false)}
+                                    className="rounded-xl font-bold h-11 px-6"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={isSubmittingCase}
+                                    className="rounded-xl font-bold h-11 px-8 bg-primary hover:bg-primary/90 text-white shadow-sm flex items-center gap-2"
+                                >
+                                    {isSubmittingCase ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <span>Analyzing with AI & Posting...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="w-4 h-4" />
+                                            <span>Post Case to Marketplace</span>
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </form>
                     </div>
                 ) : (
                     /* CASES LIST & DETAIL VIEWS */
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                        
-                        {/* Left Column: Case List (4 Cols) */}
+                        {/* Left Column: Cases List */}
                         <div className="lg:col-span-4 bg-card border border-border rounded-3xl p-6 space-y-6 shadow-sm">
                             <div className="flex justify-between items-center">
                                 <h3 className="font-extrabold text-slate-900 text-lg">My Cases</h3>
-                                <Badge className="bg-secondary text-primary hover:bg-secondary text-[10px] font-black border-none px-2 py-0.5 rounded">
+                                <Badge className="bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-black border-none px-2 py-0.5 rounded">
                                     {cases.length} Total
                                 </Badge>
                             </div>
@@ -693,7 +498,7 @@ export default function CasesPage() {
                                     <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                                     <Input 
                                         className="pl-9 h-10 text-xs rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary font-semibold"
-                                        placeholder="Search cases or advocates..."
+                                        placeholder="Search cases or categories..."
                                         value={caseSearchQuery}
                                         onChange={(e) => setCaseSearchQuery(e.target.value)}
                                     />
@@ -707,566 +512,540 @@ export default function CasesPage() {
                                 </div>
                             ) : cases.length === 0 ? (
                                 <div className="py-16 text-center text-slate-400 border border-dashed border-border rounded-2xl bg-slate-50/50 p-6">
-                                    <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-primary mb-4 border border-border shadow-sm">
+                                    <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-4 border border-border shadow-sm">
                                         <Briefcase size={24} />
                                     </div>
                                     <p className="font-extrabold text-slate-900 text-base">No active cases</p>
-                                    <p className="text-xs text-slate-500 max-w-[220px] mx-auto mt-2 leading-relaxed font-semibold">Once you hire a lawyer for a case or book a consultation, it will show up here.</p>
+                                    <p className="text-xs text-slate-500 max-w-[220px] mx-auto mt-2 leading-relaxed font-semibold">
+                                        Post a case with documents to receive proposals from top advocates.
+                                    </p>
                                     <Button
                                         onClick={() => setShowNewCaseFlow(true)}
-                                        className="mt-5 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary hover:to-indigo-700 text-white rounded-xl font-bold text-xs h-10 px-6 shadow-lg shadow-sm/30"
+                                        className="mt-5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs h-10 px-6 shadow-sm"
                                     >
-                                        + Start First Case
+                                        + Post First Case
                                     </Button>
                                 </div>
                             ) : filteredCases.length === 0 ? (
-                                <div className="py-12 text-center text-slate-450">
+                                <div className="py-12 text-center text-slate-400">
                                     <Briefcase size={28} className="mx-auto mb-2 text-slate-300" />
                                     <p className="font-bold text-sm text-slate-500">No matching cases</p>
                                     <p className="text-xs text-slate-400 mt-1">Try adjusting your search query.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-                                    {filteredCases.map((c) => (
-                                        <div
-                                            key={c._id}
-                                            onClick={() => setSelectedCase(c)}
-                                            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                                                selectedCase?._id === c._id
-                                                    ? "border-primary bg-secondary/30 shadow-sm"
-                                                    : "border-border bg-card hover:border-slate-300 hover:shadow-sm"
-                                            }`}
-                                        >
-                                            <div className="flex gap-3">
-                                                <Avatar className="h-10 w-10 rounded-xl border border-slate-150 shrink-0">
-                                                    <AvatarImage 
-                                                        src={c.lawyer?.avatar ? (c.lawyer.avatar.startsWith('http') ? c.lawyer.avatar : (c.lawyer.avatar.startsWith('/') ? `/lawyer${c.lawyer.avatar}` : `/lawyer/${c.lawyer.avatar}`)) : ""} 
-                                                        alt={c.lawyer?.fullName || "Lawyer Avatar"} 
-                                                        className="object-cover"
-                                                    />
-                                                    <AvatarFallback className="rounded-xl bg-slate-50 text-slate-400">
-                                                        <User className="h-5 w-5" />
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex-1 min-w-0 space-y-1">
-                                                    <div className="flex justify-between items-start gap-1.5">
-                                                        <h4 className="font-extrabold text-slate-900 text-sm leading-snug truncate">{c.title}</h4>
+                                <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
+                                    {filteredCases.map((c) => {
+                                        const interestedCount = c.interestedLawyers?.length || 0;
+                                        return (
+                                            <div
+                                                key={c._id}
+                                                onClick={() => setSelectedCase(c)}
+                                                className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                                                    selectedCase?._id === c._id
+                                                        ? "border-primary bg-primary/5 shadow-sm"
+                                                        : "border-border bg-card hover:border-slate-300 hover:shadow-xs"
+                                                }`}
+                                            >
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <h4 className="font-extrabold text-slate-900 text-sm leading-snug line-clamp-2">
+                                                            {c.title}
+                                                        </h4>
                                                     </div>
-                                                    <p className="text-[10px] text-slate-500 font-semibold truncate">
-                                                        Adv. {c.lawyer?.fullName || "Legal Counsel"}
-                                                    </p>
-                                                    <div className="flex items-center gap-1.5 pt-1.5">
+
+                                                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                                                        <span>{c.category || "General Legal"}</span>
+                                                        <span className="font-bold text-slate-900">
+                                                            ₹{(c.totalFee || c.budget || 0).toLocaleString()}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between pt-1">
                                                         <Badge 
                                                             className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-none shadow-none ${
-                                                                c.status === 'pending_lawyer' 
-                                                                ? 'bg-amber-50 text-amber-700 border border-amber-200/50' 
-                                                                : c.status === 'pending_payment' 
-                                                                    ? 'bg-orange-50 text-orange-700 border border-orange-200/50' 
-                                                                    : c.status === 'active'
-                                                                        ? 'bg-secondary text-violet-705 border border-primary/20/50'
-                                                                        : 'bg-green-50 text-green-700 border border-green-200/50'
+                                                                c.status === 'open'
+                                                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                    : c.status === 'pending_lawyer' 
+                                                                        ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                                                        : c.status === 'pending_payment' 
+                                                                            ? 'bg-orange-50 text-orange-700 border border-orange-200' 
+                                                                            : c.status === 'active'
+                                                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                                : 'bg-slate-100 text-slate-700'
                                                             }`}
                                                         >
-                                                            {c.status === 'pending_lawyer' ? 'Awaiting Lawyer' : c.status === 'pending_payment' ? 'Awaiting Payment' : c.status}
+                                                            {c.status === 'open' 
+                                                                ? `Open (${interestedCount} Applied)`
+                                                                : c.status === 'pending_lawyer' 
+                                                                    ? 'Awaiting Lawyer' 
+                                                                    : c.status === 'pending_payment' 
+                                                                        ? 'Awaiting Payment' 
+                                                                        : c.status}
                                                         </Badge>
+
+                                                        {c.documents && c.documents.length > 0 && (
+                                                            <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                                                                <FileText className="w-3 h-3 text-slate-400" />
+                                                                {c.documents.length} doc{c.documents.length > 1 ? 's' : ''}
+                                                            </span>
+                                                        )}
                                                     </div>
+
+                                                    {/* Progress bar if active */}
+                                                    {c.status === 'active' && (
+                                                        <div className="pt-2 border-t border-slate-100">
+                                                            <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                                                <span>Progress</span>
+                                                                <span className="text-primary">{c.currentProgress}%</span>
+                                                            </div>
+                                                            <Progress value={c.currentProgress} className="h-1.5 bg-slate-100" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            
-                                            {/* Progress bar */}
-                                            <div className="mt-4 pt-3 border-t border-slate-50">
-                                                <div className="flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                                                    <span>Verification Progress</span>
-                                                    <span className="text-violet-705">{c.currentProgress}%</span>
-                                                </div>
-                                                <Progress value={c.currentProgress} className="h-1.5 bg-slate-100 [&>div]:bg-primary" />
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
 
-                        {/* Right Column: Case Details (8 Cols) */}
+                        {/* Right Column: Case Details */}
                         <div className="lg:col-span-8">
                             {selectedCase ? (
                                 <Card className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden">
                                     <CardContent className="p-6 md:p-8 space-y-8">
                                         
-                                        {/* Case Title and Status */}
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-border pb-6">
+                                        {/* Case Header */}
+                                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-border pb-6">
                                             <div className="space-y-1">
-                                                <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">{selectedCase.title}</h2>
-                                                <div className="flex items-center gap-2 mt-1.5">
-                                                    <span className="text-xs text-slate-400 font-semibold">Case Reference:</span>
-                                                    <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold">{selectedCase._id}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold">
+                                                        {selectedCase.category || "General Legal"}
+                                                    </Badge>
+                                                    <span className="text-xs text-slate-400 font-mono font-semibold">
+                                                        Ref: {selectedCase.filingNumber || selectedCase._id}
+                                                    </span>
                                                 </div>
+                                                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-tight mt-1">
+                                                    {selectedCase.title}
+                                                </h2>
+                                                <p className="text-xs text-slate-400 font-semibold">
+                                                    Posted on {new Date(selectedCase.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </p>
                                             </div>
-                                            <div className="flex flex-row items-center gap-6 shrink-0 bg-slate-50 border border-slate-150/40 rounded-2xl px-6 py-4">
+
+                                            <div className="flex items-center gap-4 shrink-0 bg-slate-50 border border-slate-200/60 rounded-2xl px-5 py-3">
                                                 <div>
-                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Case Status</p>
+                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
                                                     <Badge 
                                                         className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border-none shadow-none mt-1 ${
-                                                            selectedCase.status === 'pending_lawyer' 
-                                                            ? 'bg-amber-100 text-amber-800' 
-                                                            : selectedCase.status === 'pending_payment' 
-                                                                ? 'bg-orange-100 text-orange-800' 
-                                                                : selectedCase.status === 'active'
-                                                                    ? 'bg-secondary/80 text-primary'
-                                                                    : 'bg-green-100 text-green-800'
+                                                            selectedCase.status === 'open' 
+                                                                ? 'bg-blue-100 text-blue-800'
+                                                                : selectedCase.status === 'pending_lawyer' 
+                                                                    ? 'bg-amber-100 text-amber-800' 
+                                                                    : selectedCase.status === 'pending_payment' 
+                                                                        ? 'bg-orange-100 text-orange-800' 
+                                                                        : selectedCase.status === 'active'
+                                                                            ? 'bg-emerald-100 text-emerald-800'
+                                                                            : 'bg-slate-100 text-slate-800'
                                                         }`}
                                                     >
-                                                        {selectedCase.status === 'pending_lawyer' ? 'Awaiting Lawyer' : selectedCase.status === 'pending_payment' ? 'Awaiting Payment' : selectedCase.status}
+                                                        {selectedCase.status === 'open' ? 'Open for Lawyers' : selectedCase.status === 'pending_lawyer' ? 'Awaiting Confirmation' : selectedCase.status === 'pending_payment' ? 'Awaiting Payment' : selectedCase.status}
                                                     </Badge>
                                                 </div>
                                                 <div className="w-px h-8 bg-slate-200" />
                                                 <div>
-                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Contract Fee</p>
-                                                    <p className="text-sm font-black text-primary mt-1">₹{selectedCase.totalFee.toLocaleString()}</p>
+                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Contract Fee</p>
+                                                    <p className="text-base font-black text-primary mt-0.5">
+                                                        ₹{(selectedCase.totalFee || selectedCase.budget || 0).toLocaleString()}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
- 
-                                        {/* Lawyer Details card */}
-                                        <div className="bg-slate-50/50 border border-border p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                            <div className="flex items-center gap-4">
-                                                <Avatar className="h-14 w-14 rounded-xl border border-primary/20 shrink-0">
-                                                    <AvatarImage 
-                                                        src={selectedCase.lawyer?.avatar ? (selectedCase.lawyer.avatar.startsWith('http') ? selectedCase.lawyer.avatar : (selectedCase.lawyer.avatar.startsWith('/') ? `/lawyer${selectedCase.lawyer.avatar}` : `/lawyer/${selectedCase.lawyer.avatar}`)) : ""} 
-                                                        alt={selectedCase.lawyer?.fullName || "Lawyer"} 
-                                                        className="object-cover"
-                                                    />
-                                                    <AvatarFallback className="rounded-xl bg-secondary text-primary">
-                                                        <User className="h-7 w-7 text-primary/80" />
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div>
+
+                                        {/* AI LEGAL SUMMARY & ANALYSIS CARD */}
+                                        {selectedCase.aiSummary && (
+                                            <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 border border-primary/20 rounded-2xl p-6 space-y-4 shadow-xs">
+                                                <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <h4 className="font-extrabold text-slate-900 text-sm">{selectedCase.lawyer?.fullName}</h4>
-                                                        <span className="text-[9px] font-bold text-primary bg-secondary px-1.5 py-0.5 rounded border border-border uppercase tracking-wider">VERIFIED ADVOCATE</span>
-                                                    </div>
-                                                    <p className="text-xs text-slate-500 font-semibold mt-1">{selectedCase.lawyer?.title || "Senior Counsel"} • {selectedCase.lawyer?.expertise || "Corporate Specialist"}</p>
-                                                    <p className="text-[10px] text-slate-400 mt-1 font-bold">Contact: {selectedCase.lawyer?.email}</p>
-                                                </div>
-                                            </div>
-                                            <Button 
-                                                variant="outline" 
-                                                className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-50 h-9 px-4 gap-1.5"
-                                                onClick={() => navigate(`/lawyers/${selectedCase.lawyer?._id}`)}
-                                            >
-                                                <span>View Full Profile</span>
-                                                <ExternalLink size={12} />
-                                            </Button>
-                                        </div>
- 
-                                        {/* Scheduling/Date Details (if booking request) */}
-                                        {selectedCase.bookingDate && (
-                                            <div className="grid grid-cols-2 gap-4 bg-slate-55 bg-slate-50 border border-border rounded-2xl p-5 text-xs font-semibold text-slate-600 shadow-sm">
-                                                <div className="space-y-1">
-                                                    <p className="text-[9px] font-bold text-slate-405 text-slate-400 uppercase tracking-widest">Scheduled Consultation Date</p>
-                                                    <p className="text-sm font-black text-slate-900 flex items-center gap-1.5 mt-1.5">
-                                                        <Calendar className="h-4 w-4 text-primary" />
-                                                        {new Date(selectedCase.bookingDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                                    </p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-[9px] font-bold text-slate-405 text-slate-400 uppercase tracking-widest">Scheduled Consultation Time</p>
-                                                    <p className="text-sm font-black text-slate-900 flex items-center gap-1.5 mt-1.5">
-                                                        <Clock className="h-4 w-4 text-primary" />
-                                                        {selectedCase.bookingTime}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
- 
-                                        {/* Case Description */}
-                                        <div className="space-y-2">
-                                            <h4 className="font-bold text-slate-900 text-sm">Engagement Scope</h4>
-                                            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-200/60 rounded-xl p-4">{selectedCase.description}</p>
-                                        </div>
- 
-                                        <Separator />
-
-                                        {selectedCase.status === 'pending_lawyer' && (
-                                            /* BOOKING REQUEST SENT - AWAITING LAWYER */
-                                            <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 flex items-start gap-4">
-                                                <Clock size={24} className="text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-                                                <div className="space-y-2">
-                                                    <h4 className="font-extrabold text-amber-900 text-sm">Awaiting Lawyer Confirmation</h4>
-                                                    <p className="text-xs text-amber-700 leading-relaxed">
-                                                        We have sent your consultation details to Advocate <strong>{selectedCase.lawyer?.fullName}</strong>. Once they verify their calendar availability, the booking status will update and request payment details. We will notify you via email!
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {selectedCase.status === 'pending_payment' && (
-                                            /* BOOKING ACCEPTED - AWAITING PAYMENT */
-                                            <div className="bg-orange-50 border border-orange-200 rounded-3xl p-6 space-y-4">
-                                                <div className="flex items-start gap-4">
-                                                    <ShieldAlert size={24} className="text-orange-600 shrink-0 mt-0.5" />
-                                                    <div className="space-y-1">
-                                                        <h4 className="font-extrabold text-orange-900 text-sm">Consultation Confirmed! Awaiting Payment</h4>
-                                                        <p className="text-xs text-orange-700 leading-relaxed">
-                                                            Advocate <strong>{selectedCase.lawyer?.fullName}</strong> has accepted your consultation slot. Please complete the booking fee payment of <strong>₹{selectedCase.totalFee.toLocaleString()}</strong> to activate your case folder.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-wrap justify-end gap-3 pt-2">
-                                                    <Button 
-                                                        disabled={isProcessingPayment}
-                                                        onClick={() => handleCheckoutPayment(selectedCase._id, false)}
-                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl px-6 py-2.5 shadow-md shadow-emerald-100 text-xs flex items-center gap-2"
-                                                    >
-                                                        <Lock className="w-3.5 h-3.5" />
-                                                        {isProcessingPayment ? "Opening Razorpay..." : `Pay ₹${selectedCase.totalFee.toLocaleString()}`}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {selectedCase.status === 'active' && (
-                                            /* ACTIVE ROADMAP STEPPER & PROGRESS */
-                                            <div className="space-y-6 animate-in fade-in duration-300">
-                                                {/* Meeting Summary Document Card */}
-                                                {selectedCase.meetingSummaryUrl && (
-                                                    <div className="bg-secondary border border-border rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm animate-in fade-in duration-300">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-3 bg-secondary/80 rounded-xl text-violet-750 text-violet-750 text-primary">
-                                                                <FileText size={24} />
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-extrabold text-slate-900 text-sm">Consultation Meeting Summary Document</h4>
-                                                                <p className="text-xs text-slate-500 mt-1">Briefing document: <span className="font-bold text-slate-700">{selectedCase.meetingSummaryName}</span></p>
-                                                                <p className="text-[10px] text-slate-400 font-semibold">Uploaded on {selectedCase.meetingSummaryUploadedAt ? new Date(selectedCase.meetingSummaryUploadedAt).toLocaleDateString() : 'N/A'}</p>
-                                                            </div>
+                                                        <div className="w-7 h-7 rounded-lg bg-primary text-white flex items-center justify-center">
+                                                            <Sparkles className="w-4 h-4" />
                                                         </div>
-                                                        <a 
-                                                            href={getFileUrl(selectedCase.meetingSummaryUrl)}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="bg-primary hover:bg-violet-850 hover:bg-violet-800 text-white rounded-xl font-bold px-5 py-2.5 text-xs flex items-center gap-1.5 shadow-sm transition-all text-center shrink-0"
-                                                        >
-                                                            <Download size={14} />
-                                                            Download Summary Briefing
-                                                        </a>
+                                                        <div>
+                                                            <h4 className="font-extrabold text-slate-900 text-sm">Vidhik AI Case Intelligence Summary</h4>
+                                                            <p className="text-[10px] text-primary font-bold uppercase tracking-wider">Executive Legal Brief & Issue Extraction</p>
+                                                        </div>
                                                     </div>
-                                                )}
-
-                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                                    <div>
-                                                        <h3 className="font-bold text-slate-900 text-lg">Procedural Action Plan</h3>
-                                                        {selectedCase.meetingLink && (
-                                                            <Button
-                                                                onClick={() => navigate(`/cases/${selectedCase._id}/meet`)}
-                                                                className="mt-2 bg-primary hover:bg-violet-800 text-white rounded-xl font-bold px-4 py-2 text-xs flex items-center gap-2 shadow-sm"
-                                                            >
-                                                                <Video className="w-4 h-4" />
-                                                                <span>Join Video Consultation</span>
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                    
-                                                    <Badge variant={
-                                                        selectedCase.planApproved ? "default" : selectedCase.planSubmitted ? "secondary" : "destructive"
-                                                    } className="text-xs px-3 py-1 font-bold">
-                                                        {selectedCase.planApproved 
-                                                            ? "Active Plan" 
-                                                            : selectedCase.planSubmitted 
-                                                                ? "Roadmap Pending Your Approval" 
-                                                                : "Awaiting Lawyer Setup"}
+                                                    <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] font-bold">
+                                                        AI Verified
                                                     </Badge>
                                                 </div>
 
-                                                {!selectedCase.planSubmitted ? (
-                                                    /* NO ROADMAP YET - GATE ON MEETING SUMMARY */
-                                                    !selectedCase.meetingSummaryUrl ? (
-                                                        <div className="bg-amber-50/50 border border-amber-200 rounded-3xl p-8 text-center space-y-6">
-                                                            <Clock size={36} className="text-amber-600 mx-auto animate-pulse" />
-                                                            <div className="space-y-2">
-                                                                <h4 className="font-bold text-slate-900 text-sm">Consultation Call Pending</h4>
-                                                                <p className="text-xs text-slate-650 max-w-md mx-auto leading-relaxed font-semibold">
-                                                                    Consultation Call Pending - Awaiting meeting summary upload from your lawyer to initiate the roadmap.
-                                                                </p>
-                                                            </div>
-                                                            {selectedCase.meetingLink && (
-                                                                <div className="flex justify-center pt-2">
-                                                                    <Button
-                                                                        onClick={() => navigate(`/cases/${selectedCase._id}/meet`)}
-                                                                        className="bg-primary hover:bg-violet-850 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md shadow-sm"
-                                                                    >
-                                                                        <Video className="w-4 h-4" />
-                                                                        <span>Join Video Consultation Call</span>
-                                                                    </Button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="bg-slate-50 border border-border rounded-2xl p-8 text-center space-y-4">
-                                                            <Clock size={36} className="text-slate-350 mx-auto animate-pulse" />
-                                                            <div className="space-y-1">
-                                                                <h4 className="font-bold text-slate-900 text-sm">Lawyer is mapping out the roadmap...</h4>
-                                                                <p className="text-xs text-slate-500 max-w-md mx-auto leading-normal">
-                                                                    Advocate {selectedCase.lawyer?.fullName} has completed the consultation and uploaded the summary brief. They are currently structuring the detailed milestones and procedural stages for your work. Once submitted, you will review and approve the roadmap here.
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                ) : !selectedCase.planApproved ? (
-                                                    /* ROADMAP REQUIRES CLIENT APPROVAL */
-                                                    <div className="bg-amber-50/50 border border-amber-200 rounded-3xl p-6 space-y-6">
-                                                        <div className="flex items-start gap-4">
-                                                            <div className="p-2 bg-amber-100 rounded-xl text-amber-700 mt-1 shrink-0">
-                                                                <ShieldAlert size={20} />
-                                                            </div>
-                                                            <div className="space-y-1.5">
-                                                                <h4 className="font-bold text-amber-900 text-sm">Review & Approve Action Plan</h4>
-                                                                <p className="text-xs text-amber-700 leading-relaxed">
-                                                                    Your lawyer has proposed the following milestone breakdown. Review the tasks, progress contributions, and payouts. If they align with your expectations, click **Approve Action Plan** to initiate the legal engagement.
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                                <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-line bg-white/70 border border-slate-150 rounded-xl p-4">
+                                                    {selectedCase.aiSummary}
+                                                </p>
 
-                                                        {/* Proposed milestones preview */}
-                                                        <div className="space-y-3">
-                                                            {selectedCase.milestones.map((m, idx) => (
-                                                                <div key={idx} className="bg-white border border-amber-150 p-4 rounded-xl flex justify-between items-center gap-4 shadow-sm">
-                                                                    <div>
-                                                                        <h5 className="font-bold text-slate-900 text-xs">{idx + 1}. {m.title}</h5>
-                                                                        <p className="text-[11px] text-slate-500 mt-0.5">{m.description}</p>
-                                                                    </div>
-                                                                    <div className="text-right shrink-0">
-                                                                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest bg-amber-50 border border-amber-100 px-2 py-0.5 rounded">+{m.progressIncrement}% Progress</span>
-                                                                        <p className="text-xs font-black text-slate-900 mt-1">₹{m.payoutAmount.toLocaleString()}</p>
-                                                                    </div>
+                                                {selectedCase.aiKeyFacts && selectedCase.aiKeyFacts.length > 0 && (
+                                                    <div className="space-y-2 pt-1">
+                                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Key Legal Facts & Disputed Points</span>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            {selectedCase.aiKeyFacts.map((fact, idx) => (
+                                                                <div key={idx} className="bg-white/90 border border-slate-150 rounded-lg p-2.5 flex items-start gap-2 text-xs font-semibold text-slate-800">
+                                                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                                                    <span>{fact}</span>
                                                                 </div>
                                                             ))}
-                                                        </div>
-
-                                                        <div className="flex justify-end pt-3">
-                                                            <Button 
-                                                                onClick={handleApprovePlan}
-                                                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl px-6 py-2 shadow-lg shadow-indigo-100"
-                                                            >
-                                                                Approve Action Plan
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    /* ACTIVE ROADMAP STEPPER & PROGRESS */
-                                                    <div className="space-y-6 animate-in fade-in duration-300">
-                                                        
-                                                        {/* Progress Indicator */}
-                                                        <div className="bg-slate-50 border border-border p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                            <div>
-                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Overall Verification Progress</p>
-                                                                <h3 className="text-2xl font-black text-slate-900 mt-0.5">{selectedCase.currentProgress}% Work Completed</h3>
-                                                            </div>
-                                                            <div className="flex-1 max-w-md bg-slate-200 rounded-full h-3 overflow-hidden">
-                                                                <div 
-                                                                    className="bg-primary h-3 rounded-full transition-all duration-700" 
-                                                                    style={{ width: `${selectedCase.currentProgress}%` }}
-                                                                ></div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Milestones Stepper */}
-                                                        <div className="relative pl-6 border-l-2 border-slate-100 space-y-8 ml-3 py-2">
-                                                            {selectedCase.milestones.map((m, idx) => {
-                                                                const isCompleted = m.status === 'completed';
-                                                                const isInProgress = m.status === 'in_progress';
-                                                                
-                                                                return (
-                                                                    <div key={idx} className="relative">
-                                                                        {/* Dot */}
-                                                                        <div className={`absolute -left-[33px] top-1.5 h-4 w-4 rounded-full border-4 border-white ${
-                                                                            isCompleted 
-                                                                                ? "bg-green-500 shadow-md ring-4 ring-green-100" 
-                                                                                : isInProgress 
-                                                                                    ? "bg-primary animate-pulse ring-4 ring-violet-100" 
-                                                                                    : "bg-slate-300"
-                                                                        }`} />
-
-                                                                        <div className="bg-white border border-slate-200/60 rounded-2xl p-5 space-y-3 hover:shadow-md hover:border-slate-300 transition-all duration-200">
-                                                                            <div className="flex justify-between items-center gap-4">
-                                                                                <div>
-                                                                                    <span className="font-mono text-[9px] font-black text-slate-400">STAGE {idx + 1} ({m.progressIncrement}%)</span>
-                                                                                    <h4 className="font-bold text-slate-900 text-sm mt-0.5">{m.title}</h4>
-                                                                                </div>
-                                                                                <Badge className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border-none shadow-none ${
-                                                                                    isCompleted 
-                                                                                    ? "bg-green-50 text-green-700 hover:bg-green-50" 
-                                                                                    : isInProgress 
-                                                                                        ? "bg-secondary text-primary hover:bg-secondary" 
-                                                                                        : "bg-slate-50 text-slate-400 hover:bg-slate-50"
-                                                                                }`}>
-                                                                                    {m.status.replace('_', ' ')}
-                                                                                </Badge>
-                                                                            </div>
-
-                                                                            <p className="text-slate-500 text-xs leading-relaxed">{m.description}</p>
-
-                                                                            {/* Proof of Work and verification documents */}
-                                                                            {selectedCase.planApproved && (
-                                                                                <div className="border-t border-border pt-3 mt-2 space-y-3">
-                                                                                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                                                                        <div className="space-y-1 w-full">
-                                                                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verification Proof & Progress Updates</span>
-                                                                                            {m.proofDocs.length === 0 ? (
-                                                                                                <p className="text-xs text-amber-600 font-semibold flex items-center gap-1">
-                                                                                                    <AlertCircle size={12} />
-                                                                                                    Awaiting progress updates or files from lawyer.
-                                                                                                </p>
-                                                                                            ) : (
-                                                                                                <div className="space-y-3 w-full">
-                                                                                                    {m.proofDocs.map((doc, dIdx) => {
-                                                                                                        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.url);
-                                                                                                        return (
-                                                                                                            <div key={dIdx} className="space-y-2 border-b border-slate-100 pb-2 last:border-b-0 last:pb-0">
-                                                                                                                <div className="flex flex-wrap items-center gap-2">
-                                                                                                                    <a 
-                                                                                                                        href={getFileUrl(doc.url)}
-                                                                                                                        target="_blank"
-                                                                                                                        rel="noreferrer"
-                                                                                                                        className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1.5"
-                                                                                                                    >
-                                                                                                                        <FileText size={12} />
-                                                                                                                        <span>{doc.name}</span>
-                                                                                                                        <ExternalLink size={10} />
-                                                                                                                    </a>
-                                                                                                                    <span className="text-[9px] text-slate-400 font-semibold">({new Date(doc.uploadedAt).toLocaleString()})</span>
-                                                                                                                </div>
-                                                                                                                {doc.details && (
-                                                                                                                    <p className="text-[11px] text-slate-600 bg-slate-100/50 border border-slate-200/50 rounded-lg p-2.5 mt-1 leading-relaxed">
-                                                                                                                        {doc.details}
-                                                                                                                    </p>
-                                                                                                                )}
-                                                                                                                {isImg && (
-                                                                                                                    <div className="mt-2 rounded-xl overflow-hidden border border-border bg-slate-100 max-w-sm shadow-sm relative group">
-                                                                                                                        <img 
-                                                                                                                            src={getFileUrl(doc.url)} 
-                                                                                                                            alt={doc.name}
-                                                                                                                            className="max-h-48 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                                                                                                                        />
-                                                                                                                    </div>
-                                                                                                                )}
-                                                                                                            </div>
-                                                                                                        );
-                                                                                                    })}
-                                                                                                </div>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    {/* Payout status */}
-                                                                                    {isCompleted && (
-                                                                                        <div className="flex justify-between items-center p-3 rounded-xl border border-border bg-slate-50/30">
-                                                                                            <div>
-                                                                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Milestone Payment</span>
-                                                                                                <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                                                                                                    <Coins size={12} className="text-orange-500" />
-                                                                                                    ₹{m.payoutAmount.toLocaleString()}
-                                                                                                </p>
-                                                                                            </div>
-                                                                                            
-                                                                                            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded ${
-                                                                                                m.payoutStatus === 'approved' 
-                                                                                                    ? "bg-green-100 text-green-700" 
-                                                                                                    : m.payoutStatus === 'requested' 
-                                                                                                        ? "bg-amber-100 text-amber-700 animate-pulse" 
-                                                                                                        : "bg-slate-100 text-slate-500"
-                                                                                            }`}>
-                                                                                                {m.payoutStatus === 'approved' 
-                                                                                                    ? "Released (Paid)" 
-                                                                                                    : m.payoutStatus === 'requested' 
-                                                                                                        ? "Awaiting Admin Release" 
-                                                                                                        : "Pending Work Completion"}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
                                                         </div>
                                                     </div>
                                                 )}
                                             </div>
                                         )}
+
+                                        {/* UPLOADED CASE DOCUMENTS */}
+                                        {selectedCase.documents && selectedCase.documents.length > 0 && (
+                                            <div className="space-y-3">
+                                                <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                                                    <FileText className="w-4 h-4 text-primary" />
+                                                    Attached Case Documents ({selectedCase.documents.length})
+                                                </h4>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    {selectedCase.documents.map((doc, idx) => (
+                                                        <a 
+                                                            key={idx}
+                                                            href={getFileUrl(doc.url)} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-between group transition-all"
+                                                        >
+                                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                                                    <FileText className="w-4 h-4" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-xs font-bold text-slate-900 truncate group-hover:text-primary transition-colors">
+                                                                        {doc.name}
+                                                                    </p>
+                                                                    <span className="text-[10px] text-slate-400 font-semibold">{doc.docType || "Case Document"}</span>
+                                                                </div>
+                                                            </div>
+                                                            <Download className="w-4 h-4 text-slate-400 group-hover:text-primary shrink-0 ml-2" />
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* INTERESTED LAWYERS & APPROVALS (MARKETPLACE FLOW) */}
+                                        {selectedCase.status === 'open' && (
+                                            <div className="space-y-4 pt-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                                                            <ShieldCheck className="w-5 h-5 text-primary" />
+                                                            Lawyer Approvals & Expressions of Interest
+                                                        </h3>
+                                                        <p className="text-xs text-slate-500 font-semibold">
+                                                            Review advocates who have approved and applied to represent your case. Choose your preferred lawyer.
+                                                        </p>
+                                                    </div>
+                                                    <Badge className="bg-primary text-white text-xs font-bold px-3 py-1">
+                                                        {selectedCase.interestedLawyers?.length || 0} Applied
+                                                    </Badge>
+                                                </div>
+
+                                                {(!selectedCase.interestedLawyers || selectedCase.interestedLawyers.length === 0) ? (
+                                                    <div className="bg-blue-50/50 border border-blue-200 rounded-2xl p-6 text-center space-y-2">
+                                                        <Clock className="w-8 h-8 text-blue-600 mx-auto animate-pulse" />
+                                                        <h4 className="font-extrabold text-slate-900 text-sm">Your Case is Active on the Lawyer Marketplace</h4>
+                                                        <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                                                            Verified advocates in our network are reviewing your case documentation. As soon as lawyers approve your case, their proposals and rates will appear here in real-time.
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {selectedCase.interestedLawyers.map((item, idx) => {
+                                                            const lawyer = item.lawyer;
+                                                            if (!lawyer) return null;
+                                                            const isAiMatch = selectedCase.aiRecommendedLawyer?._id === lawyer._id;
+                                                            const isAdminRec = selectedCase.adminRecommendedLawyer?._id === lawyer._id;
+
+                                                            return (
+                                                                <div 
+                                                                    key={idx}
+                                                                    className={`rounded-2xl border p-5 transition-all space-y-3 ${
+                                                                        isAiMatch 
+                                                                            ? "bg-gradient-to-r from-purple-50/70 to-indigo-50/40 border-primary shadow-xs" 
+                                                                            : isAdminRec 
+                                                                                ? "bg-amber-50/50 border-amber-300"
+                                                                                : "bg-white border-slate-200 hover:border-slate-300"
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                                        <div className="flex items-center gap-3.5">
+                                                                            <Avatar className="h-12 w-12 rounded-xl border border-border shrink-0">
+                                                                                <AvatarImage 
+                                                                                    src={lawyer.avatar ? (lawyer.avatar.startsWith('http') ? lawyer.avatar : `/lawyer${lawyer.avatar}`) : ""} 
+                                                                                    alt={lawyer.fullName} 
+                                                                                />
+                                                                                <AvatarFallback className="rounded-xl bg-slate-100 font-bold">
+                                                                                    {lawyer.fullName?.charAt(0) || "A"}
+                                                                                </AvatarFallback>
+                                                                            </Avatar>
+                                                                            <div>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <h4 className="font-extrabold text-slate-900 text-sm">{lawyer.fullName}</h4>
+                                                                                    <ShieldCheck className="w-4 h-4 text-primary" />
+                                                                                    {isAiMatch && (
+                                                                                        <Badge className="bg-primary text-white text-[9px] font-black uppercase tracking-wider">
+                                                                                            ⭐ AI Best Match
+                                                                                        </Badge>
+                                                                                    )}
+                                                                                    {isAdminRec && (
+                                                                                        <Badge className="bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider">
+                                                                                            🛡️ Admin Recommended
+                                                                                        </Badge>
+                                                                                    )}
+                                                                                </div>
+                                                                                <p className="text-xs text-slate-500 font-semibold">
+                                                                                    {lawyer.expertise || "Specialist Advocate"} • {lawyer.experience || "10+ Yrs"} Experience • {lawyer.location || "High Court"}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="flex items-center gap-4 justify-between sm:justify-end">
+                                                                            <div className="text-right">
+                                                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Proposed Fee</span>
+                                                                                <span className="text-base font-black text-slate-900">
+                                                                                    ₹{(item.proposedFee || selectedCase.budget || selectedCase.totalFee).toLocaleString()}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            <Button
+                                                                                disabled={isSelectingLawyer}
+                                                                                onClick={() => handleSelectLawyer(lawyer._id, lawyer.fullName)}
+                                                                                className="rounded-xl font-bold text-xs h-10 px-5 bg-primary hover:bg-primary/90 text-white flex items-center gap-1.5 shadow-xs"
+                                                                            >
+                                                                                <span>Select Advocate</span>
+                                                                                <ChevronRight className="w-4 h-4" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Proposal note / AI Reason */}
+                                                                    {item.proposalNote && (
+                                                                        <div className="bg-white/80 border border-slate-150 rounded-xl p-3 text-xs text-slate-700 font-medium">
+                                                                            <span className="font-bold text-slate-900 mr-1.5">Advocate Pitch:</span>
+                                                                            {item.proposalNote}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {isAiMatch && selectedCase.aiRecommendationReason && (
+                                                                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-2.5 text-xs text-primary font-semibold flex items-center gap-2">
+                                                                            <Sparkles className="w-4 h-4 shrink-0" />
+                                                                            <span><strong>Why AI Recommends:</strong> {selectedCase.aiRecommendationReason}</span>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {isAdminRec && selectedCase.adminRecommendationNote && (
+                                                                        <div className="bg-amber-100/70 border border-amber-300 rounded-xl p-2.5 text-xs text-amber-900 font-semibold flex items-center gap-2">
+                                                                            <ShieldCheck className="w-4 h-4 shrink-0 text-amber-700" />
+                                                                            <span><strong>Admin Note:</strong> {selectedCase.adminRecommendationNote}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* AWAITING LAWYER CONFIRMATION */}
+                                        {selectedCase.status === 'pending_lawyer' && (
+                                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-start gap-4">
+                                                <Clock className="w-6 h-6 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                                                <div className="space-y-1.5 flex-1">
+                                                    <h4 className="font-extrabold text-amber-900 text-sm">
+                                                        Awaiting Confirmation from Adv. {selectedCase.lawyer?.fullName || "Selected Advocate"}
+                                                    </h4>
+                                                    <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                                                        You have selected Advocate <strong>{selectedCase.lawyer?.fullName}</strong>. We have sent the confirmation request to their portal. Once accepted, payment will be enabled to activate the roadmap.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* PENDING PAYMENT - PROCEED TO RAZORPAY */}
+                                        {selectedCase.status === 'pending_payment' && (
+                                            <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6 space-y-4">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                                                        <Lock className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h4 className="font-extrabold text-orange-950 text-base">
+                                                            Adv. {selectedCase.lawyer?.fullName} Accepted Your Case!
+                                                        </h4>
+                                                        <p className="text-xs text-orange-800 font-medium">
+                                                            Please complete the consultation and retainer fee payment. Funds remain securely escrowed under admin supervision until milestone verification.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-orange-200/60">
+                                                    <div>
+                                                        <span className="text-[10px] font-bold text-orange-700 uppercase tracking-widest block">Amount Payable</span>
+                                                        <span className="text-2xl font-black text-slate-900">
+                                                            ₹{selectedCase.totalFee.toLocaleString()}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                        <Button
+                                                            disabled={isProcessingPayment}
+                                                            onClick={() => handleCheckoutPayment(selectedCase._id, true)}
+                                                            variant="outline"
+                                                            className="rounded-xl font-bold text-xs h-11 px-4 border-orange-300 text-orange-900 hover:bg-orange-100"
+                                                        >
+                                                            Test / Instant Pay
+                                                        </Button>
+                                                        <Button
+                                                            disabled={isProcessingPayment}
+                                                            onClick={() => handleCheckoutPayment(selectedCase._id, false)}
+                                                            className="rounded-xl font-bold text-xs h-11 px-6 bg-primary hover:bg-primary/90 text-white flex-1 sm:flex-none flex items-center justify-center gap-2 shadow-sm"
+                                                        >
+                                                            <Lock className="w-4 h-4" />
+                                                            <span>Pay via Razorpay Secure</span>
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* ACTIVE CASE - VIDEO CONSULTATION & ACTION ROADMAP */}
+                                        {selectedCase.status === 'active' && (
+                                            <div className="space-y-8">
+                                                {/* Meeting link card */}
+                                                {selectedCase.meetingLink && (
+                                                    <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-white border border-emerald-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                                                <Video className="w-5 h-5" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-extrabold text-emerald-950 text-sm">Case Consultation Suite Active</h4>
+                                                                <p className="text-xs text-emerald-700 font-medium">Join the secure video consultation room with your advocate.</p>
+                                                            </div>
+                                                        </div>
+
+                                                        <Button
+                                                            onClick={() => navigate(`/cases/${selectedCase._id}/consultation`)}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs h-10 px-5 flex items-center gap-2 shrink-0 shadow-xs"
+                                                        >
+                                                            <Video className="w-4 h-4" />
+                                                            <span>Join Video Meeting</span>
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                                {/* ACTION ROADMAP & MILESTONES */}
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <h3 className="font-extrabold text-slate-900 text-base">Case Action Roadmap & Milestones</h3>
+                                                            <p className="text-xs text-slate-500 font-semibold">
+                                                                Track step-by-step progress submitted by your lawyer.
+                                                            </p>
+                                                        </div>
+                                                        <Badge className="bg-primary/10 text-primary border-none text-xs font-bold">
+                                                            {selectedCase.currentProgress}% Completed
+                                                        </Badge>
+                                                    </div>
+
+                                                    {!selectedCase.planSubmitted ? (
+                                                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-2">
+                                                            <Clock className="w-7 h-7 text-slate-400 mx-auto" />
+                                                            <h4 className="font-bold text-slate-800 text-sm">Lawyer Preparing Action Roadmap</h4>
+                                                            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                                                                Advocate {selectedCase.lawyer?.fullName} is outlining the milestone action plan. Once submitted, you will review and approve it here.
+                                                            </p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-4">
+                                                            {!selectedCase.planApproved && (
+                                                                <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between gap-4">
+                                                                    <div className="text-xs text-slate-800">
+                                                                        <span className="font-extrabold block text-slate-900">Roadmap Ready for Your Approval</span>
+                                                                        Please review the milestones below and click approve to authorize work.
+                                                                    </div>
+                                                                    <Button
+                                                                        onClick={handleApprovePlan}
+                                                                        className="bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs h-9 px-4 shrink-0"
+                                                                    >
+                                                                        Approve Roadmap
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="space-y-3">
+                                                                {selectedCase.milestones.map((m, mIdx) => (
+                                                                    <div 
+                                                                        key={mIdx}
+                                                                        className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2"
+                                                                    >
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                                                                    m.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                                                                                }`}>
+                                                                                    {mIdx + 1}
+                                                                                </div>
+                                                                                <h5 className="font-extrabold text-slate-900 text-sm">{m.title}</h5>
+                                                                            </div>
+                                                                            <Badge className={`text-[9px] font-bold uppercase ${
+                                                                                m.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                                                                            }`}>
+                                                                                {m.status}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <p className="text-xs text-slate-600 font-medium pl-8">{m.description}</p>
+                                                                        
+                                                                        {/* Proof docs if any */}
+                                                                        {m.proofDocs && m.proofDocs.length > 0 && (
+                                                                            <div className="pl-8 pt-2 flex flex-wrap gap-2">
+                                                                                {m.proofDocs.map((doc, dIdx) => (
+                                                                                    <a
+                                                                                        key={dIdx}
+                                                                                        href={getFileUrl(doc.url)}
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                        className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-700 flex items-center gap-1.5"
+                                                                                    >
+                                                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                                                                        <span>Proof: {doc.name}</span>
+                                                                                    </a>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <div className="space-y-6 animate-in fade-in duration-500">
-                                    {/* Stats grid */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Active Cases</span>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary">
-                                                    <Briefcase size={20} />
-                                                </div>
-                                                <span className="text-2xl font-black text-slate-900">{cases.filter(c => c.status === 'active').length}</span>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Pending Actions</span>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary">
-                                                    <Clock size={20} />
-                                                </div>
-                                                <span className="text-2xl font-black text-slate-900">
-                                                    {cases.filter(c => c.status === 'pending_payment' || c.status === 'pending_lawyer').length}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Completed</span>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary">
-                                                    <CheckCircle2 size={20} />
-                                                </div>
-                                                <span className="text-2xl font-black text-slate-900">{cases.filter(c => c.status === 'completed').length}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Select a Case Hero Panel */}
-                                    <div className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm text-center space-y-6 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/80 rounded-full blur-3xl -z-10" />
-                                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/30 rounded-full blur-3xl -z-10" />
-                                        
-                                        <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto text-primary border border-border shadow-sm">
-                                            <Briefcase size={32} />
-                                        </div>
-                                        
-                                        <div className="space-y-2">
-                                            <h3 className="font-extrabold text-slate-900 text-xl tracking-tight">Select a Case from the Sidebar</h3>
-                                            <p className="text-slate-500 text-xs max-w-md mx-auto leading-relaxed font-semibold">
-                                                Choose one of your listed active legal engagements or consultation bookings on the left to manage step-by-step roadmaps, join live video meetings, review progress updates, and approve milestones.
-                                            </p>
-                                        </div>
-
-                                        <div className="pt-6 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-lg mx-auto">
-                                            <div className="flex items-start gap-3">
-                                                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-secondary text-violet-750 font-black text-[10px] shrink-0 border border-border shadow-sm">01</span>
-                                                <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
-                                                    Select a case or booking to load the lawyer's professional details and consultation slots.
-                                                </p>
-                                            </div>
-                                            <div className="flex items-start gap-3">
-                                                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-secondary text-violet-750 font-black text-[10px] shrink-0 border border-border shadow-sm">02</span>
-                                                <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
-                                                    Follow visual timeline stages, join Jitsi video links, and release payouts once milestones are achieved.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div className="bg-card border border-border rounded-3xl p-12 text-center text-slate-400">
+                                    <Briefcase className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                                    <h3 className="font-bold text-slate-700 text-base">Select a case to view details</h3>
+                                    <p className="text-xs text-slate-400 mt-1">Pick a case from the list on the left to view documentation, AI analysis, and advocate proposals.</p>
                                 </div>
                             )}
                         </div>
-
                     </div>
                 )}
             </div>

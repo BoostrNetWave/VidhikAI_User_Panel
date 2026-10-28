@@ -300,12 +300,61 @@ export const toggleConsultantVisibility = async (req: Request, res: Response) =>
 export const getAllCases = async (_req: Request, res: Response) => {
     try {
         const cases = await Case.find({})
-            .populate('client', 'fullName email')
-            .populate('lawyer', 'fullName email bankName accountNumber ifsc')
+            .populate('client', 'fullName email phone location')
+            .populate('lawyer', 'fullName email bankName accountNumber ifsc phone location title expertise rating experience')
+            .populate('interestedLawyers.lawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate')
+            .populate('aiRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate')
+            .populate('adminRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate')
             .sort({ createdAt: -1 });
         res.json(cases);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching cases' });
+    }
+};
+
+// @desc    Admin recommends a lawyer for a case
+// @route   POST /api/admin/cases/:id/recommend-lawyer
+export const recommendLawyerForCase = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { lawyerId, note } = req.body;
+
+        const kase = await Case.findById(id);
+        if (!kase) {
+            res.status(404).json({ message: 'Case not found' });
+            return;
+        }
+
+        const lawyer = await User.findById(lawyerId);
+        if (!lawyer) {
+            res.status(404).json({ message: 'Lawyer not found' });
+            return;
+        }
+
+        kase.adminRecommendedLawyer = lawyerId;
+        kase.adminRecommendationNote = note || `Admin team recommends Adv. ${lawyer.fullName} based on verified litigation record.`;
+        await kase.save();
+
+        const populated = await Case.findById(kase._id)
+            .populate('client', 'fullName email phone location')
+            .populate('lawyer', 'fullName email bankName accountNumber ifsc phone location title expertise rating experience')
+            .populate('interestedLawyers.lawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate')
+            .populate('aiRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate')
+            .populate('adminRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate');
+
+        // Notify client
+        await Notification.create({
+            userId: kase.client.toString(),
+            userRole: 'user',
+            title: 'Admin Recommended a Lawyer',
+            message: `Admin has recommended Adv. ${lawyer.fullName} for your case "${kase.title}".`,
+            type: 'case',
+            link: `/cases`
+        });
+
+        res.json({ message: 'Lawyer recommendation saved successfully', kase: populated });
+    } catch (error) {
+        res.status(500).json({ message: 'Error setting lawyer recommendation' });
     }
 };
 

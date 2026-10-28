@@ -16,22 +16,47 @@ export interface IMilestone {
     completedAt?: string;
 }
 
+export interface ILawyerProfile {
+    _id: string;
+    fullName: string;
+    email: string;
+    phone?: string;
+    location?: string;
+    title?: string;
+    expertise?: string;
+    avatar?: string;
+    rating?: number;
+    experience?: string;
+    casesWon?: number;
+    hourlyRate?: number;
+    bio?: string;
+}
+
+export interface IInterestedLawyer {
+    lawyer: ILawyerProfile;
+    appliedAt: string;
+    proposalNote?: string;
+    proposedFee?: number;
+    estimatedTimeline?: string;
+    status?: 'applied' | 'selected' | 'rejected';
+}
+
+export interface ICaseDocument {
+    name: string;
+    url: string;
+    size?: number;
+    uploadedAt: string;
+    docType?: string;
+}
+
 export interface ICase {
     _id: string;
     title: string;
     description: string;
-    client: string;
-    lawyer: {
-        _id: string;
-        fullName: string;
-        email: string;
-        phone?: string;
-        location?: string;
-        title?: string;
-        expertise?: string;
-        avatar?: string;
-    };
-    status: 'pending_lawyer' | 'pending_payment' | 'active' | 'completed' | 'cancelled';
+    client: string | { _id: string; fullName: string; email: string; phone?: string; location?: string };
+    lawyer?: ILawyerProfile;
+    status: 'open' | 'pending_lawyer' | 'pending_payment' | 'active' | 'completed' | 'cancelled';
+    budget?: number;
     totalFee: number;
     currentProgress: number;
     planSubmitted: boolean;
@@ -42,16 +67,19 @@ export interface ICase {
     filingNumber?: string;
     nextHearingDate?: string;
     priority?: 'low' | 'medium' | 'high' | 'urgent';
+    aiSummary?: string;
+    aiKeyFacts?: string[];
+    aiRecommendedSpecialization?: string;
+    aiRecommendedLawyer?: ILawyerProfile;
+    aiRecommendationReason?: string;
+    adminRecommendedLawyer?: ILawyerProfile;
+    adminRecommendationNote?: string;
+    interestedLawyers?: IInterestedLawyer[];
+    documents?: ICaseDocument[];
     notes?: {
         text: string;
         createdAt: string;
         createdBy?: string;
-    }[];
-    documents?: {
-        name: string;
-        url: string;
-        uploadedAt: string;
-        docType?: string;
     }[];
     bookingDate?: string;
     bookingTime?: string;
@@ -76,6 +104,15 @@ export const caseService = {
         return response.data;
     },
 
+    async createCaseWithFiles(formData: FormData): Promise<ICase> {
+        const response = await api.post('/cases', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    },
+
     async createCase(data: {
         title: string;
         description: string;
@@ -84,10 +121,21 @@ export const caseService = {
         filingNumber?: string;
         nextHearingDate?: string;
         priority?: string;
+        budget?: number;
         lawyerId?: string;
         totalFee?: number;
     }): Promise<ICase> {
         const response = await api.post('/cases', data);
+        return response.data;
+    },
+
+    async selectLawyer(caseId: string, lawyerId: string): Promise<ICase> {
+        const response = await api.post(`/cases/${caseId}/select-lawyer`, { lawyerId });
+        return response.data;
+    },
+
+    async applyToCase(caseId: string, data: { proposalNote?: string; proposedFee?: number; estimatedTimeline?: string }): Promise<ICase> {
+        const response = await api.post(`/cases/${caseId}/apply`, data);
         return response.data;
     },
 

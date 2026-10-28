@@ -9,6 +9,7 @@ import {
     getPublicLawyers, 
     verifyUser, 
     getAllCases, 
+    recommendLawyerForCase,
     approveMilestonePayout, 
     rejectMilestonePayout, 
     getPublicLawyerById,
@@ -52,6 +53,7 @@ router.post('/approve-lawyer/:id', protect, adminOnly, approveLawyer);
 router.post('/lawyers/:id/toggle-consultant', protect, adminOnly, toggleConsultantVisibility);
 router.post('/verify-user/:id', protect, adminOnly, verifyUser);
 router.get('/cases', protect, adminOnly, getAllCases);
+router.post('/cases/:id/recommend-lawyer', protect, adminOnly, recommendLawyerForCase);
 router.post('/cases/:id/milestones/:index/approve-payout', protect, adminOnly, approveMilestonePayout);
 router.post('/cases/:id/milestones/:index/reject-payout', protect, adminOnly, rejectMilestonePayout);
 
