@@ -128,6 +128,12 @@ export const extractTextFromDocument = async (file: { originalname: string; mime
         if (text.length > 50) return text;
     }
 
+    // Image Files (PNG, JPG, JPEG, WEBP, GIF, BMP)
+    if (/^(png|jpe?g|webp|gif|bmp|tiff)$/i.test(ext) || mime.startsWith('image/')) {
+        console.log(`[Text Extractor] File is an image (${filename}). Returning image metadata reference.`);
+        return `[Image Attachment: ${filename} (${mime || 'image/' + ext})]`;
+    }
+
     // 7. General Plain Text, Markdown, CSV, TSV
     try {
         const text = file.buffer.toString('utf8');

@@ -15,6 +15,7 @@ export interface LLMRequest {
     maxTokens?: number;
     feature?: string; // 'default' | 'chatbot' | 'doc_gen' | 'doc_review' or custom key
     userId?: string;
+    images?: { mimeType: string; base64: string }[];
 }
 
 export interface LLMResponse {
@@ -233,7 +234,26 @@ class LLMService {
         if (request.history && request.history.length > 0) {
             messages.push(...request.history);
         }
-        messages.push({ role: 'user', content: request.userPrompt });
+
+        if (request.images && request.images.length > 0) {
+            const userContent: any[] = [
+                { type: 'text', text: request.userPrompt }
+            ];
+            for (const img of request.images) {
+                userContent.push({
+                    type: 'image_url',
+                    image_url: {
+                        url: img.base64.startsWith('data:') 
+                            ? img.base64 
+                            : `data:${img.mimeType || 'image/png'};base64,${img.base64}`,
+                        detail: 'auto'
+                    }
+                });
+            }
+            messages.push({ role: 'user', content: userContent });
+        } else {
+            messages.push({ role: 'user', content: request.userPrompt });
+        }
 
         const completionParams: any = {
             model: resolvedModel,
@@ -300,7 +320,26 @@ class LLMService {
         if (request.history && request.history.length > 0) {
             messages.push(...request.history);
         }
-        messages.push({ role: 'user', content: request.userPrompt });
+
+        if (request.images && request.images.length > 0) {
+            const userContent: any[] = [
+                { type: 'text', text: request.userPrompt }
+            ];
+            for (const img of request.images) {
+                userContent.push({
+                    type: 'image_url',
+                    image_url: {
+                        url: img.base64.startsWith('data:') 
+                            ? img.base64 
+                            : `data:${img.mimeType || 'image/png'};base64,${img.base64}`,
+                        detail: 'auto'
+                    }
+                });
+            }
+            messages.push({ role: 'user', content: userContent });
+        } else {
+            messages.push({ role: 'user', content: request.userPrompt });
+        }
 
         const completion = await client.chat.completions.create({
             model: model,
@@ -341,6 +380,21 @@ class LLMService {
             throw new Error('OpenRouter API key is missing. Please configure it in AI Infrastructure settings or set OPENROUTER_API_KEY.');
         }
 
+        let userContent: any = request.userPrompt;
+        if (request.images && request.images.length > 0) {
+            userContent = [
+                { type: 'text', text: request.userPrompt },
+                ...request.images.map(img => ({
+                    type: 'image_url',
+                    image_url: {
+                        url: img.base64.startsWith('data:') 
+                            ? img.base64 
+                            : `data:${img.mimeType || 'image/png'};base64,${img.base64}`
+                    }
+                }))
+            ];
+        }
+
         const res = await axios.post(
             'https://openrouter.ai/api/v1/chat/completions',
             {
@@ -348,7 +402,7 @@ class LLMService {
                 messages: [
                     { role: 'system', content: systemPrompt },
                     ...(request.history || []),
-                    { role: 'user', content: request.userPrompt }
+                    { role: 'user', content: userContent }
                 ],
                 temperature,
                 max_tokens: maxTokens
@@ -469,7 +523,19 @@ class LLMService {
                 });
             }
         }
-        contents.push({ role: 'user', parts: [{ text: request.userPrompt }] });
+        const userParts: any[] = [{ text: request.userPrompt }];
+        if (request.images && request.images.length > 0) {
+            for (const img of request.images) {
+                const rawBase64 = img.base64.replace(/^data:image\/\w+;base64,/, '');
+                userParts.push({
+                    inlineData: {
+                        mimeType: img.mimeType || 'image/png',
+                        data: rawBase64
+                    }
+                });
+            }
+        }
+        contents.push({ role: 'user', parts: userParts });
 
         const requestBody: any = {
             contents,

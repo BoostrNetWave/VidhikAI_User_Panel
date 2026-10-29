@@ -20,7 +20,9 @@ import {
     selectLawyer,
     applyToCase,
     addCaseNote,
-    requestMilestonePayout
+    requestMilestonePayout,
+    reanalyzeCase,
+    uploadCaseDocuments
 } from '../controllers/caseController';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -78,5 +80,7 @@ router.get('/:id/signals', getSignals);
 router.post('/:id/signals/clear', clearSignals);
 router.get('/:id', getCaseById);
 router.put('/:id/approve-plan', approvePlan);
+router.post('/:id/documents', upload.array('documents', 5), uploadCaseDocuments);
+router.post('/:id/reanalyze', reanalyzeCase);
 
 export default router;

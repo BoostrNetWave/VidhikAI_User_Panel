@@ -350,6 +350,7 @@ export const createCase = async (req: any, res: Response): Promise<void> => {
         // Process uploaded files
         const documents: any[] = [];
         let extractedTexts: string[] = [];
+        const imageFiles: { mimeType: string; base64: string; filename: string }[] = [];
 
         if (req.files && Array.isArray(req.files)) {
             for (const file of req.files) {
@@ -358,23 +359,37 @@ export const createCase = async (req: any, res: Response): Promise<void> => {
                     await saveFileToGridFS(file.filename, file.path, file.mimetype);
 
                     const fileUrl = `/uploads/${file.filename}`;
+                    const isImg = /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(file.originalname) || (file.mimetype && file.mimetype.startsWith('image/'));
+                    const isPdf = /\.pdf$/i.test(file.originalname) || (file.mimetype && file.mimetype.includes('pdf'));
+                    const isWord = /\.(doc|docx)$/i.test(file.originalname) || (file.mimetype && file.mimetype.includes('word'));
+
                     documents.push({
                         name: file.originalname,
                         url: fileUrl,
                         size: file.size,
                         uploadedAt: new Date(),
-                        docType: file.mimetype.includes('pdf') ? 'PDF' : file.mimetype.includes('word') ? 'Word' : 'Document'
+                        docType: isPdf ? 'PDF' : isWord ? 'Word' : isImg ? 'Image' : 'Document'
                     });
 
-                    // Extract text for AI analysis
                     const fileBuffer = fs.readFileSync(file.path);
-                    const docText = await extractTextFromDocument({
-                        originalname: file.originalname,
-                        mimetype: file.mimetype,
-                        buffer: fileBuffer
-                    });
-                    if (docText && docText.trim().length > 0) {
-                        extractedTexts.push(`--- File: ${file.originalname} ---\n${docText.slice(0, 3000)}`);
+
+                    if (isImg) {
+                        imageFiles.push({
+                            mimeType: file.mimetype || 'image/png',
+                            base64: fileBuffer.toString('base64'),
+                            filename: file.originalname
+                        });
+                        extractedTexts.push(`[Attached Document Image: "${file.originalname}" (${file.mimetype || 'image'}) - Attached for visual inspection]`);
+                    } else {
+                        // Extract text for AI analysis
+                        const docText = await extractTextFromDocument({
+                            originalname: file.originalname,
+                            mimetype: file.mimetype,
+                            buffer: fileBuffer
+                        });
+                        if (docText && docText.trim().length > 0) {
+                            extractedTexts.push(`--- Document: ${file.originalname} ---\n${docText.slice(0, 4000)}`);
+                        }
                     }
                 } catch (fileErr) {
                     console.warn(`[Case Upload] Error processing file ${file.originalname}:`, fileErr);
@@ -397,49 +412,43 @@ export const createCase = async (req: any, res: Response): Promise<void> => {
             location: l.location || 'Pan India'
         }));
 
-        // AI Summarization & Lawyer Recommendation
+        // AI Summarization & Legal Relevance Verification
         let aiSummary = '';
         let aiKeyFacts: string[] = [];
         let aiRecommendedSpecialization = category || 'General Legal';
         let aiRecommendedLawyerId: string | undefined = undefined;
         let aiRecommendationReason = '';
+        let isLegalRelated = true;
+        let nonLegalReason = '';
 
         try {
             const combinedContext = [
                 `Title: ${title}`,
                 `Category: ${category || 'General Legal'}`,
                 `User Description: ${description || 'Not provided'}`,
-                extractedTexts.length > 0 ? `Uploaded Case Documents Content:\n${extractedTexts.join('\n\n')}` : ''
+                extractedTexts.length > 0 ? `Uploaded Case Documents Content:\n${extractedTexts.join('\n\n')}` : 'No document attachments or readable text.'
             ].join('\n\n');
 
-            const systemPrompt = `You are Vidhik AI Senior Legal Counsel. Analyze the legal case details and uploaded documents.
-Provide:
-1. "summary": A concise executive summary of the case (2-3 clear paragraphs explaining facts, core dispute, and legal posture).
-2. "keyFacts": An array of 3 to 5 crucial bullet points summarizing core evidence, disputed claims, and legal statutory points.
-3. "recommendedSpecialization": The exact legal practice area (e.g. Criminal Defense, Corporate Law, Real Estate Disputes, Family Law, IP Rights).
-4. "recommendedLawyerId": Choose the single best lawyer from the provided list below whose expertise and profile best matches this case.
-5. "recommendationReason": A 2-sentence rationale explaining why this lawyer is the top recommendation.
-
-Available Lawyers:
-${JSON.stringify(lawyersContext, null, 2)}
-
-Respond ONLY with valid JSON with keys: "summary", "keyFacts", "recommendedSpecialization", "recommendedLawyerId", "recommendationReason".`;
+            const systemPrompt = getCaseAISystemPrompt(lawyersContext);
 
             const aiResp = await llmService.generate({
                 userPrompt: combinedContext,
                 systemPrompt,
                 feature: 'case_summary',
-                temperature: 0.3
+                temperature: 0.2,
+                images: imageFiles.slice(0, 3)
             });
 
             if (aiResp && aiResp.content) {
                 try {
                     const cleaned = aiResp.content.replace(/```json|```/g, '').trim();
                     const parsed = JSON.parse(cleaned);
+                    if (typeof parsed.isLegalRelated === 'boolean') isLegalRelated = parsed.isLegalRelated;
+                    if (parsed.nonLegalReason) nonLegalReason = parsed.nonLegalReason;
                     if (parsed.summary) aiSummary = parsed.summary;
                     if (Array.isArray(parsed.keyFacts)) aiKeyFacts = parsed.keyFacts;
                     if (parsed.recommendedSpecialization) aiRecommendedSpecialization = parsed.recommendedSpecialization;
-                    if (parsed.recommendedLawyerId && availableLawyers.some(l => l._id.toString() === parsed.recommendedLawyerId)) {
+                    if (isLegalRelated && parsed.recommendedLawyerId && availableLawyers.some(l => l._id.toString() === parsed.recommendedLawyerId)) {
                         aiRecommendedLawyerId = parsed.recommendedLawyerId;
                         aiRecommendationReason = parsed.recommendationReason || 'Highest match for required case specialization and tribunal experience.';
                     }
@@ -453,19 +462,25 @@ Respond ONLY with valid JSON with keys: "summary", "keyFacts", "recommendedSpeci
 
         // Fallback AI summary if model was unavailable
         if (!aiSummary) {
-            aiSummary = description 
-                ? `Case Overview: ${description.slice(0, 500)}. Case file uploaded and prepared for review by legal practitioners.`
-                : 'Case details submitted with attached supporting documentation. Ready for review by legal specialists.';
+            if (documents.length > 0) {
+                aiSummary = `Case Brief: ${title}. ${documents.length} document(s) uploaded. Case file is prepared for advocate review and legal assessment.`;
+            } else {
+                aiSummary = description 
+                    ? `Case Overview: ${description.slice(0, 500)}. Case file uploaded and prepared for review by legal practitioners.`
+                    : 'Case details submitted with attached supporting documentation. Ready for review by legal specialists.';
+            }
         }
         if (aiKeyFacts.length === 0) {
-            aiKeyFacts = [
-                `Filed under domain: ${category || 'General Legal'}`,
+            aiKeyFacts = isLegalRelated ? [
+                `Filed under domain: ${aiRecommendedSpecialization || category || 'General Legal'}`,
                 `Priority level: ${priority || 'Medium'}`,
                 documents.length > 0 ? `${documents.length} supporting legal document(s) attached` : 'Direct brief submitted by client'
+            ] : [
+                'Non-legal document or attachment detected',
+                'Awaiting submission of valid legal documentation or dispute particulars'
             ];
         }
-        if (!aiRecommendedLawyerId && availableLawyers.length > 0) {
-            // Match by category or rating
+        if (isLegalRelated && !aiRecommendedLawyerId && availableLawyers.length > 0) {
             const matched = availableLawyers.find(l => 
                 (l.expertise || '').toLowerCase().includes((category || '').toLowerCase())
             ) || availableLawyers[0];
@@ -494,10 +509,12 @@ Respond ONLY with valid JSON with keys: "summary", "keyFacts", "recommendedSpeci
             planApproved: false,
             milestones: [],
             documents,
+            isLegalDocument: isLegalRelated !== false,
+            nonLegalReason: nonLegalReason || '',
             aiSummary,
             aiKeyFacts,
             aiRecommendedSpecialization,
-            aiRecommendedLawyer: aiRecommendedLawyerId || undefined,
+            aiRecommendedLawyer: isLegalRelated ? (aiRecommendedLawyerId || undefined) : undefined,
             aiRecommendationReason,
             interestedLawyers: [],
             notes: []
@@ -844,6 +861,236 @@ export const clearSignals = async (req: any, res: Response): Promise<void> => {
         const { id } = req.params;
         await Signal.deleteMany({ caseId: id });
         res.json({ message: 'Signals cleared successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+/**
+ * Re-run AI Analysis & Document Verification for an existing case
+ */
+export const reanalyzeCase = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const kase = await Case.findById(id);
+        if (!kase) {
+            res.status(404).json({ message: 'Case not found' });
+            return;
+        }
+
+        const availableLawyers = await User.find({ role: 'lawyer' })
+            .select('_id fullName expertise rating experience bio specializations casesWon location hourlyRate')
+            .limit(20);
+
+        const lawyersContext = availableLawyers.map(l => ({
+            id: l._id.toString(),
+            name: l.fullName,
+            expertise: l.expertise || 'General Law',
+            rating: l.rating || 5.0,
+            experience: l.experience || '5+ years'
+        }));
+
+        const imageFiles: { mimeType: string; base64: string; filename: string }[] = [];
+        const extractedTexts: string[] = [];
+
+        if (kase.documents && kase.documents.length > 0) {
+            for (const doc of kase.documents) {
+                try {
+                    const clean = doc.url.split('?')[0].split('#')[0];
+                    const filename = clean.split('/').filter(Boolean).pop();
+                    if (!filename) continue;
+
+                    const possiblePaths = [
+                        path.resolve(__dirname, '../uploads', filename),
+                        path.resolve(__dirname, '../../uploads', filename),
+                        path.resolve(__dirname, '../../../uploads', filename),
+                        path.resolve(process.cwd(), 'uploads', filename),
+                        path.resolve(process.cwd(), 'server/uploads', filename),
+                        path.resolve('d:/BooterNetWave/VidhikAI/user-admin2/server/uploads', filename),
+                        path.resolve('d:/BooterNetWave/VidhikAI/user-admin2/uploads', filename)
+                    ];
+
+                    const foundPath = possiblePaths.find(p => fs.existsSync(p));
+                    if (foundPath) {
+                        const fileBuffer = fs.readFileSync(foundPath);
+                        const isImg = /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(filename) || (doc.docType === 'Image');
+                        if (isImg) {
+                            const ext = filename.split('.').pop()?.toLowerCase();
+                            imageFiles.push({
+                                mimeType: ext === 'png' ? 'image/png' : 'image/jpeg',
+                                base64: fileBuffer.toString('base64'),
+                                filename: doc.name || filename
+                            });
+                            extractedTexts.push(`[Attached Document Image: "${doc.name || filename}"]`);
+                        } else {
+                            const docText = await extractTextFromDocument({
+                                originalname: doc.name || filename,
+                                mimetype: doc.docType?.toLowerCase().includes('pdf') ? 'application/pdf' : 'application/octet-stream',
+                                buffer: fileBuffer
+                            });
+                            if (docText && docText.trim().length > 0) {
+                                extractedTexts.push(`--- Document: ${doc.name || filename} ---\n${docText.slice(0, 4000)}`);
+                            }
+                        }
+                    } else {
+                        extractedTexts.push(`[Attached Document: "${doc.name || filename}"]`);
+                    }
+                } catch (e) {
+                    console.warn('[Reanalyze Case] Error processing doc:', e);
+                }
+            }
+        }
+
+        const combinedContext = [
+            `Title: ${kase.title}`,
+            `Category: ${kase.category || 'General Legal'}`,
+            `User Description: ${kase.description || 'Not provided'}`,
+            extractedTexts.length > 0 ? `Uploaded Case Documents Content:\n${extractedTexts.join('\n\n')}` : 'No readable document text available.'
+        ].join('\n\n');
+
+        const systemPrompt = getCaseAISystemPrompt(lawyersContext);
+
+        const aiResp = await llmService.generate({
+            userPrompt: combinedContext,
+            systemPrompt,
+            feature: 'case_summary',
+            temperature: 0.2,
+            images: imageFiles.slice(0, 3)
+        });
+
+        if (aiResp && aiResp.content) {
+            try {
+                const cleaned = aiResp.content.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(cleaned);
+                if (typeof parsed.isLegalRelated === 'boolean') kase.isLegalDocument = parsed.isLegalRelated;
+                if (parsed.nonLegalReason) kase.nonLegalReason = parsed.nonLegalReason;
+                if (parsed.summary) kase.aiSummary = parsed.summary;
+                if (Array.isArray(parsed.keyFacts)) kase.aiKeyFacts = parsed.keyFacts;
+                if (parsed.recommendedSpecialization) kase.aiRecommendedSpecialization = parsed.recommendedSpecialization;
+                if (kase.isLegalDocument && parsed.recommendedLawyerId && availableLawyers.some(l => l._id.toString() === parsed.recommendedLawyerId)) {
+                    kase.aiRecommendedLawyer = parsed.recommendedLawyerId;
+                    kase.aiRecommendationReason = parsed.recommendationReason || 'Highest match for required case specialization and tribunal experience.';
+                }
+            } catch {
+                kase.aiSummary = aiResp.content.slice(0, 1000);
+            }
+        }
+
+        await kase.save();
+        res.status(200).json(kase);
+    } catch (error: any) {
+        console.error('[Reanalyze Error]:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Upload additional documents to an existing case and re-analyze
+ */
+export const uploadCaseDocuments = async (req: any, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const kase = await Case.findById(id);
+        if (!kase) {
+            res.status(404).json({ message: 'Case not found' });
+            return;
+        }
+
+        if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+            res.status(400).json({ message: 'No documents provided' });
+            return;
+        }
+
+        const newDocs: any[] = [];
+        const imageFiles: { mimeType: string; base64: string; filename: string }[] = [];
+        const extractedTexts: string[] = [];
+
+        for (const file of req.files) {
+            try {
+                await saveFileToGridFS(file.filename, file.path, file.mimetype);
+                const fileUrl = `/uploads/${file.filename}`;
+                const isImg = /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(file.originalname) || (file.mimetype && file.mimetype.startsWith('image/'));
+                const isPdf = /\.pdf$/i.test(file.originalname) || (file.mimetype && file.mimetype.includes('pdf'));
+                const isWord = /\.(doc|docx)$/i.test(file.originalname) || (file.mimetype && file.mimetype.includes('word'));
+
+                newDocs.push({
+                    name: file.originalname,
+                    url: fileUrl,
+                    size: file.size,
+                    uploadedAt: new Date(),
+                    docType: isPdf ? 'PDF' : isWord ? 'Word' : isImg ? 'Image' : 'Document'
+                });
+
+                const fileBuffer = fs.readFileSync(file.path);
+                if (isImg) {
+                    imageFiles.push({
+                        mimeType: file.mimetype || 'image/png',
+                        base64: fileBuffer.toString('base64'),
+                        filename: file.originalname
+                    });
+                    extractedTexts.push(`[Attached Document Image: "${file.originalname}" (${file.mimetype || 'image'})]`);
+                } else {
+                    const docText = await extractTextFromDocument({
+                        originalname: file.originalname,
+                        mimetype: file.mimetype,
+                        buffer: fileBuffer
+                    });
+                    if (docText && docText.trim().length > 0) {
+                        extractedTexts.push(`--- Document: ${file.originalname} ---\n${docText.slice(0, 4000)}`);
+                    }
+                }
+            } catch (err) {
+                console.warn('[Add Case Doc] File processing error:', err);
+            }
+        }
+
+        kase.documents.push(...newDocs);
+
+        // Re-analyze
+        const availableLawyers = await User.find({ role: 'lawyer' })
+            .select('_id fullName expertise rating experience bio specializations casesWon location hourlyRate')
+            .limit(20);
+
+        const lawyersContext = availableLawyers.map(l => ({
+            id: l._id.toString(),
+            name: l.fullName,
+            expertise: l.expertise || 'General Law',
+            rating: l.rating || 5.0,
+            experience: l.experience || '5+ years'
+        }));
+
+        const combinedContext = [
+            `Title: ${kase.title}`,
+            `Category: ${kase.category || 'General Legal'}`,
+            `User Description: ${kase.description || 'Not provided'}`,
+            extractedTexts.length > 0 ? `Newly Uploaded Documents:\n${extractedTexts.join('\n\n')}` : ''
+        ].join('\n\n');
+
+        try {
+            const aiResp = await llmService.generate({
+                userPrompt: combinedContext,
+                systemPrompt: getCaseAISystemPrompt(lawyersContext),
+                feature: 'case_summary',
+                temperature: 0.2,
+                images: imageFiles.slice(0, 3)
+            });
+
+            if (aiResp && aiResp.content) {
+                const cleaned = aiResp.content.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(cleaned);
+                if (typeof parsed.isLegalRelated === 'boolean') kase.isLegalDocument = parsed.isLegalRelated;
+                if (parsed.nonLegalReason) kase.nonLegalReason = parsed.nonLegalReason;
+                if (parsed.summary) kase.aiSummary = parsed.summary;
+                if (Array.isArray(parsed.keyFacts)) kase.aiKeyFacts = parsed.keyFacts;
+                if (parsed.recommendedSpecialization) kase.aiRecommendedSpecialization = parsed.recommendedSpecialization;
+            }
+        } catch (aiErr) {
+            console.warn('[Re-analysis] Error:', aiErr);
+        }
+
+        await kase.save();
+        res.status(200).json(kase);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

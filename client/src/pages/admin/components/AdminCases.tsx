@@ -16,7 +16,8 @@ import {
     User, 
     ChevronRight,
     X,
-    Filter
+    Filter,
+    AlertCircle
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { toast } from 'sonner';
@@ -298,37 +299,57 @@ export function AdminCases({ cases = [], onRefresh }: AdminCasesProps) {
 
                                 <CardContent className="p-6 space-y-6">
                                     {/* AI CASE SUMMARY AUDIT */}
-                                    {selectedCase.aiSummary && (
-                                        <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 border border-primary/20 rounded-2xl p-5 space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Sparkles className="w-4 h-4 text-primary" />
-                                                    <span className="text-xs font-extrabold text-foreground">AI Legal Brief & Issue Summary</span>
-                                                </div>
-                                                <Badge className="bg-primary/10 text-primary border-none text-[9px] font-bold">
-                                                    Platform AI
-                                                </Badge>
-                                            </div>
+                                    {selectedCase.aiSummary && (() => {
+                                        const isNonLegal = selectedCase.isLegalDocument === false || 
+                                            selectedCase.aiSummary.startsWith('⚠️') || 
+                                            selectedCase.aiSummary.includes('Non-Legal Document Detected');
 
-                                            <p className="text-xs text-slate-700 leading-relaxed font-medium bg-white/80 border border-slate-150 rounded-xl p-3">
-                                                {selectedCase.aiSummary}
-                                            </p>
-
-                                            {selectedCase.aiKeyFacts && selectedCase.aiKeyFacts.length > 0 && (
-                                                <div className="space-y-1.5 pt-1">
-                                                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Identified Key Claims & Facts</span>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                                                        {selectedCase.aiKeyFacts.map((fact: string, idx: number) => (
-                                                            <div key={idx} className="bg-white/90 border border-slate-150 rounded-lg p-2 text-xs font-semibold text-slate-800 flex items-start gap-1.5">
-                                                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                                                <span>{fact}</span>
-                                                            </div>
-                                                        ))}
+                                        return (
+                                            <div className={`border rounded-2xl p-5 space-y-3 ${
+                                                isNonLegal 
+                                                    ? 'bg-amber-50/90 border-amber-300' 
+                                                    : 'bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 border-primary/20'
+                                            }`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        {isNonLegal ? <AlertCircle className="w-4 h-4 text-amber-600" /> : <Sparkles className="w-4 h-4 text-primary" />}
+                                                        <span className={`text-xs font-extrabold ${isNonLegal ? 'text-amber-950' : 'text-foreground'}`}>
+                                                            {isNonLegal ? '⚠️ Non-Legal Document Detected' : 'AI Legal Brief & Issue Summary'}
+                                                        </span>
                                                     </div>
+                                                    <Badge className={`border-none text-[9px] font-bold ${
+                                                        isNonLegal ? 'bg-amber-100 text-amber-800' : 'bg-primary/10 text-primary'
+                                                    }`}>
+                                                        {isNonLegal ? 'Validation Alert' : 'Platform AI'}
+                                                    </Badge>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
+
+                                                <p className={`text-xs leading-relaxed font-medium border rounded-xl p-3 ${
+                                                    isNonLegal ? 'text-amber-950 bg-amber-100/50 border-amber-200' : 'text-slate-700 bg-white/80 border-slate-150'
+                                                }`}>
+                                                    {selectedCase.aiSummary}
+                                                </p>
+
+                                                {selectedCase.aiKeyFacts && selectedCase.aiKeyFacts.length > 0 && (
+                                                    <div className="space-y-1.5 pt-1">
+                                                        <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                                                            {isNonLegal ? 'Validation Findings' : 'Identified Key Claims & Facts'}
+                                                        </span>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                                            {selectedCase.aiKeyFacts.map((fact: string, idx: number) => (
+                                                                <div key={idx} className={`border rounded-lg p-2 text-xs font-semibold flex items-start gap-1.5 ${
+                                                                    isNonLegal ? 'bg-amber-100/50 border-amber-200 text-amber-900' : 'bg-white/90 border-slate-150 text-slate-800'
+                                                                }`}>
+                                                                    {isNonLegal ? <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" /> : <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />}
+                                                                    <span>{fact}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* ATTACHED DOCUMENTS */}
                                     {selectedCase.documents && selectedCase.documents.length > 0 && (
