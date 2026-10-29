@@ -157,9 +157,13 @@ function App() {
                 <Route path="/lawyers/booking/:id" element={<LawyerBooking />} />
                 <Route path="/lawyers/booking-success" element={<LawyerBookingSuccess />} />
                 <Route path="/cases" element={<CasesPage />} />
+                <Route path="/cases/:id" element={<CasesPage />} />
                 <Route path="/cases/:id/meet" element={<ConsultationMeeting />} />
+                <Route path="/cases/:id/consultation" element={<ConsultationMeeting />} />
                 <Route path="/consultations" element={<ConsultationsPage />} />
                 <Route path="/consultations/:id/meet" element={<ConsultationRoom />} />
+                <Route path="/consultations/:id/consultation" element={<ConsultationRoom />} />
+                <Route path="/consultation-room/:id" element={<ConsultationRoom />} />
                 <Route path="/billing" element={<BillingPlans />} />
                 <Route path="/billing/checkout" element={<BillingCheckout />} />
                 <Route path="/support" element={<MySupportTicketsPage />} />
@@ -176,6 +180,7 @@ function App() {
                     </AdminProtectedRoute>
                 } />
                 
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <Toaster position="top-center" />
         </BrowserRouter>

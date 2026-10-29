@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { 
     Briefcase, 
     AlertCircle, 
@@ -45,6 +45,7 @@ import { getFileUrl, isImageFile, isPdfFile } from "@/lib/fileUtils";
 export default function CasesPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { id: routeCaseId } = useParams<{ id: string }>();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [cases, setCases] = useState<ICase[]>([]);
@@ -85,6 +86,10 @@ export default function CasesPage() {
             const data = await caseService.getClientCases();
             setCases(data);
             setSelectedCase(prevSelected => {
+                if (routeCaseId) {
+                    const fromRoute = data.find(c => c._id === routeCaseId);
+                    if (fromRoute) return fromRoute;
+                }
                 if (!prevSelected) {
                     return data.length > 0 ? data[0] : null;
                 }
@@ -926,7 +931,7 @@ export default function CasesPage() {
                                         {selectedCase.status === 'active' && (
                                             <div className="space-y-8">
                                                 {/* Meeting link card */}
-                                                {selectedCase.meetingLink && (
+                                                {(selectedCase.meetingLink || selectedCase.status === 'active') && (
                                                     <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-white border border-emerald-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">

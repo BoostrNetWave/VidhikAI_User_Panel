@@ -320,7 +320,7 @@ export default function ConsultationMeeting() {
         const initMeeting = async () => {
             try {
                 setLoading(true);
-                const data = await caseService.getCaseById(id!);
+                const data = await caseService.getCaseById(id || '');
                 setCaseData(data);
                 
                 // Let backend know client has joined consultation
@@ -494,7 +494,7 @@ export default function ConsultationMeeting() {
         );
     }
 
-    const sharedDocs = caseData.milestones.flatMap((m) => m.proofDocs || []);
+    const sharedDocs = [...((caseData.milestones || []).flatMap((m) => m?.proofDocs || [])), ...(caseData.documents || [])];
 
     return (
         <DashboardLayout userNav={<UserNav />}>
