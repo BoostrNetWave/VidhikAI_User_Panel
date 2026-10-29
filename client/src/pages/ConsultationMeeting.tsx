@@ -10,7 +10,7 @@ import {
     Lock, RefreshCcw, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getFileUrl, isImageFile, isPdfFile } from '@/lib/fileUtils';
+import { getFileUrl, isImageFile, isPdfFile, downloadFile } from '@/lib/fileUtils';
 
 export default function ConsultationMeeting() {
     const { id } = useParams<{ id: string }>();
@@ -31,6 +31,7 @@ export default function ConsultationMeeting() {
     const [caseData, setCaseData] = useState<ICase | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'details' | 'docs'>('details');
+    const [previewDoc, setPreviewDoc] = useState<{ url: string; title: string; details?: string; uploadedAt?: string } | null>(null);
 
 
     // Call Toggles & Status
@@ -802,15 +803,28 @@ export default function ConsultationMeeting() {
                                                 <p className="text-[10px] text-emerald-800 leading-relaxed font-semibold">
                                                     The lawyer has submitted the official consultation briefing summary. It is now securely archived in the registry.
                                                 </p>
-                                                <a
-                                                    href={getFileUrl(caseData.meetingSummaryUrl)}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                                                >
-                                                    <Download size={13} />
-                                                    Download Summary Brief
-                                                </a>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPreviewDoc({
+                                                            url: getFileUrl(caseData.meetingSummaryUrl),
+                                                            title: caseData.meetingSummaryName || 'Meeting Summary',
+                                                            details: 'Official consultation briefing summary'
+                                                        })}
+                                                        className="flex-1 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                                                    >
+                                                        <Eye size={13} />
+                                                        Preview
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => downloadFile(getFileUrl(caseData.meetingSummaryUrl), caseData.meetingSummaryName || 'Meeting-Summary.pdf')}
+                                                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                                                    >
+                                                        <Download size={13} />
+                                                        Download Brief
+                                                    </button>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="bg-slate-50 border border-slate-150 p-6 rounded-2xl text-center space-y-2">
@@ -853,14 +867,28 @@ export default function ConsultationMeeting() {
                                                     <span className="text-[9px] text-primary font-black uppercase tracking-wider">Meeting Summary</span>
                                                 </div>
                                             </div>
-                                            <a
-                                                href={getFileUrl(caseData.meetingSummaryUrl)}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="h-8 w-8 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-secondary text-violet-750 hover:text-primary shrink-0 transition-colors"
-                                            >
-                                                <Download size={14} />
-                                            </a>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPreviewDoc({
+                                                        url: getFileUrl(caseData.meetingSummaryUrl),
+                                                        title: caseData.meetingSummaryName || 'Meeting Summary',
+                                                        details: 'Official consultation briefing summary'
+                                                    })}
+                                                    className="h-8 w-8 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-secondary text-primary transition-colors"
+                                                    title="Preview Summary"
+                                                >
+                                                    <Eye size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => downloadFile(getFileUrl(caseData.meetingSummaryUrl), caseData.meetingSummaryName || 'Meeting-Summary.pdf')}
+                                                    className="h-8 w-8 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-secondary text-primary transition-colors"
+                                                    title="Download Summary"
+                                                >
+                                                    <Download size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
@@ -881,14 +909,28 @@ export default function ConsultationMeeting() {
                                                         <span className="text-[9px] text-slate-400 font-semibold">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
                                                     </div>
                                                 </div>
-                                                <a
-                                                    href={getFileUrl(doc.url)}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-500 hover:text-slate-900 shrink-0 transition-colors"
-                                                >
-                                                    <ExternalLink size={14} />
-                                                </a>
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPreviewDoc({
+                                                            url: getFileUrl(doc.url),
+                                                            title: doc.name || 'Document',
+                                                            uploadedAt: doc.uploadedAt
+                                                        })}
+                                                        className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-colors"
+                                                        title="Preview Document"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => downloadFile(getFileUrl(doc.url), doc.name)}
+                                                        className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-colors"
+                                                        title="Download Document"
+                                                    >
+                                                        <Download size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))
                                     )}

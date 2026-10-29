@@ -17,8 +17,25 @@ export function getFileUrl(rawUrl: string | undefined | null): string {
     const filename = clean.split('/').filter(Boolean).pop();
     if (!filename) return '';
 
-    // Safe user panel route: works in dev (via Vite proxy rewrite) and prod (via Express /user/uploads & Nginx /user)
-    return `/user/uploads/${filename}`;
+    // Route directly via API proxy so it is served by Express (disk / GridFS) without touching SPA router
+    return `/api/uploads/${filename}`;
+}
+
+export async function downloadFile(url: string, filename?: string): Promise<void> {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename || getFileName(url);
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(a);
+    } catch {
+        window.open(url, '_blank');
+    }
 }
 
 export function isImageFile(filenameOrUrl: string | undefined | null): boolean {

@@ -50,6 +50,7 @@ import ConsultationMeeting from './pages/ConsultationMeeting'
 import ConsultationsPage from './pages/ConsultationsPage'
 import ConsultationRoom from './pages/ConsultationRoom'
 import MySupportTicketsPage from './pages/support/MySupportTicketsPage'
+import DocumentViewPage from './pages/DocumentViewPage'
 
 import { useEffect } from 'react'
 import { getSocket, registerSocketUser, disconnectSocket } from './lib/socket'
@@ -179,6 +180,11 @@ function App() {
                         <AdminSettings />
                     </AdminProtectedRoute>
                 } />
+                
+                <Route path="/uploads/:filename" element={<DocumentViewPage />} />
+                <Route path="/uploads/*" element={<DocumentViewPage />} />
+                <Route path="/user/uploads/:filename" element={<DocumentViewPage />} />
+                <Route path="/user/uploads/*" element={<DocumentViewPage />} />
                 
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
