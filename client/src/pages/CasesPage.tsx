@@ -610,10 +610,12 @@ export default function CasesPage() {
                                                             {c.status === 'open' 
                                                                 ? `Open (${interestedCount} Applied)`
                                                                 : c.status === 'pending_lawyer' 
-                                                                    ? 'Awaiting Lawyer' 
+                                                                    ? `Awaiting Confirmation (${interestedCount} Applied)` 
                                                                     : c.status === 'pending_payment' 
-                                                                        ? 'Awaiting Payment' 
-                                                                        : c.status}
+                                                                        ? `Accepted - Pay Fee (${interestedCount} Applied)` 
+                                                                        : c.status === 'active'
+                                                                            ? `Active (${c.lawyer?.fullName ? `Adv. ${c.lawyer.fullName}` : 'Assigned'})`
+                                                                            : c.status}
                                                         </Badge>
 
                                                         {c.documents && c.documents.length > 0 && (
@@ -831,144 +833,7 @@ export default function CasesPage() {
                                             </div>
                                         )}
 
-                                        {/* INTERESTED LAWYERS & APPROVALS (MARKETPLACE FLOW) */}
-                                        {selectedCase.status === 'open' && (
-                                            <div className="space-y-4 pt-2">
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                                                            <ShieldCheck className="w-5 h-5 text-primary" />
-                                                            Lawyer Approvals & Expressions of Interest
-                                                        </h3>
-                                                        <p className="text-xs text-slate-500 font-semibold">
-                                                            Review advocates who have approved and applied to represent your case. Choose your preferred lawyer.
-                                                        </p>
-                                                    </div>
-                                                    <Badge className="bg-primary text-white text-xs font-bold px-3 py-1">
-                                                        {selectedCase.interestedLawyers?.length || 0} Applied
-                                                    </Badge>
-                                                </div>
-
-                                                {(!selectedCase.interestedLawyers || selectedCase.interestedLawyers.length === 0) ? (
-                                                    <div className="bg-blue-50/50 border border-blue-200 rounded-2xl p-6 text-center space-y-2">
-                                                        <Clock className="w-8 h-8 text-blue-600 mx-auto animate-pulse" />
-                                                        <h4 className="font-extrabold text-slate-900 text-sm">Your Case is Active on the Lawyer Marketplace</h4>
-                                                        <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-                                                            Verified advocates in our network are reviewing your case documentation. As soon as lawyers approve your case, their proposals and rates will appear here in real-time.
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-3">
-                                                        {selectedCase.interestedLawyers.map((item, idx) => {
-                                                            const lawyer = item.lawyer;
-                                                            if (!lawyer) return null;
-                                                            const lawyerId = typeof lawyer === 'string' ? lawyer : (lawyer._id || (lawyer as any).id);
-                                                            const lawyerName = (typeof lawyer === 'object' && lawyer?.fullName) ? lawyer.fullName : 'Advocate';
-                                                            const isAiMatch = (selectedCase.aiRecommendedLawyer?._id || selectedCase.aiRecommendedLawyer)?.toString() === lawyerId?.toString();
-                                                            const isAdminRec = (selectedCase.adminRecommendedLawyer?._id || selectedCase.adminRecommendedLawyer)?.toString() === lawyerId?.toString();
-                                                            const isThisSelecting = selectingLawyerId === lawyerId;
-
-                                                            return (
-                                                                <div 
-                                                                    key={item._id || lawyerId || idx}
-                                                                    className={`rounded-2xl border p-5 transition-all space-y-3 ${
-                                                                        isAiMatch 
-                                                                            ? "bg-gradient-to-r from-purple-50/70 to-indigo-50/40 border-primary shadow-xs" 
-                                                                            : isAdminRec 
-                                                                                ? "bg-amber-50/50 border-amber-300"
-                                                                                : "bg-white border-slate-200 hover:border-slate-300"
-                                                                    }`}
-                                                                >
-                                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                                        <div className="flex items-center gap-3.5">
-                                                                            <Avatar className="h-12 w-12 rounded-xl border border-border shrink-0">
-                                                                                <AvatarImage 
-                                                                                    src={(typeof lawyer === 'object' && lawyer.avatar) ? (lawyer.avatar.startsWith('http') ? lawyer.avatar : `/lawyer${lawyer.avatar}`) : ""} 
-                                                                                    alt={lawyerName} 
-                                                                                />
-                                                                                <AvatarFallback className="rounded-xl bg-slate-100 font-bold">
-                                                                                    {lawyerName?.charAt(0) || "A"}
-                                                                                </AvatarFallback>
-                                                                            </Avatar>
-                                                                            <div>
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <h4 className="font-extrabold text-slate-900 text-sm">{lawyerName}</h4>
-                                                                                    <ShieldCheck className="w-4 h-4 text-primary" />
-                                                                                    {isAiMatch && (
-                                                                                        <Badge className="bg-primary text-white text-[9px] font-black uppercase tracking-wider">
-                                                                                            ⭐ AI Best Match
-                                                                                        </Badge>
-                                                                                    )}
-                                                                                    {isAdminRec && (
-                                                                                        <Badge className="bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider">
-                                                                                            🛡️ Admin Recommended
-                                                                                        </Badge>
-                                                                                    )}
-                                                                                </div>
-                                                                                <p className="text-xs text-slate-500 font-semibold">
-                                                                                    {(typeof lawyer === 'object' && lawyer.expertise) ? lawyer.expertise : "Specialist Advocate"} • {(typeof lawyer === 'object' && lawyer.experience) ? lawyer.experience : "10+ Yrs"} Experience • {(typeof lawyer === 'object' && lawyer.location) ? lawyer.location : "High Court"}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        <div className="flex items-center gap-4 justify-between sm:justify-end">
-                                                                            <div className="text-right">
-                                                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Proposed Fee</span>
-                                                                                <span className="text-base font-black text-slate-900">
-                                                                                    ₹{(item.proposedFee || selectedCase.budget || selectedCase.totalFee).toLocaleString()}
-                                                                                </span>
-                                                                            </div>
-
-                                                                            <Button
-                                                                                disabled={isSelectingLawyer}
-                                                                                onClick={() => handleSelectLawyer(lawyerId, lawyerName)}
-                                                                                className="rounded-xl font-bold text-xs h-10 px-5 bg-primary hover:bg-primary/90 text-white flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-60"
-                                                                            >
-                                                                                {isThisSelecting ? (
-                                                                                    <>
-                                                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                                                        <span>Selecting...</span>
-                                                                                    </>
-                                                                                ) : (
-                                                                                    <>
-                                                                                        <span>Select Advocate</span>
-                                                                                        <ChevronRight className="w-4 h-4" />
-                                                                                    </>
-                                                                                )}
-                                                                            </Button>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Proposal note / AI Reason */}
-                                                                    {item.proposalNote && (
-                                                                        <div className="bg-white/80 border border-slate-150 rounded-xl p-3 text-xs text-slate-700 font-medium">
-                                                                            <span className="font-bold text-slate-900 mr-1.5">Advocate Pitch:</span>
-                                                                            {item.proposalNote}
-                                                                        </div>
-                                                                    )}
-
-                                                                    {isAiMatch && selectedCase.aiRecommendationReason && (
-                                                                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-2.5 text-xs text-primary font-semibold flex items-center gap-2">
-                                                                            <Sparkles className="w-4 h-4 shrink-0" />
-                                                                            <span><strong>Why AI Recommends:</strong> {selectedCase.aiRecommendationReason}</span>
-                                                                        </div>
-                                                                    )}
-
-                                                                    {isAdminRec && selectedCase.adminRecommendationNote && (
-                                                                        <div className="bg-amber-100/70 border border-amber-300 rounded-xl p-2.5 text-xs text-amber-900 font-semibold flex items-center gap-2">
-                                                                            <ShieldCheck className="w-4 h-4 shrink-0 text-amber-700" />
-                                                                            <span><strong>Admin Note:</strong> {selectedCase.adminRecommendationNote}</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* AWAITING LAWYER CONFIRMATION */}
+                                        {/* AWAITING LAWYER CONFIRMATION BANNER */}
                                         {selectedCase.status === 'pending_lawyer' && (
                                             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-start gap-4">
                                                 <Clock className="w-6 h-6 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
@@ -1029,6 +894,235 @@ export default function CasesPage() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* INTERESTED LAWYERS & APPROVALS (ALWAYS VISIBLE WHEN APPLICANTS OR LAWYER EXIST) */}
+                                        {(() => {
+                                            // Build unified applicants list including selected lawyer
+                                            const applicants = [...(selectedCase.interestedLawyers || [])];
+                                            if (selectedCase.lawyer && typeof selectedCase.lawyer === 'object') {
+                                                const selectedId = (selectedCase.lawyer as any)._id?.toString();
+                                                const alreadyIn = applicants.some((i: any) => (i.lawyer?._id || i.lawyer)?.toString() === selectedId);
+                                                if (!alreadyIn) {
+                                                    applicants.unshift({
+                                                        lawyer: selectedCase.lawyer as any,
+                                                        appliedAt: selectedCase.createdAt,
+                                                        proposedFee: selectedCase.totalFee || selectedCase.budget,
+                                                        proposalNote: 'Selected and assigned advocate for this case.',
+                                                        status: 'selected'
+                                                    } as any);
+                                                }
+                                            }
+
+                                            const shouldShowSection = selectedCase.status === 'open' || 
+                                                selectedCase.status === 'pending_lawyer' || 
+                                                selectedCase.status === 'pending_payment' ||
+                                                applicants.length > 0;
+
+                                            if (!shouldShowSection) return null;
+
+                                            return (
+                                                <div className="space-y-4 pt-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                                                                <ShieldCheck className="w-5 h-5 text-primary" />
+                                                                {selectedCase.status === 'open' 
+                                                                    ? "Lawyer Approvals & Expressions of Interest" 
+                                                                    : selectedCase.status === 'pending_payment'
+                                                                        ? "Accepted Legal Counsel & Applicant Advocates"
+                                                                        : "Selected Legal Representation & Applications"}
+                                                            </h3>
+                                                            <p className="text-xs text-slate-500 font-semibold">
+                                                                {selectedCase.status === 'open'
+                                                                    ? "Review advocates who have approved and applied to represent your case. Choose your preferred lawyer."
+                                                                    : selectedCase.status === 'pending_payment'
+                                                                        ? `Adv. ${selectedCase.lawyer?.fullName || 'Advocate'} has confirmed acceptance of your case. Review terms and proceed with retainer payment.`
+                                                                        : "Review selected advocate and applications for your case representation."}
+                                                            </p>
+                                                        </div>
+                                                        <Badge className="bg-primary text-white text-xs font-bold px-3 py-1">
+                                                            {applicants.length} Applied
+                                                        </Badge>
+                                                    </div>
+
+                                                    {applicants.length === 0 ? (
+                                                        <div className="bg-blue-50/50 border border-blue-200 rounded-2xl p-6 text-center space-y-2">
+                                                            <Clock className="w-8 h-8 text-blue-600 mx-auto animate-pulse" />
+                                                            <h4 className="font-extrabold text-slate-900 text-sm">Your Case is Active on the Lawyer Marketplace</h4>
+                                                            <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                                                                Verified advocates in our network are reviewing your case documentation. As soon as lawyers approve your case, their proposals and rates will appear here in real-time.
+                                                            </p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {applicants.map((item, idx) => {
+                                                                const lawyer = item.lawyer;
+                                                                if (!lawyer) return null;
+                                                                const lawyerId = typeof lawyer === 'string' ? lawyer : (lawyer._id || (lawyer as any).id);
+                                                                const lawyerName = (typeof lawyer === 'object' && lawyer?.fullName) ? lawyer.fullName : 'Advocate';
+                                                                const isSelectedLawyer = (selectedCase.lawyer?._id || selectedCase.lawyer)?.toString() === lawyerId?.toString() || item.status === 'selected';
+                                                                const isAiMatch = (selectedCase.aiRecommendedLawyer?._id || selectedCase.aiRecommendedLawyer)?.toString() === lawyerId?.toString();
+                                                                const isAdminRec = (selectedCase.adminRecommendedLawyer?._id || selectedCase.adminRecommendedLawyer)?.toString() === lawyerId?.toString();
+                                                                const isThisSelecting = selectingLawyerId === lawyerId;
+
+                                                                return (
+                                                                    <div 
+                                                                        key={item._id || lawyerId || idx}
+                                                                        className={`rounded-2xl border p-5 transition-all space-y-3 ${
+                                                                            isSelectedLawyer && selectedCase.status === 'pending_payment'
+                                                                                ? "bg-gradient-to-r from-emerald-50/80 to-teal-50/40 border-emerald-400 ring-2 ring-emerald-300/40 shadow-sm"
+                                                                                : isSelectedLawyer && selectedCase.status === 'pending_lawyer'
+                                                                                    ? "bg-gradient-to-r from-amber-50/80 to-orange-50/40 border-amber-400 shadow-sm"
+                                                                                    : isSelectedLawyer && selectedCase.status === 'active'
+                                                                                        ? "bg-gradient-to-r from-emerald-50/50 to-white border-emerald-300 shadow-xs"
+                                                                                        : isAiMatch 
+                                                                                            ? "bg-gradient-to-r from-purple-50/70 to-indigo-50/40 border-primary shadow-xs" 
+                                                                                            : isAdminRec 
+                                                                                                ? "bg-amber-50/50 border-amber-300"
+                                                                                                : "bg-white border-slate-200 hover:border-slate-300"
+                                                                        }`}
+                                                                    >
+                                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                                            <div className="flex items-center gap-3.5">
+                                                                                <Avatar className="h-12 w-12 rounded-xl border border-border shrink-0">
+                                                                                    <AvatarImage 
+                                                                                        src={(typeof lawyer === 'object' && lawyer.avatar) ? (lawyer.avatar.startsWith('http') ? lawyer.avatar : `/lawyer${lawyer.avatar}`) : ""} 
+                                                                                        alt={lawyerName} 
+                                                                                    />
+                                                                                    <AvatarFallback className="rounded-xl bg-slate-100 font-bold">
+                                                                                        {lawyerName?.charAt(0) || "A"}
+                                                                                    </AvatarFallback>
+                                                                                </Avatar>
+                                                                                <div>
+                                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                                        <h4 className="font-extrabold text-slate-900 text-sm">{lawyerName}</h4>
+                                                                                        <ShieldCheck className="w-4 h-4 text-primary" />
+                                                                                        
+                                                                                        {/* Contextual Status Badges */}
+                                                                                        {isSelectedLawyer && selectedCase.status === 'pending_payment' && (
+                                                                                            <Badge className="bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                                                                                <CheckCircle2 className="w-3 h-3" />
+                                                                                                ✓ Accepted Your Case
+                                                                                            </Badge>
+                                                                                        )}
+                                                                                        {isSelectedLawyer && selectedCase.status === 'pending_lawyer' && (
+                                                                                            <Badge className="bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                                                                                <Clock className="w-3 h-3" />
+                                                                                                Selected • Awaiting Confirmation
+                                                                                            </Badge>
+                                                                                        )}
+                                                                                        {isSelectedLawyer && selectedCase.status === 'active' && (
+                                                                                            <Badge className="bg-emerald-700 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                                                                                <CheckCircle2 className="w-3 h-3" />
+                                                                                                Retained Advocate
+                                                                                            </Badge>
+                                                                                        )}
+                                                                                        {!isSelectedLawyer && selectedCase.status !== 'open' && (
+                                                                                            <Badge variant="outline" className="text-slate-500 border-slate-300 text-[9px] font-bold uppercase">
+                                                                                                Alternative Applicant
+                                                                                            </Badge>
+                                                                                        )}
+                                                                                        {isAiMatch && (
+                                                                                            <Badge className="bg-primary text-white text-[9px] font-black uppercase tracking-wider">
+                                                                                                ⭐ AI Best Match
+                                                                                            </Badge>
+                                                                                        )}
+                                                                                        {isAdminRec && (
+                                                                                            <Badge className="bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider">
+                                                                                                🛡️ Admin Recommended
+                                                                                            </Badge>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                                                                                        {(typeof lawyer === 'object' && lawyer.expertise) ? lawyer.expertise : "Specialist Advocate"} • {(typeof lawyer === 'object' && lawyer.experience) ? lawyer.experience : "10+ Yrs"} Experience • {(typeof lawyer === 'object' && lawyer.location) ? lawyer.location : "High Court"}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-4 justify-between sm:justify-end">
+                                                                                <div className="text-right">
+                                                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+                                                                                        {isSelectedLawyer && selectedCase.status !== 'open' ? 'Agreed Fee' : 'Proposed Fee'}
+                                                                                    </span>
+                                                                                    <span className="text-base font-black text-slate-900">
+                                                                                        ₹{(item.proposedFee || selectedCase.budget || selectedCase.totalFee).toLocaleString()}
+                                                                                    </span>
+                                                                                </div>
+
+                                                                                {/* Action buttons based on case status */}
+                                                                                {selectedCase.status === 'open' && (
+                                                                                    <Button
+                                                                                        disabled={isSelectingLawyer}
+                                                                                        onClick={() => handleSelectLawyer(lawyerId, lawyerName)}
+                                                                                        className="rounded-xl font-bold text-xs h-10 px-5 bg-primary hover:bg-primary/90 text-white flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-60"
+                                                                                    >
+                                                                                        {isThisSelecting ? (
+                                                                                            <>
+                                                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                                                                <span>Selecting...</span>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            <>
+                                                                                                <span>Select Advocate</span>
+                                                                                                <ChevronRight className="w-4 h-4" />
+                                                                                            </>
+                                                                                        )}
+                                                                                    </Button>
+                                                                                )}
+
+                                                                                {selectedCase.status === 'pending_payment' && isSelectedLawyer && (
+                                                                                    <Button
+                                                                                        disabled={isProcessingPayment}
+                                                                                        onClick={() => handleCheckoutPayment(selectedCase._id, false)}
+                                                                                        className="rounded-xl font-bold text-xs h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm"
+                                                                                    >
+                                                                                        <Lock className="w-3.5 h-3.5" />
+                                                                                        <span>Complete Payment</span>
+                                                                                    </Button>
+                                                                                )}
+
+                                                                                {selectedCase.status === 'pending_lawyer' && !isSelectedLawyer && (
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        disabled={isSelectingLawyer}
+                                                                                        onClick={() => handleSelectLawyer(lawyerId, lawyerName)}
+                                                                                        className="rounded-xl font-bold text-xs h-9 px-3.5 border-slate-300 text-slate-700 hover:bg-slate-100"
+                                                                                    >
+                                                                                        <span>Switch Selection</span>
+                                                                                    </Button>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Proposal note / AI Reason */}
+                                                                        {item.proposalNote && (
+                                                                            <div className="bg-white/80 border border-slate-150 rounded-xl p-3 text-xs text-slate-700 font-medium">
+                                                                                <span className="font-bold text-slate-900 mr-1.5">Advocate Pitch:</span>
+                                                                                {item.proposalNote}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {isAiMatch && selectedCase.aiRecommendationReason && (
+                                                                            <div className="bg-primary/10 border border-primary/20 rounded-xl p-2.5 text-xs text-primary font-semibold flex items-center gap-2">
+                                                                                <Sparkles className="w-4 h-4 shrink-0" />
+                                                                                <span><strong>Why AI Recommends:</strong> {selectedCase.aiRecommendationReason}</span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {isAdminRec && selectedCase.adminRecommendationNote && (
+                                                                            <div className="bg-amber-100/70 border border-amber-300 rounded-xl p-2.5 text-xs text-amber-900 font-semibold flex items-center gap-2">
+                                                                                <ShieldCheck className="w-4 h-4 shrink-0 text-amber-700" />
+                                                                                <span><strong>Admin Note:</strong> {selectedCase.adminRecommendationNote}</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
 
                                         {/* ACTIVE CASE - VIDEO CONSULTATION & ACTION ROADMAP */}
                                         {selectedCase.status === 'active' && (

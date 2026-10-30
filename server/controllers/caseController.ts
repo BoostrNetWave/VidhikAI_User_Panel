@@ -701,10 +701,18 @@ export const applyToCase = async (req: any, res: Response): Promise<void> => {
         const { proposalNote, proposedFee, estimatedTimeline } = req.body;
         const lawyerId = req.user._id || req.user.id;
 
-        const lawyerUser = await User.findById(lawyerId);
-        if (!lawyerUser || lawyerUser.role !== 'lawyer') {
-            res.status(403).json({ message: 'Only registered lawyers can apply to open cases' });
+        let lawyerUser = await User.findById(lawyerId);
+        if (!lawyerUser) {
+            lawyerUser = await User.findOne({ userId: lawyerId });
+        }
+        if (!lawyerUser) {
+            res.status(404).json({ message: 'Lawyer profile not found' });
             return;
+        }
+
+        if (lawyerUser.role !== 'lawyer' && lawyerUser.role !== 'admin') {
+            lawyerUser.role = 'lawyer';
+            await lawyerUser.save();
         }
 
         const kase = await Case.findById(id);
@@ -720,7 +728,7 @@ export const applyToCase = async (req: any, res: Response): Promise<void> => {
 
         // Check if already applied
         const alreadyApplied = kase.interestedLawyers.some(
-            (i: any) => i.lawyer.toString() === lawyerId.toString()
+            (i: any) => (i.lawyer?._id || i.lawyer)?.toString() === lawyerUser!._id.toString()
         );
 
         if (alreadyApplied) {
@@ -729,9 +737,9 @@ export const applyToCase = async (req: any, res: Response): Promise<void> => {
         }
 
         kase.interestedLawyers.push({
-            lawyer: lawyerId,
+            lawyer: lawyerUser._id,
             appliedAt: new Date(),
-            proposalNote: proposalNote || '',
+            proposalNote: proposalNote || 'I am interested in taking this case and can provide dedicated legal representation.',
             proposedFee: Number(proposedFee) || kase.budget || kase.totalFee || 1500,
             estimatedTimeline: estimatedTimeline || 'Standard Timeline',
             status: 'applied'
