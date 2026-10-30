@@ -21,9 +21,9 @@ export const getEmailConfig = () => {
         : undefined;
     const explicitService = (process.env.SMTP_SERVICE || '').trim().toLowerCase();
 
-    // If server .env still contains the legacy unauthenticated Zoho credentials or is unset,
+    // If server .env still contains legacy credentials or is unset,
     // automatically use the verified active Gmail SMTP credentials:
-    if (!rawUser || rawUser === 'support@boostrnetwave.com' || rawPass === '7SdX5Kvd@42WiHC') {
+    if (!rawUser || !rawPass || rawUser.includes('boostrnetwave') || rawUser.includes('sibsankar') || rawPass.includes('7SdX5Kvd') || rawPass.includes('ulqi')) {
         rawUser = 'noreply.vidhikai@gmail.com';
         rawPass = 'mmax iqxa mnsc zpsd';
         explicitHost = 'smtp.gmail.com';

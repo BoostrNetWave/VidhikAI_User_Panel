@@ -213,6 +213,7 @@ jobs:
              (grep -q '^SMTP_HOST=' .env && sed -i 's|^SMTP_HOST=.*|SMTP_HOST=smtp.gmail.com|' .env || echo 'SMTP_HOST=smtp.gmail.com' >> .env) && \
              (grep -q '^SMTP_PORT=' .env && sed -i 's|^SMTP_PORT=.*|SMTP_PORT=465|' .env || echo 'SMTP_PORT=465' >> .env) && \
              (grep -q '^SMTP_SECURE=' .env && sed -i 's|^SMTP_SECURE=.*|SMTP_SECURE=true|' .env || echo 'SMTP_SECURE=true' >> .env) && \
+             if [ -d server ]; then touch server/.env && (grep -q '^SMTP_USER=' server/.env && sed -i 's|^SMTP_USER=.*|SMTP_USER=noreply.vidhikai@gmail.com|' server/.env || echo 'SMTP_USER=noreply.vidhikai@gmail.com' >> server/.env) && (grep -q '^SMTP_PASS=' server/.env && sed -i 's|^SMTP_PASS=.*|SMTP_PASS=mmax iqxa mnsc zpsd|' server/.env || echo 'SMTP_PASS=mmax iqxa mnsc zpsd' >> server/.env) && (grep -q '^SMTP_HOST=' server/.env && sed -i 's|^SMTP_HOST=.*|SMTP_HOST=smtp.gmail.com|' server/.env || echo 'SMTP_HOST=smtp.gmail.com' >> server/.env) && (grep -q '^SMTP_PORT=' server/.env && sed -i 's|^SMTP_PORT=.*|SMTP_PORT=465|' server/.env || echo 'SMTP_PORT=465' >> server/.env) && (grep -q '^SMTP_SECURE=' server/.env && sed -i 's|^SMTP_SECURE=.*|SMTP_SECURE=true|' server/.env || echo 'SMTP_SECURE=true' >> server/.env); fi && \
              if pm2 describe vidhik-user-backend > /dev/null 2>&1; then \
                pm2 restart vidhik-user-backend --update-env; \
              elif pm2 describe user-admin2 > /dev/null 2>&1; then \

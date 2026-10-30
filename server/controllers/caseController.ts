@@ -388,8 +388,11 @@ export const createCase = async (req: any, res: Response): Promise<void> => {
                             mimetype: file.mimetype,
                             buffer: fileBuffer
                         });
-                        if (docText && docText.trim().length > 0) {
-                            extractedTexts.push(`--- Document: ${file.originalname} ---\n${docText.slice(0, 4000)}`);
+                        if (docText && typeof docText === 'string') {
+                            const cleaned = docText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ').replace(/\s+/g, ' ').trim();
+                            if (cleaned.length > 0) {
+                                extractedTexts.push(`--- Document: ${file.originalname} ---\n${cleaned.slice(0, 4000)}`);
+                            }
                         }
                     }
                 } catch (fileErr) {

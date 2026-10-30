@@ -50,9 +50,20 @@ const upload = multer({
     storage,
     limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
     fileFilter: (_req, file, cb) => {
-        const allowed = /pdf|doc|docx|txt|rtf|jpg|jpeg|png/;
-        const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
-        if (allowed.test(ext)) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const allowedExts = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.jpg', '.jpeg', '.png', '.webp'];
+        const allowedMimes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/octet-stream',
+            'text/plain',
+            'text/rtf',
+            'image/jpeg',
+            'image/png',
+            'image/webp'
+        ];
+        if (allowedExts.includes(ext) || allowedMimes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
             cb(new Error('Allowed file types: PDF, Word (DOC, DOCX), TXT, and Images'));
