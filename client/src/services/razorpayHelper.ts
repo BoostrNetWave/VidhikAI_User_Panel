@@ -57,13 +57,12 @@ export const launchRazorpayCheckout = async (params: {
 
     const { order, onSuccess, onError, onDismiss } = params;
 
-    const options = {
+    const options: any = {
         key: order.keyId,
         amount: order.amount,
         currency: order.currency || 'INR',
         name: order.name || 'Vidhik AI',
         description: order.description || 'Legal Services Payment',
-        order_id: order.id,
         prefill: order.prefill || {},
         theme: order.theme || { color: '#0f172a' },
         modal: {
@@ -79,6 +78,10 @@ export const launchRazorpayCheckout = async (params: {
             }
         }
     };
+
+    if (order.id && !order.id.startsWith('order_test_') && !order.id.startsWith('order_sim_')) {
+        options.order_id = order.id;
+    }
 
     try {
         const rzp = new (window as any).Razorpay(options);

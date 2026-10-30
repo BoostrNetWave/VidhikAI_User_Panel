@@ -49,20 +49,9 @@ class RazorpayService {
                 return order;
             }
         } catch (error: any) {
-            console.warn('[Razorpay Service] API order creation failed or using fallback test mode:', error?.message || error);
+            console.error('[Razorpay Service] API order creation failed:', error?.error?.description || error?.message || error);
+            throw new Error(error?.error?.description || error?.message || 'Razorpay order creation failed.');
         }
-
-        // Fallback Test Order if Razorpay API fails or in test mode
-        const testOrderId = `order_test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        console.log(`[Razorpay Service] Created Fallback Test Order: ${testOrderId}`);
-        return {
-            id: testOrderId,
-            amount: amountInPaise,
-            currency: 'INR',
-            receipt,
-            status: 'created',
-            notes
-        };
     }
 
     /**

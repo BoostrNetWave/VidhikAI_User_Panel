@@ -185,6 +185,13 @@ export const createCasePaymentOrder = async (req: any, res: Response): Promise<v
         }
 
         const amount = kase.totalFee || 1000;
+        if (amount > 500000) {
+            res.status(400).json({
+                success: false,
+                message: `Fee amount (₹${amount.toLocaleString('en-IN')}) exceeds the Razorpay payment gateway limit of ₹5,00,000 per transaction. Please structure fees within ₹5,00,000.`
+            });
+            return;
+        }
         const receiptId = `rcpt_case_${Date.now().toString().slice(-8)}`;
         const notes = {
             userId: req.user._id.toString(),
