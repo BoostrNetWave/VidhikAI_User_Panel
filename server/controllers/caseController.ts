@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Response } from 'express';
 import fs from 'fs';
 import path from 'path';
@@ -588,25 +589,46 @@ export const selectLawyer = async (req: any, res: Response): Promise<void> => {
             return;
         }
 
-        const lawyerUser = await User.findOne({ _id: lawyerId, role: 'lawyer' });
+        // Support string, object ID, or subdoc ID
+        const targetLawyerId = (typeof lawyerId === 'object' && lawyerId?._id) 
+            ? lawyerId._id.toString() 
+            : lawyerId.toString().trim();
+
+        // Find user by _id or userId
+        let lawyerUser = await User.findById(targetLawyerId);
+        if (!lawyerUser) {
+            lawyerUser = await User.findOne({ userId: targetLawyerId });
+        }
+        if (!lawyerUser && mongoose.isValidObjectId(targetLawyerId)) {
+            lawyerUser = await User.findById(new mongoose.Types.ObjectId(targetLawyerId));
+        }
+
         if (!lawyerUser) {
             res.status(404).json({ message: 'Selected lawyer not found' });
             return;
         }
 
-        // Check if lawyer had submitted a proposed fee
-        const applicant = kase.interestedLawyers?.find(
-            (i: any) => i.lawyer.toString() === lawyerId.toString()
-        );
+        // Ensure user has lawyer role assigned so they have full access in lawyer portal
+        if (lawyerUser.role !== 'lawyer' && lawyerUser.role !== 'admin') {
+            lawyerUser.role = 'lawyer';
+            await lawyerUser.save();
+        }
+
+        // Check if lawyer had submitted a proposed fee in interestedLawyers
+        const applicant = kase.interestedLawyers?.find((i: any) => {
+            const iLawyerId = i.lawyer?._id ? i.lawyer._id.toString() : i.lawyer?.toString();
+            return iLawyerId === targetLawyerId || iLawyerId === lawyerUser!._id.toString();
+        });
 
         if (applicant && applicant.proposedFee) {
             kase.totalFee = applicant.proposedFee;
         }
 
-        // Update interested lawyers status
+        // Update interested lawyers status: mark selected, reject other applied
         if (kase.interestedLawyers && kase.interestedLawyers.length > 0) {
             kase.interestedLawyers.forEach((i: any) => {
-                if (i.lawyer.toString() === lawyerId.toString()) {
+                const iLawyerId = i.lawyer?._id ? i.lawyer._id.toString() : i.lawyer?.toString();
+                if (iLawyerId === targetLawyerId || iLawyerId === lawyerUser!._id.toString()) {
                     i.status = 'selected';
                 } else if (i.status === 'applied') {
                     i.status = 'rejected';
@@ -614,7 +636,7 @@ export const selectLawyer = async (req: any, res: Response): Promise<void> => {
             });
         }
 
-        kase.lawyer = lawyerId;
+        kase.lawyer = lawyerUser._id as any;
         kase.status = 'pending_lawyer';
         await kase.save();
 
@@ -624,34 +646,49 @@ export const selectLawyer = async (req: any, res: Response): Promise<void> => {
             .populate('aiRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate')
             .populate('adminRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate');
 
-        // Notify the selected lawyer
-        await (Notification as any).create({
-            userId: lawyerId.toString(),
-            userRole: 'lawyer',
-            title: 'Client Selected You for Case',
-            message: `Client ${req.user.fullName || 'User'} selected you for case "${kase.title}". Please accept to initiate engagement.`,
-            type: 'case',
-            link: `/cases`
-        });
+        // Notify the selected lawyer (safe try/catch)
+        try {
+            await (Notification as any).create({
+                userId: lawyerUser._id.toString(),
+                userRole: 'lawyer',
+                title: 'Client Selected You for Case',
+                message: `Client ${req.user.fullName || 'User'} selected you for case "${kase.title}". Please accept to initiate engagement.`,
+                type: 'case',
+                link: `/cases`
+            });
+        } catch (notifErr) {
+            console.warn('[selectLawyer] Notification creation error:', notifErr);
+        }
 
-        emitToUser(lawyerId.toString(), 'lawyer_selected', {
-            caseId: kase._id,
-            title: kase.title,
-            clientName: req.user.fullName
-        });
+        try {
+            emitToUser(lawyerUser._id.toString(), 'lawyer_selected', {
+                caseId: kase._id,
+                title: kase.title,
+                clientName: req.user.fullName || 'User'
+            });
+        } catch (socketErr) {
+            console.warn('[selectLawyer] Socket emit error:', socketErr);
+        }
 
-        // Email lawyer
-        await sendEmail(
-            lawyerUser.email,
-            `You Have Been Selected: ${kase.title}`,
-            `<h3>Congratulations Adv. ${lawyerUser.fullName}!</h3>
-             <p>The client <strong>${req.user.fullName}</strong> has reviewed the applicants and selected you to represent their case: <strong>${kase.title}</strong>.</p>
-             <p>Please log in to your Lawyer Portal under <strong>Case Management</strong> to accept the engagement.</p>`
-        );
+        // Email lawyer (safe try/catch)
+        if (lawyerUser.email) {
+            try {
+                await sendEmail(
+                    lawyerUser.email,
+                    `You Have Been Selected: ${kase.title}`,
+                    `<h3>Congratulations Adv. ${lawyerUser.fullName}!</h3>
+                     <p>The client <strong>${req.user.fullName || 'Client'}</strong> has reviewed the applicants and selected you to represent their case: <strong>${kase.title}</strong>.</p>
+                     <p>Please log in to your Lawyer Portal under <strong>Case Management</strong> to accept the engagement.</p>`
+                );
+            } catch (emailErr) {
+                console.warn('[selectLawyer] Email send error:', emailErr);
+            }
+        }
 
         res.json(populated);
     } catch (error: any) {
-        res.status(500).json({ message: error.message });
+        console.error('[selectLawyer] Error:', error);
+        res.status(500).json({ message: error.message || 'Failed to select lawyer' });
     }
 };
 

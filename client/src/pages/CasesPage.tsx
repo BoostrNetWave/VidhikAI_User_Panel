@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { 
-    Briefcase, 
+    Briefcase,
+    Loader2, 
     AlertCircle, 
     Clock, 
     User, 
@@ -89,6 +90,7 @@ export default function CasesPage() {
 
     // Selection & Action states
     const [isSelectingLawyer, setIsSelectingLawyer] = useState(false);
+    const [selectingLawyerId, setSelectingLawyerId] = useState<string | null>(null);
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     const categories = [
@@ -206,18 +208,21 @@ export default function CasesPage() {
     };
 
     const handleSelectLawyer = async (lawyerId: string, lawyerName: string) => {
-        if (!selectedCase) return;
+        if (!selectedCase || !lawyerId) return;
         setIsSelectingLawyer(true);
+        setSelectingLawyerId(lawyerId);
         try {
             const updated = await caseService.selectLawyer(selectedCase._id, lawyerId);
             toast.success(`Approval request sent to Adv. ${lawyerName}! Awaiting confirmation.`);
             setSelectedCase(updated);
+            setCases(prev => prev.map(c => c._id === updated._id ? updated : c));
             fetchCases(true);
         } catch (err: any) {
             console.error(err);
             toast.error(err.response?.data?.message || "Failed to select lawyer");
         } finally {
             setIsSelectingLawyer(false);
+            setSelectingLawyerId(null);
         }
     };
 
@@ -857,12 +862,15 @@ export default function CasesPage() {
                                                         {selectedCase.interestedLawyers.map((item, idx) => {
                                                             const lawyer = item.lawyer;
                                                             if (!lawyer) return null;
-                                                            const isAiMatch = selectedCase.aiRecommendedLawyer?._id === lawyer._id;
-                                                            const isAdminRec = selectedCase.adminRecommendedLawyer?._id === lawyer._id;
+                                                            const lawyerId = typeof lawyer === 'string' ? lawyer : (lawyer._id || (lawyer as any).id);
+                                                            const lawyerName = (typeof lawyer === 'object' && lawyer?.fullName) ? lawyer.fullName : 'Advocate';
+                                                            const isAiMatch = (selectedCase.aiRecommendedLawyer?._id || selectedCase.aiRecommendedLawyer)?.toString() === lawyerId?.toString();
+                                                            const isAdminRec = (selectedCase.adminRecommendedLawyer?._id || selectedCase.adminRecommendedLawyer)?.toString() === lawyerId?.toString();
+                                                            const isThisSelecting = selectingLawyerId === lawyerId;
 
                                                             return (
                                                                 <div 
-                                                                    key={idx}
+                                                                    key={item._id || lawyerId || idx}
                                                                     className={`rounded-2xl border p-5 transition-all space-y-3 ${
                                                                         isAiMatch 
                                                                             ? "bg-gradient-to-r from-purple-50/70 to-indigo-50/40 border-primary shadow-xs" 
@@ -875,16 +883,16 @@ export default function CasesPage() {
                                                                         <div className="flex items-center gap-3.5">
                                                                             <Avatar className="h-12 w-12 rounded-xl border border-border shrink-0">
                                                                                 <AvatarImage 
-                                                                                    src={lawyer.avatar ? (lawyer.avatar.startsWith('http') ? lawyer.avatar : `/lawyer${lawyer.avatar}`) : ""} 
-                                                                                    alt={lawyer.fullName} 
+                                                                                    src={(typeof lawyer === 'object' && lawyer.avatar) ? (lawyer.avatar.startsWith('http') ? lawyer.avatar : `/lawyer${lawyer.avatar}`) : ""} 
+                                                                                    alt={lawyerName} 
                                                                                 />
                                                                                 <AvatarFallback className="rounded-xl bg-slate-100 font-bold">
-                                                                                    {lawyer.fullName?.charAt(0) || "A"}
+                                                                                    {lawyerName?.charAt(0) || "A"}
                                                                                 </AvatarFallback>
                                                                             </Avatar>
                                                                             <div>
                                                                                 <div className="flex items-center gap-2">
-                                                                                    <h4 className="font-extrabold text-slate-900 text-sm">{lawyer.fullName}</h4>
+                                                                                    <h4 className="font-extrabold text-slate-900 text-sm">{lawyerName}</h4>
                                                                                     <ShieldCheck className="w-4 h-4 text-primary" />
                                                                                     {isAiMatch && (
                                                                                         <Badge className="bg-primary text-white text-[9px] font-black uppercase tracking-wider">
@@ -898,7 +906,7 @@ export default function CasesPage() {
                                                                                     )}
                                                                                 </div>
                                                                                 <p className="text-xs text-slate-500 font-semibold">
-                                                                                    {lawyer.expertise || "Specialist Advocate"} • {lawyer.experience || "10+ Yrs"} Experience • {lawyer.location || "High Court"}
+                                                                                    {(typeof lawyer === 'object' && lawyer.expertise) ? lawyer.expertise : "Specialist Advocate"} • {(typeof lawyer === 'object' && lawyer.experience) ? lawyer.experience : "10+ Yrs"} Experience • {(typeof lawyer === 'object' && lawyer.location) ? lawyer.location : "High Court"}
                                                                                 </p>
                                                                             </div>
                                                                         </div>
@@ -913,11 +921,20 @@ export default function CasesPage() {
 
                                                                             <Button
                                                                                 disabled={isSelectingLawyer}
-                                                                                onClick={() => handleSelectLawyer(lawyer._id, lawyer.fullName)}
-                                                                                className="rounded-xl font-bold text-xs h-10 px-5 bg-primary hover:bg-primary/90 text-white flex items-center gap-1.5 shadow-xs"
+                                                                                onClick={() => handleSelectLawyer(lawyerId, lawyerName)}
+                                                                                className="rounded-xl font-bold text-xs h-10 px-5 bg-primary hover:bg-primary/90 text-white flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-60"
                                                                             >
-                                                                                <span>Select Advocate</span>
-                                                                                <ChevronRight className="w-4 h-4" />
+                                                                                {isThisSelecting ? (
+                                                                                    <>
+                                                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                                                        <span>Selecting...</span>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <span>Select Advocate</span>
+                                                                                        <ChevronRight className="w-4 h-4" />
+                                                                                    </>
+                                                                                )}
                                                                             </Button>
                                                                         </div>
                                                                     </div>

@@ -44,7 +44,7 @@ export function AdminCases({ cases = [], onRefresh }: AdminCasesProps) {
         const fetchLawyers = async () => {
             try {
                 const users = await adminService.getAllUsers();
-                const lawyers = users.filter((u: any) => u.role === 'lawyer');
+                const lawyers = users.filter((u: any) => u.role === 'lawyer' || u.role === 'advocate' || u.title || u.expertise);
                 setLawyersList(lawyers);
             } catch (err) {
                 console.warn('Failed to fetch lawyers for recommendation dropdown', err);
@@ -84,8 +84,13 @@ export function AdminCases({ cases = [], onRefresh }: AdminCasesProps) {
 
         setIsSavingRecommendation(true);
         try {
-            await adminService.recommendLawyer(selectedCase._id, recommendedLawyerId, adminNote);
+            const res = await adminService.recommendLawyer(selectedCase._id, recommendedLawyerId, adminNote);
             toast.success('Admin recommendation saved! Client will see the verified recommendation.');
+            if (res?.kase) {
+                setSelectedCase(res.kase);
+                setRecommendedLawyerId(res.kase.adminRecommendedLawyer?._id || res.kase.adminRecommendedLawyer || '');
+                setAdminNote(res.kase.adminRecommendationNote || '');
+            }
             if (onRefresh) onRefresh();
         } catch (err: any) {
             console.error(err);

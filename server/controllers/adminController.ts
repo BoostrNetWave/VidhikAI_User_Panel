@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import SystemConfig from '../models/SystemConfig';
 import User from '../models/User';
 import Case from '../models/Case';
+import Notification from '../models/Notification';
 import SupportTicket from '../models/SupportTicket';
 import DocumentModel from '../models/Document';
 import LiveConsultation from '../models/LiveConsultation';
@@ -342,19 +343,34 @@ export const recommendLawyerForCase = async (req: Request, res: Response) => {
             .populate('aiRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate')
             .populate('adminRecommendedLawyer', 'fullName email phone location title expertise avatar rating experience casesWon hourlyRate');
 
-        // Notify client
-        await Notification.create({
-            userId: kase.client.toString(),
-            userRole: 'user',
-            title: 'Admin Recommended a Lawyer',
-            message: `Admin has recommended Adv. ${lawyer.fullName} for your case "${kase.title}".`,
-            type: 'case',
-            link: `/cases`
-        });
+        // Notify client (with defensive error handling)
+        try {
+            await Notification.create({
+                userId: kase.client.toString(),
+                userRole: 'user',
+                title: 'Admin Recommended a Lawyer',
+                message: `Admin has recommended Adv. ${lawyer.fullName} for your case "${kase.title}".`,
+                type: 'case',
+                link: `/cases`
+            });
+        } catch (notifErr) {
+            console.warn('[Admin Recommend] Client notification creation error:', notifErr);
+        }
+
+        try {
+            emitToUser(kase.client.toString(), 'admin_recommendation_set', {
+                caseId: kase._id,
+                lawyerId: lawyer._id,
+                lawyerName: lawyer.fullName
+            });
+        } catch (socketErr) {
+            console.warn('[Admin Recommend] Socket emit error:', socketErr);
+        }
 
         res.json({ message: 'Lawyer recommendation saved successfully', kase: populated });
-    } catch (error) {
-        res.status(500).json({ message: 'Error setting lawyer recommendation' });
+    } catch (error: any) {
+        console.error('[Admin Recommend] Error setting recommendation:', error);
+        res.status(500).json({ message: error.message || 'Error setting lawyer recommendation' });
     }
 };
 
