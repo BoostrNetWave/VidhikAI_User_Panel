@@ -162,9 +162,8 @@ export function AdminConfigManager({
     footerTagline: 'Intelligent legal drafting, contract review, and powerful tools for modern teams.',
     copyright: '© 2026 Vidhik AI. All rights reserved.',
     statusText: 'All systems operational',
-    linkedinUrl: '',
-    instagramUrl: '',
-    githubUrl: '',
+    linkedinUrl: 'https://www.linkedin.com/company/vidhik-ai/',
+    instagramUrl: 'https://www.instagram.com/vidhik_ai/',
     twitterUrl: ''
   });
 
@@ -261,9 +260,8 @@ export function AdminConfigManager({
       footerTagline: getConfig('LANDING_FOOTER_TAGLINE', 'Intelligent legal drafting, contract review, and powerful tools for modern teams.'),
       copyright: getConfig('LANDING_FOOTER_COPYRIGHT', '© 2026 Vidhik AI. All rights reserved.'),
       statusText: getConfig('LANDING_FOOTER_STATUS_TEXT', 'All systems operational'),
-      linkedinUrl: getConfig('LANDING_FOOTER_LINKEDIN', socs?.linkedin || ''),
-      instagramUrl: getConfig('LANDING_FOOTER_INSTAGRAM', socs?.instagram || ''),
-      githubUrl: getConfig('LANDING_FOOTER_GITHUB', socs?.github || ''),
+      linkedinUrl: getConfig('LANDING_FOOTER_LINKEDIN', socs?.linkedin || 'https://www.linkedin.com/company/vidhik-ai/'),
+      instagramUrl: getConfig('LANDING_FOOTER_INSTAGRAM', socs?.instagram || 'https://www.instagram.com/vidhik_ai/'),
       twitterUrl: getConfig('LANDING_FOOTER_TWITTER', socs?.twitter || '')
     });
 
@@ -486,12 +484,10 @@ export function AdminConfigManager({
                   { key: 'LANDING_FOOTER_STATUS_TEXT', value: navFooterData.statusText, category: 'landing', description: 'System status indicator copy' },
                   { key: 'LANDING_FOOTER_LINKEDIN', value: navFooterData.linkedinUrl || '', category: 'landing', description: 'Footer LinkedIn Profile URL' },
                   { key: 'LANDING_FOOTER_INSTAGRAM', value: navFooterData.instagramUrl || '', category: 'landing', description: 'Footer Instagram Profile URL' },
-                  { key: 'LANDING_FOOTER_GITHUB', value: navFooterData.githubUrl || '', category: 'landing', description: 'Footer GitHub Profile URL' },
                   { key: 'LANDING_FOOTER_TWITTER', value: navFooterData.twitterUrl || '', category: 'landing', description: 'Footer Twitter Profile URL' },
                   { key: 'LANDING_FOOTER_SOCIALS', value: {
                       linkedin: navFooterData.linkedinUrl || '',
                       instagram: navFooterData.instagramUrl || '',
-                      github: navFooterData.githubUrl || '',
                       twitter: navFooterData.twitterUrl || ''
                     }, category: 'landing', description: 'Footer Social Media Links' },
 
@@ -1467,7 +1463,7 @@ export function AdminConfigManager({
                       <Input 
                         value={navFooterData.linkedinUrl || ''} 
                         onChange={e => setNavFooterData({ ...navFooterData, linkedinUrl: e.target.value })} 
-                        placeholder="https://www.linkedin.com/company/vidhikai" 
+                        placeholder="https://www.linkedin.com/company/vidhik-ai/" 
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -1475,18 +1471,10 @@ export function AdminConfigManager({
                       <Input 
                         value={navFooterData.instagramUrl || ''} 
                         onChange={e => setNavFooterData({ ...navFooterData, instagramUrl: e.target.value })} 
-                        placeholder="https://www.instagram.com/vidhikai" 
+                        placeholder="https://www.instagram.com/vidhik_ai/" 
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-foreground">GitHub Profile URL</label>
-                      <Input 
-                        value={navFooterData.githubUrl || ''} 
-                        onChange={e => setNavFooterData({ ...navFooterData, githubUrl: e.target.value })} 
-                        placeholder="https://github.com/vidhikai" 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 md:col-span-2">
                       <label className="text-xs font-bold text-foreground">Twitter / X Profile URL (Optional)</label>
                       <Input 
                         value={navFooterData.twitterUrl || ''} 

@@ -121,21 +121,15 @@ const seedData = [
     },
     {
         key: 'LANDING_FOOTER_LINKEDIN',
-        value: 'https://www.linkedin.com',
+        value: 'https://www.linkedin.com/company/vidhik-ai/',
         category: 'landing',
         description: 'Official LinkedIn page URL'
     },
     {
         key: 'LANDING_FOOTER_INSTAGRAM',
-        value: 'https://www.instagram.com',
+        value: 'https://www.instagram.com/vidhik_ai/',
         category: 'landing',
         description: 'Official Instagram page URL'
-    },
-    {
-        key: 'LANDING_FOOTER_GITHUB',
-        value: 'https://github.com',
-        category: 'landing',
-        description: 'Official GitHub page URL'
     },
     {
         key: 'LANDING_FOOTER_TWITTER',
@@ -146,9 +140,8 @@ const seedData = [
     {
         key: 'LANDING_FOOTER_SOCIALS',
         value: {
-            linkedin: 'https://www.linkedin.com',
-            instagram: 'https://www.instagram.com',
-            github: 'https://github.com',
+            linkedin: 'https://www.linkedin.com/company/vidhik-ai/',
+            instagram: 'https://www.instagram.com/vidhik_ai/',
             twitter: 'https://twitter.com'
         },
         category: 'landing',
