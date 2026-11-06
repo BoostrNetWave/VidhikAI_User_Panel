@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { protect } from '../middleware/authMiddleware';
+import { protect, optionalAuth } from '../middleware/authMiddleware';
 import {
     createSupportTicket,
     getUserSupportTickets,
     getTicketById,
-    replyToTicketAsCustomer
+    replyToTicketAsCustomer,
+    submitContactInquiry
 } from '../controllers/supportController';
 import multer from 'multer';
 import path from 'path';
@@ -38,6 +39,9 @@ const upload = multer({
 });
 
 const router = Router();
+
+// Public / Authenticated Contact Us & Custom Plan Inquiry endpoint
+router.post('/contact', optionalAuth, submitContactInquiry);
 
 router.use(protect);
 

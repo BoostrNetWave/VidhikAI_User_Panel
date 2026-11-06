@@ -52,6 +52,7 @@ registerRoute('/admin', adminRoutes);
 registerRoute('/cases', caseRoutes);
 registerRoute('/dashboard', dashboardRoutes);
 registerRoute('/support', supportRoutes);
+registerRoute('/contact', supportRoutes);
 registerRoute('/consultations', consultationRoutes);
 registerRoute('/subscription', subscriptionRoutes);
 registerRoute('/subscriptions', subscriptionRoutes);

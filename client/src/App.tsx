@@ -51,6 +51,7 @@ import ConsultationsPage from './pages/ConsultationsPage'
 import ConsultationRoom from './pages/ConsultationRoom'
 import MySupportTicketsPage from './pages/support/MySupportTicketsPage'
 import DocumentViewPage from './pages/DocumentViewPage'
+import ContactUs from './pages/ContactUs'
 
 import { useEffect } from 'react'
 import { getSocket, registerSocketUser, disconnectSocket } from './lib/socket'
@@ -167,6 +168,8 @@ function App() {
                 <Route path="/consultation-room/:id" element={<ConsultationRoom />} />
                 <Route path="/billing" element={<BillingPlans />} />
                 <Route path="/billing/checkout" element={<BillingCheckout />} />
+                <Route path="/contact" element={<ContactUs />} />
+                <Route path="/contact-us" element={<ContactUs />} />
                 <Route path="/support" element={<MySupportTicketsPage />} />
                 <Route path="/support/tickets" element={<MySupportTicketsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />

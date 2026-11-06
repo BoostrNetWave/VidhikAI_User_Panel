@@ -102,6 +102,59 @@ const seedData = [
         description: 'JSON array of contact card items'
     },
     {
+        key: 'LANDING_FOOTER_TAGLINE',
+        value: 'Intelligent legal drafting, contract review, and powerful tools for modern teams.',
+        category: 'landing',
+        description: 'Footer subtitle tagline copy'
+    },
+    {
+        key: 'LANDING_FOOTER_COPYRIGHT',
+        value: '© 2026 Vidhik AI. All rights reserved.',
+        category: 'landing',
+        description: 'Footer copyright statement'
+    },
+    {
+        key: 'LANDING_FOOTER_STATUS_TEXT',
+        value: 'All systems operational',
+        category: 'landing',
+        description: 'Footer system status indicator text'
+    },
+    {
+        key: 'LANDING_FOOTER_LINKEDIN',
+        value: 'https://www.linkedin.com',
+        category: 'landing',
+        description: 'Official LinkedIn page URL'
+    },
+    {
+        key: 'LANDING_FOOTER_INSTAGRAM',
+        value: 'https://www.instagram.com',
+        category: 'landing',
+        description: 'Official Instagram page URL'
+    },
+    {
+        key: 'LANDING_FOOTER_GITHUB',
+        value: 'https://github.com',
+        category: 'landing',
+        description: 'Official GitHub page URL'
+    },
+    {
+        key: 'LANDING_FOOTER_TWITTER',
+        value: 'https://twitter.com',
+        category: 'landing',
+        description: 'Official Twitter / X page URL'
+    },
+    {
+        key: 'LANDING_FOOTER_SOCIALS',
+        value: {
+            linkedin: 'https://www.linkedin.com',
+            instagram: 'https://www.instagram.com',
+            github: 'https://github.com',
+            twitter: 'https://twitter.com'
+        },
+        category: 'landing',
+        description: 'JSON object of footer social media profile links'
+    },
+    {
         key: 'LANDING_FAQS',
         value: [
             { q: "Is Vidhik AI a replacement for a lawyer?", a: "Vidhik AI is designed to assist with routine legal tasks like document generation and contract review. For complex legal matters, we recommend consulting with a qualified lawyer — and we can help you connect with one too." },

@@ -224,6 +224,16 @@ export default function BillingPlans() {
     });
 
     const handleSelectPlan = async (tier: any) => {
+        const isCustom = tier.name.toLowerCase() === 'enterprise' || 
+                         tier.name.toLowerCase().includes('custom') || 
+                         tier.priceMonthly === 'Custom' ||
+                         (tier.priceMonthly === 0 && tier.name.toLowerCase() !== 'free');
+
+        if (isCustom) {
+            navigate('/contact', { state: { plan: tier.name, details: 'Custom Plan Inquiry', monthlyCredits: tier.monthlyCredits } });
+            return;
+        }
+
         if (tier.name.toLowerCase() === 'free') {
             try {
                 setActivatingFree(true);
@@ -493,11 +503,40 @@ export default function BillingPlans() {
                                                              : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
                                                     }`}
                                                 >
-                                                    {isCurrent ? "Current Active Plan" : tier.name.toLowerCase() === 'free' ? "Activate Free Plan" : `Upgrade to ${tier.name}`}
+                                                    {isCurrent 
+                                                        ? "Current Active Plan" 
+                                                        : tier.name.toLowerCase() === 'free' 
+                                                        ? "Activate Free Plan" 
+                                                        : (tier.name.toLowerCase() === 'enterprise' || tier.name.toLowerCase().includes('custom') || tier.priceMonthly === 'Custom' || (tier.priceMonthly === 0 && tier.name.toLowerCase() !== 'free'))
+                                                        ? "Contact for Custom Plan"
+                                                        : `Upgrade to ${tier.name}`}
                                                 </Button>
                                             </div>
                                         );
                                     })}
+                                </div>
+
+                                {/* Custom Enterprise Plan Banner */}
+                                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background border border-primary/20 rounded-3xl p-6 md:p-8 mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+                                    <div className="space-y-2">
+                                        <div className="inline-flex items-center gap-2 bg-primary/15 text-primary px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                                            <Building2 className="h-3.5 w-3.5" />
+                                            Custom Enterprise & Firm Solutions
+                                        </div>
+                                        <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                                            Need a Tailored Custom Plan with Unlimited Quotas?
+                                        </h3>
+                                        <p className="text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed">
+                                            Get customized monthly AI credit allocations, corporate GST invoicing, dedicated SLA, custom contract templates, and team access. Contact our enterprise billing team to structure a bespoke agreement.
+                                        </p>
+                                    </div>
+                                    <Button 
+                                        onClick={() => navigate('/contact', { state: { plan: 'Custom Enterprise Plan' } })}
+                                        className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold px-6 py-6 rounded-2xl whitespace-nowrap shadow-sm text-sm"
+                                    >
+                                        Contact Us for Custom Plan
+                                        <ArrowUpRight className="h-4 w-4 ml-1.5" />
+                                    </Button>
                                 </div>
 
                                 {/* Extra Credit Packages Showcase */}

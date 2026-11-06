@@ -161,7 +161,11 @@ export function AdminConfigManager({
     logoUrl: '',
     footerTagline: 'Intelligent legal drafting, contract review, and powerful tools for modern teams.',
     copyright: '© 2026 Vidhik AI. All rights reserved.',
-    statusText: 'All systems operational'
+    statusText: 'All systems operational',
+    linkedinUrl: '',
+    instagramUrl: '',
+    githubUrl: '',
+    twitterUrl: ''
   });
 
   const [pricingPlans, setPricingPlans] = useState<any[]>([]);
@@ -250,12 +254,17 @@ export function AdminConfigManager({
       items: Array.isArray(fItems) ? fItems : faqData.items
     });
 
+    const socs = getConfig('LANDING_FOOTER_SOCIALS', {});
     setNavFooterData({
       brandName: getConfig('LANDING_NAVBAR_BRAND', 'Vidhik AI'),
       logoUrl: getConfig('LANDING_LOGO_URL', ''),
       footerTagline: getConfig('LANDING_FOOTER_TAGLINE', 'Intelligent legal drafting, contract review, and powerful tools for modern teams.'),
       copyright: getConfig('LANDING_FOOTER_COPYRIGHT', '© 2026 Vidhik AI. All rights reserved.'),
-      statusText: getConfig('LANDING_FOOTER_STATUS_TEXT', 'All systems operational')
+      statusText: getConfig('LANDING_FOOTER_STATUS_TEXT', 'All systems operational'),
+      linkedinUrl: getConfig('LANDING_FOOTER_LINKEDIN', socs?.linkedin || ''),
+      instagramUrl: getConfig('LANDING_FOOTER_INSTAGRAM', socs?.instagram || ''),
+      githubUrl: getConfig('LANDING_FOOTER_GITHUB', socs?.github || ''),
+      twitterUrl: getConfig('LANDING_FOOTER_TWITTER', socs?.twitter || '')
     });
 
     const userPlans = getConfig('USER_PRICING_PLANS');
@@ -475,6 +484,16 @@ export function AdminConfigManager({
                   { key: 'LANDING_FOOTER_TAGLINE', value: navFooterData.footerTagline, category: 'landing', description: 'Footer tagline' },
                   { key: 'LANDING_FOOTER_COPYRIGHT', value: navFooterData.copyright, category: 'landing', description: 'Footer copyright' },
                   { key: 'LANDING_FOOTER_STATUS_TEXT', value: navFooterData.statusText, category: 'landing', description: 'System status indicator copy' },
+                  { key: 'LANDING_FOOTER_LINKEDIN', value: navFooterData.linkedinUrl || '', category: 'landing', description: 'Footer LinkedIn Profile URL' },
+                  { key: 'LANDING_FOOTER_INSTAGRAM', value: navFooterData.instagramUrl || '', category: 'landing', description: 'Footer Instagram Profile URL' },
+                  { key: 'LANDING_FOOTER_GITHUB', value: navFooterData.githubUrl || '', category: 'landing', description: 'Footer GitHub Profile URL' },
+                  { key: 'LANDING_FOOTER_TWITTER', value: navFooterData.twitterUrl || '', category: 'landing', description: 'Footer Twitter Profile URL' },
+                  { key: 'LANDING_FOOTER_SOCIALS', value: {
+                      linkedin: navFooterData.linkedinUrl || '',
+                      instagram: navFooterData.instagramUrl || '',
+                      github: navFooterData.githubUrl || '',
+                      twitter: navFooterData.twitterUrl || ''
+                    }, category: 'landing', description: 'Footer Social Media Links' },
 
                   { key: 'LANDING_ANNOUNCEMENT_BANNER', value: landingBanner, category: 'landing', description: 'Top alert banner' }
                 ]);
@@ -1429,6 +1448,52 @@ export function AdminConfigManager({
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-foreground">System Status Indicator Text</label>
                     <Input value={navFooterData.statusText} onChange={e => setNavFooterData({ ...navFooterData, statusText: e.target.value })} placeholder="e.g. All systems operational" />
+                  </div>
+                </div>
+
+                {/* Footer Social Media Handles */}
+                <div className="pt-4 border-t border-border space-y-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span>Footer Social Media Handles</span>
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      Configure your official social media profile URLs. Links will dynamically update on the live landing page footer and redirect visitors directly to your profiles.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">LinkedIn Profile URL</label>
+                      <Input 
+                        value={navFooterData.linkedinUrl || ''} 
+                        onChange={e => setNavFooterData({ ...navFooterData, linkedinUrl: e.target.value })} 
+                        placeholder="https://www.linkedin.com/company/vidhikai" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">Instagram Profile URL</label>
+                      <Input 
+                        value={navFooterData.instagramUrl || ''} 
+                        onChange={e => setNavFooterData({ ...navFooterData, instagramUrl: e.target.value })} 
+                        placeholder="https://www.instagram.com/vidhikai" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">GitHub Profile URL</label>
+                      <Input 
+                        value={navFooterData.githubUrl || ''} 
+                        onChange={e => setNavFooterData({ ...navFooterData, githubUrl: e.target.value })} 
+                        placeholder="https://github.com/vidhikai" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">Twitter / X Profile URL (Optional)</label>
+                      <Input 
+                        value={navFooterData.twitterUrl || ''} 
+                        onChange={e => setNavFooterData({ ...navFooterData, twitterUrl: e.target.value })} 
+                        placeholder="https://twitter.com/vidhikai" 
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
