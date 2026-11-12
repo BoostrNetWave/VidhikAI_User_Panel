@@ -18,6 +18,7 @@ import { AdminLoginHistory } from "./components/AdminLoginHistory";
 import { AdminLLMConfig } from "./components/AdminLLMConfig";
 import { AdminPayments } from "./components/AdminPayments";
 import { AdminPagesManager } from "./components/AdminPagesManager";
+import { AdminDocumentReviews } from "./components/AdminDocumentReviews";
 
 export default function AdminSettings() {
     const { tab } = useParams();
@@ -236,6 +237,8 @@ export default function AdminSettings() {
                 return <AdminTickets tickets={tickets} onReply={handleReplyTicket} onUpdateStatus={handleUpdateTicketStatus} />;
             case 'documents':
                 return <AdminDocuments documents={documents} />;
+            case 'document-reviews':
+                return <AdminDocumentReviews />;
             case 'login-history':
                 return <AdminLoginHistory history={loginHistory} />;
             default:

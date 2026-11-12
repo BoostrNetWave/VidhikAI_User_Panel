@@ -1,7 +1,7 @@
-import { useState, useRef, ReactNode } from 'react';
+import { useState, useRef, useEffect, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, Loader2, FileText, Download, Eye, Edit, Save, CheckCircle, PenTool, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, FileText, Download, Eye, Edit, Save, CheckCircle, PenTool, ShieldCheck, Gavel } from "lucide-react";
 import api from '@/lib/api';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
@@ -16,6 +16,9 @@ import { DocumentPreview } from '@/components/documents/DocumentPreview';
 import { DocumentInfoBar } from '@/components/documents/DocumentInfoBar';
 import { DocumentSidebar } from '@/components/documents/DocumentSidebar';
 import { DigitalSignatureModal } from '@/components/documents/DigitalSignatureModal';
+import { RequestLawyerReviewModal } from '@/components/documents/RequestLawyerReviewModal';
+import { ReviewStatusBanner } from '@/components/documents/ReviewStatusBanner';
+import { documentReviewService, IDocumentReviewRequest } from '@/services/documentReviewService';
 import { parseHtmlToDocx } from '@/lib/docxUtils';
 import { applyOrReplaceSignature } from '@/lib/signatureUtils';
 import {
@@ -58,7 +61,24 @@ export default function DocumentBaseGenerator({
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [activeReviewRequest, setActiveReviewRequest] = useState<IDocumentReviewRequest | null>(null);
     const quillRef = useRef<any>(null);
+
+    // Fetch existing review request if any for this document
+    useEffect(() => {
+        documentReviewService.getUserRequests().then(res => {
+            if (res.success && Array.isArray(res.data)) {
+                const match = res.data.find(r => 
+                    r.documentType === documentType && 
+                    r.status !== 'cancelled'
+                );
+                if (match) {
+                    setActiveReviewRequest(match);
+                }
+            }
+        }).catch(() => {});
+    }, [documentType]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -474,6 +494,19 @@ export default function DocumentBaseGenerator({
                         )}
                     </Card>
 
+                    {activeReviewRequest && (
+                        <div className="mb-4">
+                            <ReviewStatusBanner
+                                request={activeReviewRequest}
+                                onUpdate={(updated) => setActiveReviewRequest(updated)}
+                                onApplyReviewedContent={(content) => {
+                                    setGeneratedDocument(content);
+                                    toast.success('Loaded lawyer-reviewed draft into the viewer!');
+                                }}
+                            />
+                        </div>
+                    )}
+
                     {generatedDocument && (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between border-b pb-4 flex-wrap gap-3">
@@ -487,6 +520,14 @@ export default function DocumentBaseGenerator({
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setIsReviewModalOpen(true)}
+                                        className="gap-1.5 text-xs bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-xs"
+                                    >
+                                        <Gavel className="h-3.5 w-3.5" />
+                                        Request Lawyer Review
+                                    </Button>
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -590,6 +631,18 @@ export default function DocumentBaseGenerator({
                     formData?.party2_signatory ||
                     ''
                 }
+            />
+
+            {/* Request Lawyer Review Modal */}
+            <RequestLawyerReviewModal
+                isOpen={isReviewModalOpen}
+                onClose={() => setIsReviewModalOpen(false)}
+                documentTitle={title}
+                documentType={documentType}
+                originalContent={generatedDocument}
+                onRequestSubmitted={(newReq) => {
+                    setActiveReviewRequest(newReq);
+                }}
             />
         </DashboardLayout>
     );

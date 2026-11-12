@@ -5,12 +5,13 @@ export interface ITransaction extends mongoose.Document {
     orderId: string;
     paymentId?: string;
     signature?: string;
-    type: 'plan_subscription' | 'extra_credits' | 'case_booking' | 'video_consultation';
+    type: 'plan_subscription' | 'extra_credits' | 'case_booking' | 'video_consultation' | 'document_review';
     planName?: string;
     billingCycle?: 'monthly' | 'yearly';
     packageId?: string;
     caseId?: mongoose.Types.ObjectId;
     consultationId?: mongoose.Types.ObjectId;
+    reviewRequestId?: mongoose.Types.ObjectId;
     amount: number;
     currency: string;
     status: 'created' | 'paid' | 'failed';
@@ -44,7 +45,7 @@ const transactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['plan_subscription', 'extra_credits', 'case_booking', 'video_consultation'],
+        enum: ['plan_subscription', 'extra_credits', 'case_booking', 'video_consultation', 'document_review'],
         required: true
     },
     planName: {
@@ -65,6 +66,10 @@ const transactionSchema = new mongoose.Schema({
     consultationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LiveConsultation'
+    },
+    reviewRequestId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'DocumentReviewRequest'
     },
     amount: {
         type: Number,

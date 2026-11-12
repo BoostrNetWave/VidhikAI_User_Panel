@@ -39,7 +39,8 @@ import {
     Save,
     CheckCircle2,
     PenTool,
-    ShieldCheck
+    ShieldCheck,
+    Gavel
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { parseHtmlToDocx } from '@/lib/docxUtils';
@@ -48,6 +49,8 @@ import { saveAs } from 'file-saver';
 import { DocumentPreview, formatToLegalHtml } from '@/components/documents/DocumentPreview';
 import { DigitalSignatureModal } from '@/components/documents/DigitalSignatureModal';
 import { applyOrReplaceSignature } from '@/lib/signatureUtils';
+import { documentReviewService, IDocumentReviewRequest } from '@/services/documentReviewService';
+import { ReviewStatusBanner } from '@/components/documents/ReviewStatusBanner';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -95,7 +98,23 @@ export default function MyDocuments() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'workspace' | 'trash'>('workspace');
+    const [activeTab, setActiveTab] = useState<'workspace' | 'reviews' | 'trash'>('workspace');
+    const [userReviews, setUserReviews] = useState<IDocumentReviewRequest[]>([]);
+    const [loadingReviews, setLoadingReviews] = useState(false);
+
+    const fetchUserReviews = async () => {
+        try {
+            setLoadingReviews(true);
+            const res = await documentReviewService.getUserRequests();
+            if (res.success && Array.isArray(res.data)) {
+                setUserReviews(res.data);
+            }
+        } catch (err) {
+            console.error("Error fetching user reviews:", err);
+        } finally {
+            setLoadingReviews(false);
+        }
+    };
     const [isRestoring, setIsRestoring] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
@@ -170,8 +189,16 @@ export default function MyDocuments() {
     };
 
     useEffect(() => {
-        fetchDocuments();
+        if (activeTab === 'reviews') {
+            fetchUserReviews();
+        } else {
+            fetchDocuments();
+        }
     }, [activeTab]);
+
+    useEffect(() => {
+        fetchUserReviews();
+    }, []);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -629,11 +656,13 @@ export default function MyDocuments() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                            {activeTab === 'trash' ? 'Dustbin (Trash)' : 'My Documents'}
+                            {activeTab === 'trash' ? 'Dustbin (Trash)' : activeTab === 'reviews' ? 'Expert Lawyer Reviews' : 'My Documents'}
                         </h1>
                         <p className="text-muted-foreground mt-1">
                             {activeTab === 'trash'
                                 ? 'Recover or permanently delete your trashed documents.'
+                                : activeTab === 'reviews'
+                                ? 'Track review quotes, Razorpay fee payments, and finalized lawyer drafts.'
                                 : 'Manage and access all your generated legal documents.'}
                         </p>
                     </div>
@@ -641,13 +670,25 @@ export default function MyDocuments() {
                         <div className="flex p-1 bg-gray-100 rounded-lg border">
                             <button
                                 onClick={() => setActiveTab('workspace')}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'workspace' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'workspace' ? 'bg-background shadow-sm text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 Workspace
                             </button>
                             <button
+                                onClick={() => { setActiveTab('reviews'); fetchUserReviews(); }}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${activeTab === 'reviews' ? 'bg-background shadow-sm text-indigo-700 font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                <Gavel className="h-4 w-4" />
+                                Lawyer Reviews
+                                {userReviews.length > 0 && (
+                                    <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.2 rounded-full">
+                                        {userReviews.length}
+                                    </span>
+                                )}
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('trash')}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'trash' ? 'bg-background shadow-sm text-destructive' : 'text-muted-foreground hover:text-foreground'}`}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'trash' ? 'bg-background shadow-sm text-destructive font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 <Trash2 className="h-4 w-4" />
                                 Dustbin
@@ -679,7 +720,51 @@ export default function MyDocuments() {
                     </div>
                 </div>
 
-                <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+                {activeTab === 'reviews' ? (
+                    <div className="space-y-4">
+                        {loadingReviews ? (
+                            <div className="bg-white border rounded-2xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <span className="text-sm font-medium">Loading your lawyer reviews...</span>
+                            </div>
+                        ) : userReviews.length === 0 ? (
+                            <div className="bg-white border rounded-2xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                                <div className="h-12 w-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                    <Gavel className="h-6 w-6" />
+                                </div>
+                                <h3 className="text-base font-bold text-foreground">No Lawyer Reviews Yet</h3>
+                                <p className="text-xs text-muted-foreground max-w-md">
+                                    Generate any contract in the document generator, then click "Request Lawyer Review" to receive a tailored fee proposal and expert advocate review.
+                                </p>
+                                <Button 
+                                    onClick={() => navigate('/document-generator')}
+                                    className="text-xs rounded-xl mt-2 font-semibold bg-indigo-600 hover:bg-indigo-700 text-white"
+                                >
+                                    Browse Templates &amp; Generate
+                                </Button>
+                            </div>
+                        ) : (
+                            userReviews.map((rev) => (
+                                <ReviewStatusBanner
+                                    key={rev._id}
+                                    request={rev}
+                                    onUpdate={(updated) => {
+                                        setUserReviews(prev => prev.map(r => r._id === updated._id ? updated : r));
+                                    }}
+                                    onApplyReviewedContent={(content) => {
+                                        setEditTitle(rev.documentTitle);
+                                        setEditContent(content);
+                                        setSelectedDoc({ title: rev.documentTitle, content });
+                                        setDocModalMode('review');
+                                        setIsPreviewOpen(true);
+                                    }}
+                                />
+                            ))
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
                     <Table>
                         <TableHeader className="bg-gray-50/50">
                             <TableRow>
@@ -927,6 +1012,8 @@ export default function MyDocuments() {
                             </Button>
                         </div>
                     </div>
+                )}
+                    </>
                 )}
             </div>
 

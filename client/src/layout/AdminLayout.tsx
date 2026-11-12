@@ -77,6 +77,7 @@ export default function AdminLayout({ children, userNav }: AdminLayoutProps) {
         { path: '/admin/users', label: 'User Management', icon: Users },
         { path: '/admin/tickets', label: 'Support Tickets', icon: MessageSquare },
         { path: '/admin/documents', label: 'Client Documents', icon: FileText },
+        { path: '/admin/document-reviews', label: 'Document Reviews', icon: Gavel },
         { path: '/admin/payments', label: 'Financials & Payouts', icon: CreditCard },
         { path: '/admin/login-history', label: 'Login History', icon: ShieldAlert },
         { path: '/admin/llm-config', label: 'LLM Config', icon: Cpu },
