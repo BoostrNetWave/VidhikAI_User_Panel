@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, Loader2, FileText, Download, Eye, Edit, Save, CheckCircle, PenTool, ShieldCheck, Gavel } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, FileText, Download, Eye, Edit, Save, CheckCircle, PenTool, ShieldCheck, Gavel, Clock } from "lucide-react";
 import api from '@/lib/api';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
@@ -508,79 +508,109 @@ export default function DocumentBaseGenerator({
                     )}
 
                     {generatedDocument && (
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between border-b pb-4 flex-wrap gap-3">
-                                <div className="flex items-center gap-2.5">
-                                    <CardTitle>Generated Agreement</CardTitle>
-                                    {(generatedDocument.includes('vidhik-signature-block') || generatedDocument.includes('sig-badge') || generatedDocument.includes('Digitally Signed')) && (
-                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                                            Digitally Signed
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <Button
-                                        size="sm"
-                                        onClick={() => setIsReviewModalOpen(true)}
-                                        className="gap-1.5 text-xs bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-xs"
-                                    >
-                                        <Gavel className="h-3.5 w-3.5" />
-                                        Request Lawyer Review
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setIsSignatureModalOpen(true)}
-                                        className="gap-1.5 text-xs text-indigo-700 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 font-semibold"
-                                    >
-                                        <PenTool className="h-3.5 w-3.5" />
-                                        Add Digital Signature
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => setIsEditMode(!isEditMode)} className="gap-2">
-                                        {isEditMode ? <Eye className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-                                        {isEditMode ? 'Preview' : 'Edit'}
-                                    </Button>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="sm" className="gap-2">
-                                                <Download className="h-4 w-4" />
-                                                Download
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={handleDownloadPDF} className="cursor-pointer">
-                                                Download PDF
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handleDownloadDOCX} className="cursor-pointer">
-                                                Download DOCX
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <Button
-                                        variant={saveStatus === 'saved' ? "ghost" : "default"}
-                                        size="sm"
-                                        onClick={handleSaveToWorkspace}
-                                        disabled={isSaving || saveStatus === 'saved'}
-                                        className={`gap-2 ${saveStatus === 'saved' ? 'text-green-600 bg-green-50 hover:bg-green-100 border-green-200' : ''}`}
-                                    >
-                                        {isSaving ? (
-                                            <>
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                Saving...
-                                            </>
-                                        ) : saveStatus === 'saved' ? (
-                                            <>
-                                                <CheckCircle className="h-4 w-4" />
-                                                Saved to Workspace
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save className="h-4 w-4" />
-                                                Save to Workspace
-                                            </>
+                        <Card className="border border-slate-200/80 shadow-xs rounded-xl overflow-hidden">
+                            <CardHeader className="p-4 sm:p-5 border-b bg-white">
+                                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                        <CardTitle className="text-xl font-bold tracking-tight text-slate-900">
+                                            Generated Agreement
+                                        </CardTitle>
+                                        {(generatedDocument.includes('vidhik-signature-block') || generatedDocument.includes('sig-badge') || generatedDocument.includes('Digitally Signed')) && (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-xs">
+                                                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                                                Digitally Signed
+                                            </span>
                                         )}
-                                    </Button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+                                        {activeReviewRequest && ['pending_quote', 'payment_pending', 'in_review'].includes(activeReviewRequest.status) ? (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    toast.info(`Review request #${activeReviewRequest.requestId} is currently ${activeReviewRequest.status.replace('_', ' ')}.`);
+                                                }}
+                                                className="gap-1.5 text-xs h-8 px-3 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 font-semibold whitespace-nowrap"
+                                            >
+                                                <Clock className="h-3.5 w-3.5 text-amber-600" />
+                                                Review: {activeReviewRequest.status === 'pending_quote' ? 'Quote Pending' : activeReviewRequest.status === 'payment_pending' ? 'Payment Due' : 'In Review'}
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={() => setIsReviewModalOpen(true)}
+                                                className="gap-1.5 text-xs h-8 px-3.5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-xs hover:shadow transition-all whitespace-nowrap"
+                                            >
+                                                <Gavel className="h-3.5 w-3.5" />
+                                                Request Lawyer Review
+                                            </Button>
+                                        )}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setIsSignatureModalOpen(true)}
+                                            className="gap-1.5 text-xs h-8 px-3 text-indigo-700 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 font-semibold whitespace-nowrap"
+                                        >
+                                            <PenTool className="h-3.5 w-3.5" />
+                                            Add Digital Signature
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setIsEditMode(!isEditMode)}
+                                            className="gap-1.5 text-xs h-8 px-3 text-slate-700 hover:text-slate-900 whitespace-nowrap"
+                                        >
+                                            {isEditMode ? <Eye className="h-3.5 w-3.5" /> : <Edit className="h-3.5 w-3.5" />}
+                                            {isEditMode ? 'Preview' : 'Edit'}
+                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button type="button" variant="outline" size="sm" className="gap-1.5 text-xs h-8 px-3 text-slate-700 hover:text-slate-900 whitespace-nowrap">
+                                                    <Download className="h-3.5 w-3.5" />
+                                                    Download
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={handleDownloadPDF} className="cursor-pointer">
+                                                    Download PDF
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={handleDownloadDOCX} className="cursor-pointer">
+                                                    Download DOCX
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                        <Button
+                                            type="button"
+                                            variant={saveStatus === 'saved' ? "ghost" : "default"}
+                                            size="sm"
+                                            onClick={handleSaveToWorkspace}
+                                            disabled={isSaving || saveStatus === 'saved'}
+                                            className={`gap-1.5 text-xs h-8 px-3.5 whitespace-nowrap font-medium ${saveStatus === 'saved' ? 'text-green-600 bg-green-50 hover:bg-green-100 border border-green-200' : ''}`}
+                                        >
+                                            {isSaving ? (
+                                                <>
+                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                    Saving...
+                                                </>
+                                            ) : saveStatus === 'saved' ? (
+                                                <>
+                                                    <CheckCircle className="h-3.5 w-3.5" />
+                                                    Saved to Workspace
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="h-3.5 w-3.5" />
+                                                    Save to Workspace
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0 overflow-hidden">

@@ -51,6 +51,7 @@ import { DigitalSignatureModal } from '@/components/documents/DigitalSignatureMo
 import { applyOrReplaceSignature } from '@/lib/signatureUtils';
 import { documentReviewService, IDocumentReviewRequest } from '@/services/documentReviewService';
 import { ReviewStatusBanner } from '@/components/documents/ReviewStatusBanner';
+import { RequestLawyerReviewModal } from '@/components/documents/RequestLawyerReviewModal';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -101,6 +102,8 @@ export default function MyDocuments() {
     const [activeTab, setActiveTab] = useState<'workspace' | 'reviews' | 'trash'>('workspace');
     const [userReviews, setUserReviews] = useState<IDocumentReviewRequest[]>([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [docForReview, setDocForReview] = useState<any>(null);
 
     const fetchUserReviews = async () => {
         try {
@@ -1121,6 +1124,17 @@ export default function MyDocuments() {
                             {docModalMode === 'review' ? (
                                 <>
                                     <Button
+                                        size="sm"
+                                        className="gap-1.5 text-xs bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-xs h-8 whitespace-nowrap"
+                                        onClick={() => {
+                                            setDocForReview(selectedDoc);
+                                            setIsReviewModalOpen(true);
+                                        }}
+                                    >
+                                        <Gavel className="h-3.5 w-3.5" />
+                                        Request Lawyer Review
+                                    </Button>
+                                    <Button
                                         variant="outline"
                                         size="sm"
                                         className="gap-1.5 text-xs text-indigo-700 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 font-semibold h-8"
@@ -1422,6 +1436,20 @@ export default function MyDocuments() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {/* Request Lawyer Review Modal */}
+            <RequestLawyerReviewModal
+                isOpen={isReviewModalOpen}
+                onClose={() => setIsReviewModalOpen(false)}
+                documentTitle={docForReview?.title || selectedDoc?.title || 'Legal Document'}
+                documentType={docForReview?.documentType || selectedDoc?.documentType || 'general_agreement'}
+                originalContent={docForReview?.content || selectedDoc?.content || ''}
+                documentId={docForReview?._id || selectedDoc?._id}
+                onRequestSubmitted={() => {
+                    fetchUserReviews();
+                    setActiveTab('reviews');
+                }}
+            />
         </DashboardLayout>
     );
 }
