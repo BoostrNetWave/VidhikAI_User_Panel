@@ -224,10 +224,10 @@ export default function VerifyEmail() {
                             <button
                                 type="button"
                                 onClick={handleResendOTP}
-                                disabled={resending || resendCooldown > 0}
+                                disabled={isResending || resendCooldown > 0}
                                 className="font-semibold text-zinc-900 hover:text-zinc-600 transition-colors inline-flex items-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
                             >
-                                <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`w-3.5 h-3.5 ${isResending ? 'animate-spin' : ''}`} />
                                 {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                             </button>
 

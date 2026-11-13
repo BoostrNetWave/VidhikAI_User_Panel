@@ -234,6 +234,10 @@ export const createReviewPaymentOrder = async (req: any, res: Response) => {
         };
 
         const order = await razorpayService.createOrder(amount, receiptId, orderNotes);
+        if (!order) {
+            res.status(500).json({ success: false, message: 'Failed to create payment order' });
+            return;
+        }
 
         // Record transaction
         try {

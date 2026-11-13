@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster, toast } from 'sonner'
+import ErrorBoundary from './components/common/ErrorBoundary'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
 import VerifyEmail from './pages/auth/VerifyEmail'
@@ -107,6 +108,7 @@ function App() {
 
     return (
         <BrowserRouter basename="/user">
+            <ErrorBoundary>
             <Routes>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<SignIn />} />
@@ -191,6 +193,7 @@ function App() {
                 
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </ErrorBoundary>
             <Toaster position="top-center" />
         </BrowserRouter>
     )

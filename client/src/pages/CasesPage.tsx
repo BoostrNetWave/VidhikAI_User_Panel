@@ -1015,7 +1015,7 @@ export default function CasesPage() {
 
                                                                 return (
                                                                     <div 
-                                                                        key={item._id || lawyerId || idx}
+                                                                        key={(item as any)._id || lawyerId || idx}
                                                                         className={`rounded-2xl border p-5 transition-all space-y-3 ${
                                                                             isSelectedLawyer && selectedCase.status === 'pending_payment'
                                                                                 ? "bg-gradient-to-r from-emerald-50/80 to-teal-50/40 border-emerald-400 ring-2 ring-emerald-300/40 shadow-sm"

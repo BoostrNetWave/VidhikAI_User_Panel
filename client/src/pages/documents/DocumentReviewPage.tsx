@@ -44,6 +44,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
     Dialog,
     DialogContent,
@@ -68,6 +69,7 @@ export default function DocumentReviewPage() {
     const [analysisData, setAnalysisData] = useState<any>(null);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
+    const [isDeepScanEnabled, setIsDeepScanEnabled] = useState(false);
     const [activeHighlightIndex, setActiveHighlightIndex] = useState<number | null>(null);
     const [pinnedClauseIndex, setPinnedClauseIndex] = useState<number | null>(null);
     const [selectedClauseIndex, setSelectedClauseIndex] = useState<number | null>(null);
@@ -361,11 +363,15 @@ export default function DocumentReviewPage() {
     };
 
     const startAnalysis = async (file: File) => {
-        setState('PROCESSING');
-        setProgress(0);
-        setAnalysisError(null);
-        const currentSteps = getAnalysisSteps(isDeepScanEnabled);
-        setLogs(currentSteps.map(step => ({ msg: step, status: 'pending' })));
+        try {
+            setState('PROCESSING');
+            setProgress(0);
+            setAnalysisError(null);
+            const currentSteps = getAnalysisSteps(isDeepScanEnabled);
+            setLogs(currentSteps.map(step => ({ msg: step, status: 'pending' })));
+        } catch (setupErr: any) {
+            console.error("Pre-analysis setup error:", setupErr);
+        }
 
         try {
             const user = JSON.parse(localStorage.getItem('user_profile_data') || '{}');
@@ -453,17 +459,21 @@ export default function DocumentReviewPage() {
 
     useEffect(() => {
         if (state === 'PROCESSING') {
-            const currentSteps = getAnalysisSteps(isDeepScanEnabled);
-            const stepDuration = 100 / currentSteps.length;
-            const currentStepIndex = Math.floor(progress / stepDuration);
+            try {
+                const currentSteps = getAnalysisSteps(isDeepScanEnabled);
+                const stepDuration = 100 / currentSteps.length;
+                const currentStepIndex = Math.floor(progress / stepDuration);
 
-            setLogs(prev => prev.map((log, idx) => {
-                if (idx < currentStepIndex) return { ...log, status: 'done' };
-                if (idx === currentStepIndex) return { ...log, status: 'loading' };
-                return log;
-            }));
+                setLogs(prev => prev.map((log, idx) => {
+                    if (idx < currentStepIndex) return { ...log, status: 'done' };
+                    if (idx === currentStepIndex) return { ...log, status: 'loading' };
+                    return log;
+                }));
+            } catch (err) {
+                console.error("Failed to update analysis step logs:", err);
+            }
         }
-    }, [progress, state]);
+    }, [progress, state, isDeepScanEnabled]);
 
     // Scroll logs to bottom
     useEffect(() => {
@@ -584,6 +594,23 @@ export default function DocumentReviewPage() {
                                     Choose from My Documents
                                 </Button>
                             </div>
+                        </div>
+
+                        {/* Deep Scan & Analysis Preferences */}
+                        <div className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border shadow-xs">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <Zap className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-foreground">Deep Neural Audit Mode</p>
+                                    <p className="text-xs text-muted-foreground">Comprehensive multi-statute cross-referencing, judicial sensitivity, and extended clause risk assessment.</p>
+                                </div>
+                            </div>
+                            <Switch
+                                checked={isDeepScanEnabled}
+                                onCheckedChange={setIsDeepScanEnabled}
+                            />
                         </div>
 
                     </div>
