@@ -42,6 +42,9 @@ import {
     ChevronRight,
     ArrowUpRight,
     ShieldAlert,
+    Video,
+    ChevronDown,
+    ChevronUp,
     Loader2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -74,6 +77,7 @@ export function AdminDocumentReviews() {
     const [reviewSummary, setReviewSummary] = useState('');
     const [reviewFile, setReviewFile] = useState<File | null>(null);
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [isTextEditExpanded, setIsTextEditExpanded] = useState(false);
     const [activeTabInModal, setActiveTabInModal] = useState<'original' | 'reviewed'>('original');
 
     useEffect(() => {
@@ -391,9 +395,25 @@ export function AdminDocumentReviews() {
                                             })}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleOpenModal(req)}
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                {['in_review', 'completed'].includes(req.status) && (
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.open(`/document-reviews/${req._id}/consultation`, '_blank');
+                                                        }}
+                                                        title="Join Live Video Consultation Room"
+                                                        className="text-xs h-8 px-2.5 rounded-xl border-indigo-200 text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100"
+                                                    >
+                                                        <Video className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleOpenModal(req)}
                                                 className={`text-xs h-8 rounded-xl px-3 font-semibold ${
                                                     req.status === 'pending_quote'
                                                         ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs'
@@ -403,7 +423,8 @@ export function AdminDocumentReviews() {
                                                 }`}
                                             >
                                                 {req.status === 'pending_quote' ? 'Quote Fee' : req.status === 'in_review' ? 'Deliver Review' : 'View Details'}
-                                            </Button>
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -528,78 +549,142 @@ export function AdminDocumentReviews() {
 
                             {selectedRequest.status === 'in_review' && (
                                 <Card className="border-blue-300 bg-blue-50/40 rounded-2xl p-5 shadow-xs space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-200/60 pb-3">
                                         <div className="flex items-center gap-2">
                                             <Sparkles className="h-5 w-5 text-blue-600" />
-                                            <h3 className="font-bold text-sm text-foreground">Step 2: Lawyer Review &amp; Document Delivery</h3>
+                                            <div>
+                                                <h3 className="font-bold text-sm text-foreground">Step 2: Lawyer Review &amp; Document Delivery</h3>
+                                                <p className="text-[11px] text-muted-foreground">Upload the amended contract file and summarize legal changes for the client.</p>
+                                            </div>
                                         </div>
-                                        <Badge className="bg-emerald-600 text-white text-xs">
-                                            Paid ₹{selectedRequest.quoteAmount?.toLocaleString('en-IN')} via Razorpay
-                                        </Badge>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => window.open(`/document-reviews/${selectedRequest._id}/consultation`, '_blank')}
+                                                className="text-xs h-8 px-3 rounded-xl border-indigo-300 text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 font-semibold gap-1.5 shadow-2xs"
+                                            >
+                                                <Video className="h-3.5 w-3.5 text-indigo-600" />
+                                                Join Video Consultation Room
+                                            </Button>
+                                            <Badge className="bg-emerald-600 text-white text-xs">
+                                                Paid ₹{selectedRequest.quoteAmount?.toLocaleString('en-IN')}
+                                            </Badge>
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-4 pt-1">
+                                    <div className="space-y-5 pt-1">
+                                        {/* Primary Delivery: File Upload */}
+                                        <div className="bg-white rounded-2xl border-2 border-dashed border-indigo-200 p-4 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                                    <Upload className="h-4 w-4 text-indigo-600" />
+                                                    1. Upload Revised Agreement File (.docx or .pdf) — Primary Delivery
+                                                </Label>
+                                                <Badge variant="secondary" className="text-[10px] bg-indigo-50 text-indigo-700 font-bold">
+                                                    Recommended
+                                                </Badge>
+                                            </div>
+                                            <p className="text-[11.5px] text-muted-foreground">
+                                                Upload the finalized Word (.docx) or PDF contract. The client will be able to download and sign this file directly in their dashboard.
+                                            </p>
+                                            <Input
+                                                type="file"
+                                                accept=".docx,.pdf,.doc"
+                                                onChange={(e) => setReviewFile(e.target.files?.[0] || null)}
+                                                className="text-xs rounded-xl bg-slate-50 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                            />
+                                            {reviewFile && (
+                                                <div className="flex items-center justify-between text-xs bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-200">
+                                                    <span className="font-semibold flex items-center gap-1.5">
+                                                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                                        Ready for upload: {reviewFile.name} ({(reviewFile.size / 1024).toFixed(1)} KB)
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setReviewFile(null)}
+                                                        className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         {/* Review Summary */}
                                         <div className="space-y-1.5">
-                                            <Label htmlFor="review-summary" className="text-xs font-bold text-foreground">
-                                                Lawyer Review Summary &amp; Recommendations *
+                                            <Label htmlFor="review-summary" className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                                <FileText className="h-4 w-4 text-indigo-600" />
+                                                2. Advocate's Review Summary &amp; Key Amendments *
                                             </Label>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Describe clearly what changes were made, risks mitigated, and practical legal advice for the client.
+                                            </p>
                                             <Textarea
                                                 id="review-summary"
                                                 rows={3}
                                                 required
                                                 value={reviewSummary}
                                                 onChange={(e) => setReviewSummary(e.target.value)}
-                                                placeholder="Explain the changes made, risks mitigated, and practical legal advice for the client."
-                                                className="text-xs rounded-xl bg-white resize-none"
+                                                placeholder="Example: Reviewed non-compete clause (Section 4) and narrowed scope to 12 months as per Indian Contract Act. Added indemnification cap and mutual confidentiality provisions."
+                                                className="text-xs rounded-xl bg-white resize-none border-slate-200"
                                             />
                                         </div>
 
-                                        {/* Modified Document Content */}
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="reviewed-content" className="text-xs font-bold text-foreground">
-                                                Revised Document HTML / Text
-                                            </Label>
-                                            <Textarea
-                                                id="reviewed-content"
-                                                rows={8}
-                                                value={reviewedContent}
-                                                onChange={(e) => setReviewedContent(e.target.value)}
-                                                placeholder="Paste or edit the modified legal text here..."
-                                                className="font-serif text-xs rounded-xl bg-white"
-                                            />
-                                        </div>
-
-                                        {/* Optional File Upload */}
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-bold text-foreground">
-                                                Upload Revised Word (.docx) or PDF File (Optional)
-                                            </Label>
-                                            <Input
-                                                type="file"
-                                                accept=".docx,.pdf,.doc"
-                                                onChange={(e) => setReviewFile(e.target.files?.[0] || null)}
-                                                className="text-xs rounded-xl bg-white"
-                                            />
-                                            {reviewFile && (
-                                                <p className="text-[11px] text-emerald-600 font-semibold">Selected file: {reviewFile.name}</p>
+                                        {/* Optional In-Browser Text */}
+                                        <div className="border border-slate-200 rounded-2xl bg-white/70 overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsTextEditExpanded(!isTextEditExpanded)}
+                                                className="w-full flex items-center justify-between p-3.5 text-left hover:bg-slate-50 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold text-foreground">
+                                                        3. In-Browser Document Text / Clauses (Optional)
+                                                    </span>
+                                                    <Badge variant="outline" className="text-[10px] text-slate-600">
+                                                        Advanced
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                    <span>{isTextEditExpanded ? 'Collapse' : 'Edit browser draft'}</span>
+                                                    {isTextEditExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                </div>
+                                            </button>
+                                            {isTextEditExpanded && (
+                                                <div className="p-3.5 pt-0 border-t space-y-2">
+                                                    <p className="text-[11px] text-muted-foreground">
+                                                        If you want the client to view or copy amendments directly in the web browser without downloading the Word file, you can edit the HTML/text here:
+                                                    </p>
+                                                    <Textarea
+                                                        id="reviewed-content"
+                                                        rows={8}
+                                                        value={reviewedContent}
+                                                        onChange={(e) => setReviewedContent(e.target.value)}
+                                                        placeholder="Paste or edit the modified legal text here..."
+                                                        className="font-serif text-xs rounded-xl bg-white border-slate-200"
+                                                    />
+                                                </div>
                                             )}
                                         </div>
 
                                         <Button
                                             onClick={handleSubmitCompletedReview}
                                             disabled={isSubmittingReview}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 shadow-xs"
+                                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 shadow-xs w-full sm:w-auto"
                                         >
                                             {isSubmittingReview ? (
                                                 <>
                                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                                    Delivering to Client...
+                                                    Delivering Review to Client...
                                                 </>
                                             ) : (
                                                 <>
                                                     <CheckCircle2 className="h-4 w-4" />
-                                                    Submit Review &amp; Deliver to Client
+                                                    Finalize &amp; Deliver Review to Client
                                                 </>
                                             )}
                                         </Button>
@@ -608,43 +693,70 @@ export function AdminDocumentReviews() {
                             )}
 
                             {selectedRequest.status === 'completed' && (
-                                <Card className="border-emerald-300 bg-emerald-50/50 rounded-2xl p-5 shadow-xs space-y-3">
-                                    <div className="flex items-center justify-between">
+                                <Card className="border-emerald-300 bg-emerald-50/50 rounded-2xl p-5 shadow-xs space-y-3.5">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-200/60 pb-3">
                                         <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
                                             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                                             Review Delivered &amp; Completed
                                         </div>
-                                        <span className="text-xs text-muted-foreground">
-                                            Advocate: <strong>{selectedRequest.assignedLawyerName || 'Legal Ops'}</strong>
-                                        </span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => window.open(`/document-reviews/${selectedRequest._id}/consultation`, '_blank')}
+                                                className="text-xs h-8 px-3 rounded-xl border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-50 font-semibold gap-1.5 shadow-2xs"
+                                            >
+                                                <Video className="h-3.5 w-3.5 text-emerald-600" />
+                                                Join Video Consultation Room
+                                            </Button>
+                                            <span className="text-xs text-muted-foreground">
+                                                Advocate: <strong>{selectedRequest.assignedLawyerName || 'Senior Legal Counsel'}</strong>
+                                            </span>
+                                        </div>
                                     </div>
 
                                     {selectedRequest.reviewSummary && (
-                                        <div className="bg-white/80 border border-emerald-200 rounded-xl p-3 text-xs text-slate-800 space-y-1">
-                                            <span className="font-bold text-emerald-950 uppercase text-[10px] tracking-wider block">Delivered Advice:</span>
-                                            <p className="whitespace-pre-wrap leading-relaxed text-[12px]">{selectedRequest.reviewSummary}</p>
+                                        <div className="bg-white/90 border border-emerald-200 rounded-xl p-3.5 text-xs text-slate-800 space-y-1">
+                                            <span className="font-bold text-emerald-950 uppercase text-[10px] tracking-wider block">
+                                                Delivered Legal Advice &amp; Amendments:
+                                            </span>
+                                            <p className="whitespace-pre-wrap leading-relaxed text-[12px] text-slate-700">
+                                                {selectedRequest.reviewSummary}
+                                            </p>
                                         </div>
                                     )}
 
                                     {selectedRequest.reviewedDocumentFile && (
                                         <div className="pt-1">
-                                            <a
-                                                href={selectedRequest.reviewedDocumentFile}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-white px-3 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-50"
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => documentReviewService.downloadReviewFile(
+                                                    selectedRequest.reviewedDocumentFile,
+                                                    selectedRequest.reviewedDocumentFileName || `${selectedRequest.documentTitle.replace(/\s+/g, '_')}_reviewed.docx`
+                                                )}
+                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-white hover:bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-300 shadow-2xs"
                                             >
-                                                <Download className="h-3.5 w-3.5" />
-                                                Download Attached File ({selectedRequest.reviewedDocumentFileName || 'document'})
-                                            </a>
+                                                <Download className="h-3.5 w-3.5 text-emerald-600" />
+                                                Download Attached File ({selectedRequest.reviewedDocumentFileName || 'revised_agreement.docx'})
+                                            </Button>
                                         </div>
                                     )}
 
-                                    <div className="text-xs text-muted-foreground pt-1">
-                                        Client Acceptance Status: {selectedRequest.userFeedback?.accepted ? (
-                                            <span className="text-emerald-700 font-bold">&bull; Accepted by Client</span>
-                                        ) : (
-                                            <span className="text-slate-500 italic">&bull; Awaiting Client Confirmation</span>
+                                    <div className="text-xs text-muted-foreground pt-1 flex items-center justify-between flex-wrap gap-2">
+                                        <div>
+                                            Client Status: {selectedRequest.userFeedback?.accepted ? (
+                                                <span className="text-emerald-700 font-bold">&bull; Accepted &amp; Finalized by Client</span>
+                                            ) : (
+                                                <span className="text-slate-500 italic">&bull; Awaiting Client Final Confirmation</span>
+                                            )}
+                                        </div>
+                                        {selectedRequest.reviewedAt && (
+                                            <span className="text-[11px] text-muted-foreground">
+                                                Delivered on: {new Date(selectedRequest.reviewedAt).toLocaleString('en-IN')}
+                                            </span>
                                         )}
                                     </div>
                                 </Card>

@@ -3,6 +3,8 @@ import DocumentReviewRequest from '../models/DocumentReviewRequest';
 import Transaction from '../models/Transaction';
 import Notification from '../models/Notification';
 import User from '../models/User';
+import Signal from '../models/Signal';
+import Document from '../models/Document';
 import razorpayService from '../services/razorpayService';
 import { getEmailConfig, sendEmail } from '../utils/emailService';
 import { saveFileToGridFS } from '../utils/gridfsStorage';
@@ -740,3 +742,92 @@ export const cancelReviewRequest = async (req: any, res: Response) => {
     }
 };
 
+/**
+ * 11. Join Review Video Consultation Meeting
+ */
+export const joinReviewMeeting = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const isLawyer = req.user?.role === 'lawyer' || req.user?.role === 'admin' || req.user?.role === 'superadmin';
+
+        const request = await DocumentReviewRequest.findById(id);
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Review request not found' });
+        }
+
+        if (isLawyer) {
+            request.meetingJoinedByLawyer = true;
+        } else {
+            request.meetingJoinedByClient = true;
+        }
+
+        await request.save();
+
+        emitSocketUpdate(request.userId.toString(), 'REVIEW_MEETING_JOINED', {
+            reviewId: request._id,
+            joinedBy: isLawyer ? 'lawyer' : 'client'
+        });
+
+        return res.json({
+            success: true,
+            data: request
+        });
+    } catch (err: any) {
+        console.error('[Review Meeting] Error joining meeting:', err);
+        return res.status(500).json({ success: false, message: err.message || 'Failed to join meeting' });
+    }
+};
+
+/**
+ * 12. Send WebRTC signal for review video meeting
+ */
+export const sendReviewSignal = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { sender, type, sdp, candidate } = req.body;
+
+        if (!sender || !type) {
+            return res.status(400).json({ success: false, message: 'Sender and type required' });
+        }
+
+        const signal = await Signal.create({
+            reviewId: id,
+            sender,
+            type,
+            sdp,
+            candidate: typeof candidate === 'string' ? candidate : JSON.stringify(candidate)
+        });
+
+        return res.status(201).json({ success: true, data: signal });
+    } catch (err: any) {
+        console.error('[Review Signal] Error sending signal:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * 13. Get WebRTC signals for review video meeting
+ */
+export const getReviewSignals = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const signals = await Signal.find({ reviewId: id }).sort({ createdAt: 1 });
+        return res.json({ success: true, data: signals });
+    } catch (err: any) {
+        console.error('[Review Signals] Error getting signals:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * 14. Clear signals after review video call concludes
+ */
+export const clearReviewSignals = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        await Signal.deleteMany({ reviewId: id });
+        return res.json({ success: true, message: 'Signals cleared' });
+    } catch (err: any) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};

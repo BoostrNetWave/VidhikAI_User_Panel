@@ -36,6 +36,7 @@ import ResidentialLeaseAgreement from './pages/documents/realestate/ResidentialL
 import DocumentHub from './pages/documents/DocumentHub'
 import MyDocuments from './pages/documents/MyDocuments'
 import DocumentReviewPage from './pages/documents/DocumentReviewPage'
+import ReviewConsultationRoom from './pages/documents/ReviewConsultationRoom'
 import LegalResearchPage from './pages/research/LegalResearchPage'
 import AILawyerList from './pages/AILawyerList'
 import LawyerProfile from './pages/LawyerProfile'
@@ -124,6 +125,10 @@ function App() {
                 <Route path="/documents/hub" element={<DocumentHub />} />
                 <Route path="/documents/workspace" element={<MyDocuments />} />
                 <Route path="/documents/review" element={<DocumentReviewPage />} />
+                <Route path="/document-reviews/:id/consultation" element={<ReviewConsultationRoom />} />
+                <Route path="/document-reviews/:id/meet" element={<ReviewConsultationRoom />} />
+                <Route path="/documents/reviews/:id/meet" element={<ReviewConsultationRoom />} />
+                <Route path="/documents/reviews/:id/consultation" element={<ReviewConsultationRoom />} />
                 <Route path="/documents/shared/:id" element={<DocumentReviewPage />} />
                 <Route path="/workspace" element={<MyDocuments />} />
 

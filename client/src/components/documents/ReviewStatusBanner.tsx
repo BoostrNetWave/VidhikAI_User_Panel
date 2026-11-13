@@ -115,7 +115,7 @@ export function ReviewStatusBanner({
             setIsAccepting(true);
             const res = await documentReviewService.acceptReview(request._id, "Client accepted revised draft");
             if (res.success && res.data) {
-                toast.success("Thank you! You have accepted the reviewed document.");
+                toast.success("Thank you! You have accepted the reviewed document. It has been finalized in your workspace.");
                 if (onUpdate) onUpdate(res.data);
             }
         } catch (err: any) {
@@ -125,14 +125,20 @@ export function ReviewStatusBanner({
         }
     };
 
-    const handleScheduleConsultation = () => {
-        navigate('/consultations', {
-            state: {
-                reviewRequestId: request.requestId,
-                documentTitle: request.documentTitle,
-                ref: 'document_review'
-            }
-        });
+    const handleJoinConsultation = () => {
+        navigate(`/document-reviews/${request._id}/consultation`);
+    };
+
+    const handleDownloadFile = async () => {
+        if (!request.reviewedDocumentFile) return;
+        toast.info("Downloading revised document...");
+        const ok = await documentReviewService.downloadReviewFile(
+            request.reviewedDocumentFile,
+            request.reviewedDocumentFileName || `${request.documentTitle.replace(/\s+/g, '_')}_reviewed.docx`
+        );
+        if (ok) {
+            toast.success("Download started!");
+        }
     };
 
     // Render based on current review status
@@ -166,7 +172,7 @@ export function ReviewStatusBanner({
 
     if (request.status === 'payment_pending') {
         return (
-            <Card className="border-indigo-200 bg-linear-to-r from-indigo-50/90 to-blue-50/90 rounded-2xl shadow-sm overflow-hidden">
+            <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50/90 to-blue-50/90 rounded-2xl shadow-sm overflow-hidden">
                 <CardContent className="p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
                         <div className="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
@@ -242,11 +248,11 @@ export function ReviewStatusBanner({
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={handleScheduleConsultation}
-                        className="w-full sm:w-auto shrink-0 text-xs rounded-xl border-blue-200 bg-white hover:bg-blue-50 text-blue-700 gap-1.5"
+                        onClick={handleJoinConsultation}
+                        className="w-full sm:w-auto shrink-0 text-xs rounded-xl border-blue-300 bg-white hover:bg-blue-100 text-blue-800 font-semibold gap-1.5 shadow-2xs"
                     >
-                        <Video className="h-3.5 w-3.5" />
-                        Schedule Video Call
+                        <Video className="h-3.5 w-3.5 text-blue-600" />
+                        Join Video Consultation Room
                     </Button>
                 </CardContent>
             </Card>
@@ -257,7 +263,7 @@ export function ReviewStatusBanner({
         const isAccepted = request.userFeedback?.accepted;
 
         return (
-            <Card className="border-emerald-200 bg-linear-to-r from-emerald-50/90 to-teal-50/90 rounded-2xl shadow-sm overflow-hidden">
+            <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50/90 to-teal-50/90 rounded-2xl shadow-sm overflow-hidden">
                 <CardContent className="p-4 sm:p-5 space-y-3.5">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-start gap-3">
@@ -286,7 +292,7 @@ export function ReviewStatusBanner({
                                 <Button
                                     size="sm"
                                     onClick={() => onApplyReviewedContent(request.reviewedContent || '')}
-                                    className="text-xs bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl gap-1.5"
+                                    className="text-xs bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl gap-1.5 shadow-2xs font-semibold"
                                 >
                                     <FileText className="h-3.5 w-3.5" />
                                     Load Reviewed Draft
@@ -294,16 +300,15 @@ export function ReviewStatusBanner({
                             )}
 
                             {request.reviewedDocumentFile && (
-                                <a
-                                    href={request.reviewedDocumentFile}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download={request.reviewedDocumentFileName || 'reviewed_document.docx'}
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleDownloadFile}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white text-emerald-800 border border-emerald-300 hover:bg-emerald-50 transition-colors shadow-2xs"
                                 >
                                     <Download className="h-3.5 w-3.5 text-emerald-600" />
                                     Download Lawyer File
-                                </a>
+                                </Button>
                             )}
 
                             {!isAccepted ? (
@@ -312,13 +317,13 @@ export function ReviewStatusBanner({
                                     variant="outline"
                                     onClick={handleAccept}
                                     disabled={isAccepting}
-                                    className="text-xs rounded-xl border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-100 gap-1.5"
+                                    className="text-xs rounded-xl border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-100 font-semibold gap-1.5 shadow-2xs"
                                 >
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                    {isAccepting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
                                     Accept &amp; Finalize
                                 </Button>
                             ) : (
-                                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-1 px-2.5">
+                                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs py-1 px-2.5 font-bold">
                                     Accepted by You
                                 </Badge>
                             )}
@@ -326,18 +331,18 @@ export function ReviewStatusBanner({
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={handleScheduleConsultation}
-                                className="text-xs rounded-xl border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50 gap-1.5"
+                                onClick={handleJoinConsultation}
+                                className="text-xs rounded-xl border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50 font-semibold gap-1.5 shadow-2xs"
                             >
                                 <Video className="h-3.5 w-3.5 text-indigo-600" />
-                                Schedule Video Call
+                                Join Video Consultation Room
                             </Button>
                         </div>
                     </div>
 
                     {/* Lawyer summary note box */}
                     {request.reviewSummary && (
-                        <div className="bg-white/80 border border-emerald-200 rounded-xl p-3 text-xs text-slate-800 space-y-1">
+                        <div className="bg-white/90 border border-emerald-200 rounded-xl p-3.5 text-xs text-slate-800 space-y-1">
                             <span className="font-bold text-emerald-950 uppercase text-[10px] tracking-wider block">
                                 Advocate's Review Summary &amp; Recommendations:
                             </span>
@@ -353,4 +358,3 @@ export function ReviewStatusBanner({
 
     return null;
 }
-

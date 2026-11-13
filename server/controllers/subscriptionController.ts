@@ -256,6 +256,9 @@ export const createPaymentOrder = async (req: any, res: Response) => {
             };
 
             const order = await razorpayService.createOrder(price, receiptId, notes);
+            if (!order) {
+                return res.status(500).json({ success: false, message: 'Failed to create subscription order' });
+            }
 
             // Record transaction in DB with status 'created'
             await Transaction.create({
@@ -323,6 +326,9 @@ export const createPaymentOrder = async (req: any, res: Response) => {
             };
 
             const order = await razorpayService.createOrder(pkg.price, receiptId, notes);
+            if (!order) {
+                return res.status(500).json({ success: false, message: 'Failed to create credits payment order' });
+            }
 
             // Record transaction in DB with status 'created'
             await Transaction.create({

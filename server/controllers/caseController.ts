@@ -222,6 +222,9 @@ export const createCasePaymentOrder = async (req: any, res: Response): Promise<v
         };
 
         const order = await razorpayService.createOrder(amount, receiptId, notes);
+        if (!order) {
+            res.status(500).json({ success: false, message: 'Failed to create payment order' }); return;
+        }
 
         await Transaction.create({
             userId: req.user._id,
@@ -1121,6 +1124,7 @@ export const uploadCaseDocuments = async (req: any, res: Response): Promise<void
             }
         }
 
+        if (!kase.documents) kase.documents = [];
         kase.documents.push(...newDocs);
 
         // Re-analyze

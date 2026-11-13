@@ -13,7 +13,11 @@ import {
     getAllReviewRequestsAdmin,
     sendReviewQuoteAdmin,
     submitCompletedReviewAdmin,
-    cancelReviewRequest
+    cancelReviewRequest,
+    joinReviewMeeting,
+    sendReviewSignal,
+    getReviewSignals,
+    clearReviewSignals
 } from '../controllers/documentReviewController';
 
 const router = Router();
@@ -49,6 +53,12 @@ router.post('/:id/payment-order', protect, createReviewPaymentOrder);
 router.post('/:id/verify-payment', protect, verifyReviewPayment);
 router.post('/:id/accept', protect, acceptReview);
 router.post('/:id/cancel', protect, cancelReviewRequest);
+
+// Real-time video consultation & signaling for document reviews (both client and lawyer/admin)
+router.post('/:id/join-meeting', protect, joinReviewMeeting);
+router.post('/:id/signal', protect, sendReviewSignal);
+router.get('/:id/signals', protect, getReviewSignals);
+router.post('/:id/signals/clear', protect, clearReviewSignals);
 
 // Admin routes
 router.get('/admin/all', protect, adminOnly, getAllReviewRequestsAdmin);

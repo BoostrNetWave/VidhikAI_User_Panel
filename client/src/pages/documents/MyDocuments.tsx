@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -40,7 +41,9 @@ import {
     CheckCircle2,
     PenTool,
     ShieldCheck,
-    Gavel
+    Gavel,
+    Video,
+    Clock
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { parseHtmlToDocx } from '@/lib/docxUtils';
@@ -90,6 +93,7 @@ export default function MyDocuments() {
     const [selectedDoc, setSelectedDoc] = useState<any>(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [docModalMode, setDocModalMode] = useState<'review' | 'edit'>('review');
+    const [docModalTab, setDocModalTab] = useState<'document' | 'lawyer_review'>('document');
     const [editTitle, setEditTitle] = useState("");
     const [editContent, setEditContent] = useState("");
     const [editStatus, setEditStatus] = useState("draft");
@@ -1068,6 +1072,61 @@ export default function MyDocuments() {
                                 </span>
                             </div>
                         </div>
+
+                        {/* Check if active review exists for selectedDoc */}
+                        {(() => {
+                            const matchedReview = userReviews.find(r => 
+                                (selectedDoc?._id && r.documentId === selectedDoc._id) || 
+                                (selectedDoc?.title && r.documentTitle && r.documentTitle.toLowerCase() === selectedDoc.title.toLowerCase())
+                            );
+                            if (!matchedReview) return null;
+                            return (
+                                <div className="w-full flex items-center justify-between p-2 bg-slate-100 rounded-xl border border-slate-200 mt-2 mb-1 gap-2 flex-wrap">
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setDocModalTab('document')}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                                docModalTab === 'document'
+                                                    ? 'bg-white text-slate-900 shadow-xs'
+                                                    : 'text-slate-600 hover:text-slate-900'
+                                            }`}
+                                        >
+                                            <FileText className="h-3.5 w-3.5" />
+                                            Generated Document
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDocModalTab('lawyer_review')}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                                docModalTab === 'lawyer_review'
+                                                    ? 'bg-indigo-600 text-white shadow-xs'
+                                                    : 'text-slate-600 hover:text-slate-900'
+                                            }`}
+                                        >
+                                            <Gavel className="h-3.5 w-3.5" />
+                                            Lawyer Review Progress &amp; Details
+                                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-1 ${
+                                                docModalTab === 'lawyer_review' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'
+                                            }`}>
+                                                {matchedReview.status.replace('_', ' ').toUpperCase()}
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => window.open(`/document-reviews/${matchedReview._id}/consultation`, '_blank')}
+                                        className="text-xs h-7 px-2.5 rounded-lg border-indigo-200 text-indigo-700 bg-white hover:bg-indigo-50 font-semibold gap-1.5"
+                                    >
+                                        <Video className="h-3 w-3 text-indigo-600" />
+                                        Join Video Consultation Room
+                                    </Button>
+                                </div>
+                            );
+                        })()}
 
                         {/* Controls: Mode Switcher and Actions */}
                         <div className="flex items-center gap-2 shrink-0 flex-wrap">

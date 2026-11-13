@@ -79,6 +79,7 @@ import { getFileFromGridFS, getMimeType, saveFileToGridFS, syncLocalUploadsToGri
 const uploadDirectories = [
     path.resolve(__dirname, '../uploads'),
     path.resolve(__dirname, './uploads'),
+    path.resolve(process.cwd(), 'uploads'),
     path.resolve(__dirname, '../../lawyer-admin-main/backend/uploads'),
     '/var/www/vidhik/lawyer-admin-main/backend/uploads',
     '/var/www/html/Vidhik_AI_Lawyer/backend/uploads',

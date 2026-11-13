@@ -30,6 +30,8 @@ export interface IDocumentReviewRequest {
     reviewedDocumentFileName?: string;
     assignedLawyerName?: string;
     reviewedAt?: string;
+    meetingJoinedByClient?: boolean;
+    meetingJoinedByLawyer?: boolean;
     userFeedback?: {
         accepted?: boolean;
         feedbackText?: string;
@@ -131,6 +133,32 @@ export const documentReviewService = {
         return res.data;
     },
 
+        // Video consultation meeting methods
+    joinMeeting: async (id: string): Promise<{ success: boolean; data: IDocumentReviewRequest }> => {
+        const res = await api.post(`/document-reviews/${id}/join-meeting`);
+        return res.data;
+    },
+
+    sendSignal: async (id: string, signalData: {
+        sender: 'client' | 'lawyer';
+        type: string;
+        sdp?: string;
+        candidate?: any;
+    }): Promise<{ success: boolean; data: any }> => {
+        const res = await api.post(`/document-reviews/${id}/signal`, signalData);
+        return res.data;
+    },
+
+    getSignals: async (id: string): Promise<{ success: boolean; data: any[] }> => {
+        const res = await api.get(`/document-reviews/${id}/signals`);
+        return res.data;
+    },
+
+    clearSignals: async (id: string): Promise<{ success: boolean; message: string }> => {
+        const res = await api.post(`/document-reviews/${id}/signals/clear`);
+        return res.data;
+    },
+
     submitCompletedReviewAdmin: async (id: string, formData: FormData): Promise<{
         success: boolean;
         data: IDocumentReviewRequest;
@@ -140,6 +168,32 @@ export const documentReviewService = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return res.data;
+    },
+    downloadReviewFile: async (fileUrl: string, fileName?: string): Promise<boolean> => {
+        try {
+            let targetUrl = fileUrl;
+            if (targetUrl.startsWith("/uploads/")) {
+                targetUrl = "/api" + targetUrl;
+            } else if (!targetUrl.startsWith("http") && !targetUrl.startsWith("/api")) {
+                targetUrl = "/api/uploads/" + targetUrl.replace(/^\/+/, "");
+            }
+            const response = await fetch(targetUrl);
+            if (!response.ok) throw new Error("Failed to download: " + response.statusText);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = blobUrl;
+            anchor.download = fileName || "reviewed_document.docx";
+            document.body.appendChild(anchor);
+            anchor.click();
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(anchor);
+            return true;
+        } catch (error) {
+            console.error("downloadReviewFile error:", error);
+            const fallback = fileUrl.startsWith("/uploads/") ? "/api" + fileUrl : fileUrl;
+            window.open(fallback, "_blank");
+            return false;
+        }
     }
 };
-

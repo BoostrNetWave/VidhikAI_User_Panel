@@ -30,6 +30,8 @@ export interface IDocumentReviewRequest extends MongooseDocument {
     assignedLawyerId?: mongoose.Types.ObjectId;
     assignedLawyerName?: string;
     reviewedAt?: Date;
+    meetingJoinedByClient?: boolean;
+    meetingJoinedByLawyer?: boolean;
     userFeedback?: {
         accepted?: boolean;
         feedbackText?: string;
@@ -159,6 +161,14 @@ const documentReviewRequestSchema = new Schema<IDocumentReviewRequest>({
     reviewedAt: {
         type: Date,
         default: null
+    },
+    meetingJoinedByClient: {
+        type: Boolean,
+        default: false
+    },
+    meetingJoinedByLawyer: {
+        type: Boolean,
+        default: false
     },
     userFeedback: {
         accepted: { type: Boolean, default: null },
