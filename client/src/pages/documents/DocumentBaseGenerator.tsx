@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,7 @@ export default function DocumentBaseGenerator({
     sidebarDescription,
     docxFilename
 }: DocumentBaseGeneratorProps) {
+    const navigate = useNavigate();
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationProgress, setGenerationProgress] = useState(0);
@@ -661,6 +663,17 @@ export default function DocumentBaseGenerator({
                                     {reviewSubTab === 'reviewed' ? (
                                         activeReviewRequest.reviewedContent ? (
                                             <div className="flex flex-col w-full">
+                                                <div className="bg-emerald-50 border-b border-emerald-200/90 px-4 py-2.5 flex items-center justify-between gap-2 text-xs flex-wrap">
+                                                    <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                                                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                                        Lawyer Revised Version (Amended by {activeReviewRequest.assignedLawyerName || 'Senior Legal Counsel'})
+                                                    </span>
+                                                    {activeReviewRequest.reviewedDocumentFileName && (
+                                                        <span className="text-emerald-700 font-semibold text-[11px] bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                                                            Source File: {activeReviewRequest.reviewedDocumentFileName}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <DocumentInfoBar content={activeReviewRequest.reviewedContent} />
                                                 <DocumentPreview content={activeReviewRequest.reviewedContent} />
                                             </div>
@@ -685,6 +698,15 @@ export default function DocumentBaseGenerator({
                                         )
                                     ) : (
                                         <div className="flex flex-col w-full">
+                                            <div className="bg-slate-100 border-b border-slate-200 px-4 py-2.5 flex items-center justify-between gap-2 text-xs flex-wrap">
+                                                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                                    <FileText className="h-4 w-4 text-slate-600" />
+                                                    Original Generated Draft (Submitted by You)
+                                                </span>
+                                                <span className="text-slate-500 font-mono text-[11px]">
+                                                    Req: {activeReviewRequest.requestId}
+                                                </span>
+                                            </div>
                                             <DocumentInfoBar content={activeReviewRequest.originalContent || generatedDocument} />
                                             <DocumentPreview content={activeReviewRequest.originalContent || generatedDocument} />
                                         </div>
@@ -706,7 +728,7 @@ export default function DocumentBaseGenerator({
                                 </p>
                                 <Button
                                     type="button"
-                                    onClick={() => window.open(`/document-reviews/${activeReviewRequest._id}/consultation`, '_blank')}
+                                    onClick={() => navigate(`/document-reviews/${activeReviewRequest._id}/consultation?role=client`)}
                                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-10 rounded-xl shadow-xs gap-2"
                                 >
                                     <Video className="h-4 w-4" />

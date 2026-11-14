@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import {
     Table,
@@ -51,6 +52,7 @@ import { toast } from "sonner";
 import { documentReviewService, IDocumentReviewRequest } from "@/services/documentReviewService";
 
 export function AdminDocumentReviews() {
+    const navigate = useNavigate();
     const [requests, setRequests] = useState<IDocumentReviewRequest[]>([]);
     const [stats, setStats] = useState({
         total: 0,
@@ -403,7 +405,7 @@ export function AdminDocumentReviews() {
                                                         variant="outline"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            window.open(`/document-reviews/${req._id}/consultation`, '_blank');
+                                                            navigate(`/document-reviews/${req._id}/consultation?role=lawyer`);
                                                         }}
                                                         title="Join Live Video Consultation Room"
                                                         className="text-xs h-8 px-2.5 rounded-xl border-indigo-200 text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100"
@@ -562,7 +564,7 @@ export function AdminDocumentReviews() {
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => window.open(`/document-reviews/${selectedRequest._id}/consultation`, '_blank')}
+                                                onClick={() => navigate(`/document-reviews/${selectedRequest._id}/consultation?role=lawyer`)}
                                                 className="text-xs h-8 px-3 rounded-xl border-indigo-300 text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 font-semibold gap-1.5 shadow-2xs"
                                             >
                                                 <Video className="h-3.5 w-3.5 text-indigo-600" />
@@ -704,7 +706,7 @@ export function AdminDocumentReviews() {
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => window.open(`/document-reviews/${selectedRequest._id}/consultation`, '_blank')}
+                                                onClick={() => navigate(`/document-reviews/${selectedRequest._id}/consultation?role=lawyer`)}
                                                 className="text-xs h-8 px-3 rounded-xl border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-50 font-semibold gap-1.5 shadow-2xs"
                                             >
                                                 <Video className="h-3.5 w-3.5 text-emerald-600" />
@@ -767,43 +769,75 @@ export function AdminDocumentReviews() {
                                 <div className="flex items-center justify-between border-b pb-2">
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => setActiveTabInModal('original')}
-                                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
-                                                activeTabInModal === 'original'
-                                                    ? 'bg-slate-900 text-white'
+                                            type="button"
+                                            onClick={() => setActiveTabInModal('reviewed')}
+                                            className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all ${
+                                                activeTabInModal === 'reviewed'
+                                                    ? 'bg-emerald-700 text-white shadow-xs'
                                                     : 'text-muted-foreground hover:bg-muted'
                                             }`}
                                         >
-                                            Original Generated Document
+                                            ⚖️ Lawyer Reviewed Version
                                         </button>
-                                        {selectedRequest.reviewedContent && (
-                                            <button
-                                                onClick={() => setActiveTabInModal('reviewed')}
-                                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
-                                                    activeTabInModal === 'reviewed'
-                                                        ? 'bg-emerald-700 text-white'
-                                                        : 'text-muted-foreground hover:bg-muted'
-                                                }`}
-                                            >
-                                                Lawyer Reviewed Version
-                                            </button>
-                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveTabInModal('original')}
+                                            className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all ${
+                                                activeTabInModal === 'original'
+                                                    ? 'bg-slate-900 text-white shadow-xs'
+                                                    : 'text-muted-foreground hover:bg-muted'
+                                            }`}
+                                        >
+                                            📄 Original Generated Document
+                                        </button>
                                     </div>
 
                                     <span className="text-[11px] text-muted-foreground">
-                                        Word Count: ~{(activeTabInModal === 'reviewed' ? selectedRequest.reviewedContent : selectedRequest.originalContent)?.split(/\s+/).length || 0} words
+                                        Word Count: ~{((activeTabInModal === 'reviewed' ? selectedRequest.reviewedContent : selectedRequest.originalContent) || '').split(/\s+/).filter(Boolean).length} words
                                     </span>
                                 </div>
 
-                                <div className="bg-slate-50/70 border rounded-2xl p-5 max-h-[380px] overflow-y-auto text-xs leading-relaxed font-serif text-slate-900">
-                                    <div
-                                        dangerouslySetInnerHTML={{
-                                            __html: activeTabInModal === 'reviewed' && selectedRequest.reviewedContent
-                                                ? selectedRequest.reviewedContent
-                                                : selectedRequest.originalContent
-                                        }}
-                                    />
-                                </div>
+                                {activeTabInModal === 'reviewed' ? (
+                                    <div className="space-y-2">
+                                        <div className="bg-emerald-50 border border-emerald-200/90 rounded-xl px-4 py-2 flex items-center justify-between gap-2 text-xs">
+                                            <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                                Lawyer Reviewed Version (Delivered by {selectedRequest.assignedLawyerName || 'Legal Counsel'})
+                                            </span>
+                                            {selectedRequest.reviewedDocumentFileName && (
+                                                <span className="text-emerald-700 font-semibold text-[11px]">
+                                                    Attached File: {selectedRequest.reviewedDocumentFileName}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="bg-white border rounded-2xl p-5 max-h-[380px] overflow-y-auto text-xs leading-relaxed font-serif text-slate-900 shadow-2xs">
+                                            {selectedRequest.reviewedContent ? (
+                                                <div dangerouslySetInnerHTML={{ __html: selectedRequest.reviewedContent }} />
+                                            ) : (
+                                                <div className="py-8 text-center text-muted-foreground">
+                                                    <Sparkles className="h-6 w-6 text-indigo-500 mx-auto mb-2 animate-pulse" />
+                                                    <p className="font-semibold text-sm text-foreground">Review Draft Not Delivered Yet</p>
+                                                    <p className="text-xs">Upload an amended file or edit the text above and click deliver to publish the reviewed version.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <div className="bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 flex items-center justify-between gap-2 text-xs">
+                                            <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                                <FileText className="h-4 w-4 text-slate-600" />
+                                                Original Generated Document (Submitted by Client: {selectedRequest.userName})
+                                            </span>
+                                            <span className="text-slate-500 font-mono text-[11px]">
+                                                Req: {selectedRequest.requestId}
+                                            </span>
+                                        </div>
+                                        <div className="bg-slate-50/70 border rounded-2xl p-5 max-h-[380px] overflow-y-auto text-xs leading-relaxed font-serif text-slate-900">
+                                            <div dangerouslySetInnerHTML={{ __html: selectedRequest.originalContent }} />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

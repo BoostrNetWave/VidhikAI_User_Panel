@@ -209,6 +209,11 @@ app.get(['/user', '/user/*'], (_req, res) => {
     res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
+// Direct redirect for document review consultation URLs missing /user prefix
+app.get(['/document-reviews/*', '/document-reviews', '/documents/reviews/*', '/documents/reviews'], (req, res) => {
+    res.redirect(`/user${req.originalUrl}`);
+});
+
 import http from 'http';
 import { initSocket } from './socket';
 

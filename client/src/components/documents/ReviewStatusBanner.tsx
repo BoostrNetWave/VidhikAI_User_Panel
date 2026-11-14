@@ -126,7 +126,7 @@ export function ReviewStatusBanner({
     };
 
     const handleJoinConsultation = () => {
-        navigate(`/document-reviews/${request._id}/consultation`);
+        navigate(`/document-reviews/${request._id}/consultation?role=client`);
     };
 
     const handleDownloadFile = async () => {

@@ -1118,7 +1118,7 @@ export default function MyDocuments() {
                                         type="button"
                                         size="sm"
                                         variant="outline"
-                                        onClick={() => window.open(`/document-reviews/${matchedReview._id}/consultation`, '_blank')}
+                                        onClick={() => navigate(`/document-reviews/${matchedReview._id}/consultation?role=client`)}
                                         className="text-xs h-7 px-2.5 rounded-lg border-indigo-200 text-indigo-700 bg-white hover:bg-indigo-50 font-semibold gap-1.5"
                                     >
                                         <Video className="h-3 w-3 text-indigo-600" />

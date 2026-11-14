@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { Request, Response } from 'express';
 import DocumentReviewRequest from '../models/DocumentReviewRequest';
 import Transaction from '../models/Transaction';
@@ -603,18 +604,60 @@ export const submitCompletedReviewAdmin = async (req: any, res: Response) => {
 
         let reviewedDocUrl = request.reviewedDocumentFile || '';
         let reviewedDocName = request.reviewedDocumentFileName || '';
+        let fileExtractedHtml = '';
 
         // If an annotated/modified file was uploaded by the lawyer
         if (req.file) {
             reviewedDocUrl = `/uploads/${req.file.filename}`;
             reviewedDocName = req.file.originalname;
             await saveFileToGridFS(req.file.filename, req.file.path, req.file.mimetype).catch(() => {});
+
+            const lowerName = (req.file.originalname || '').toLowerCase();
+            if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) {
+                try {
+                    const mammoth = await import('mammoth');
+                    const mammothModule: any = (mammoth as any).default || mammoth; const parsed = await mammothModule.convertToHtml({ path: req.file.path });
+                    if (parsed && parsed.value && parsed.value.trim().length > 0) {
+                        fileExtractedHtml = `<div class="lawyer-revised-content legal-document-preview" style="font-family: 'Times New Roman', serif; line-height: 1.8; padding: 24px;">${parsed.value}</div>`;
+                        console.log(`[Review Delivery] Successfully extracted ${fileExtractedHtml.length} chars of HTML from uploaded docx ${req.file.originalname}`);
+                    }
+                } catch (docxErr) {
+                    console.warn('[Review Delivery] Failed to extract docx via mammoth:', docxErr);
+                }
+            } else if (lowerName.endsWith('.pdf')) {
+                try {
+                    const pdfParse = await import('pdf-parse');
+                    const buffer = fs.readFileSync(req.file.path);
+                    const parseFn: any = (pdfParse as any).default || pdfParse; const parsed = await parseFn(buffer);
+                    if (parsed && parsed.text && parsed.text.trim().length > 0) {
+                        const paragraphs = parsed.text
+                            .split(/\n\s*\n/)
+                            .filter((p: string) => p.trim().length > 0)
+                            .map((p: string) => `<p style="margin-bottom: 14px; text-align: justify; line-height: 1.7;">${p.trim().replace(/\n/g, ' ')}</p>`)
+                            .join('');
+                        fileExtractedHtml = `<div class="lawyer-revised-content legal-document-preview" style="font-family: 'Times New Roman', serif; line-height: 1.8; padding: 24px;">${paragraphs}</div>`;
+                        console.log(`[Review Delivery] Successfully extracted ${fileExtractedHtml.length} chars of HTML from uploaded pdf ${req.file.originalname}`);
+                    }
+                } catch (pdfErr) {
+                    console.warn('[Review Delivery] Failed to extract pdf via pdf-parse:', pdfErr);
+                }
+            }
         }
 
         const advocateName = lawyerName || req.user?.fullName || req.user?.name || 'Vidhik AI Senior Legal Counsel';
 
+        // Prefer parsed file HTML if file was uploaded; otherwise use edited text from body
+        let finalReviewedContent = '';
+        if (fileExtractedHtml) {
+            finalReviewedContent = fileExtractedHtml;
+        } else if (reviewedContent && reviewedContent.trim().length > 0) {
+            finalReviewedContent = reviewedContent.trim();
+        } else {
+            finalReviewedContent = request.originalContent;
+        }
+
         request.status = 'completed';
-        request.reviewedContent = (reviewedContent || '').trim() || request.originalContent;
+        request.reviewedContent = finalReviewedContent;
         request.reviewSummary = (reviewSummary || '').trim();
         request.reviewedDocumentFile = reviewedDocUrl;
         request.reviewedDocumentFileName = reviewedDocName;

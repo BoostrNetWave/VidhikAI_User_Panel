@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -17,8 +17,10 @@ import { getFileUrl, downloadFile, isWordFile, isPdfFile } from '@/lib/fileUtils
 export default function ReviewConsultationRoom() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const roleParam = searchParams.get('role');
 
-    // User Profile & Role
+    // User Profile & Role Detection
     const userProfile = (() => {
         try {
             return JSON.parse(localStorage.getItem('user_profile_data') || localStorage.getItem('vidhik_user_data') || '{}');
@@ -26,14 +28,15 @@ export default function ReviewConsultationRoom() {
             return {};
         }
     })();
-    const isLawyerOrAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin' || userProfile.role === 'lawyer';
-    const myRole: 'client' | 'lawyer' = isLawyerOrAdmin ? 'lawyer' : 'client';
+    const isLawyerOrAdmin = roleParam === 'lawyer' || (roleParam !== 'client' && (userProfile.role === 'admin' || userProfile.role === 'superadmin' || userProfile.role === 'lawyer'));
+    const myRole: 'client' | 'lawyer' = roleParam === 'client' ? 'client' : (isLawyerOrAdmin ? 'lawyer' : 'client');
     const partnerRole: 'client' | 'lawyer' = isLawyerOrAdmin ? 'client' : 'lawyer';
 
     // Review Request Details
     const [reviewRequest, setReviewRequest] = useState<IDocumentReviewRequest | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'doc' | 'notes'>('doc');
+    const [docVersionTab, setDocVersionTab] = useState<'reviewed' | 'original'>('reviewed');
     const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(true);
     const [callDuration, setCallDuration] = useState<number>(0);
 
@@ -56,6 +59,7 @@ export default function ReviewConsultationRoom() {
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const processedCandidatesRef = useRef<Set<string>>(new Set());
+    const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
     const lastAnsweredOfferSdp = useRef<string | null>(null);
     const pollTickCountRef = useRef<number>(0);
 
@@ -291,6 +295,18 @@ export default function ReviewConsultationRoom() {
     const startSignalingPoll = (pc: RTCPeerConnection) => {
         if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
 
+        const flushCandidates = async () => {
+            if (!pc.remoteDescription || !pc.remoteDescription.type) return;
+            while (pendingCandidatesRef.current.length > 0) {
+                const cand = pendingCandidatesRef.current.shift();
+                if (cand) {
+                    try {
+                        await pc.addIceCandidate(new RTCIceCandidate(cand));
+                    } catch (_) {}
+                }
+            }
+        };
+
         pollingIntervalRef.current = setInterval(async () => {
             if (!id) return;
             pollTickCountRef.current = (pollTickCountRef.current || 0) + 1;
@@ -314,6 +330,8 @@ export default function ReviewConsultationRoom() {
                             sdp: signal.sdp
                         }));
 
+                        await flushCandidates();
+
                         const answer = await pc.createAnswer();
                         await pc.setLocalDescription(answer);
 
@@ -326,16 +344,31 @@ export default function ReviewConsultationRoom() {
 
                     // 2. Lawyer handles Answer from Client
                     if (myRole === 'lawyer' && signal.type === 'answer' && signal.sdp) {
-                        if (!pc.currentRemoteDescription) {
+                        if (pc.signalingState === 'have-local-offer') {
                             console.log("[Review Call] Lawyer received Answer from Client. Setting remote description...");
                             await pc.setRemoteDescription(new RTCSessionDescription({
                                 type: 'answer',
                                 sdp: signal.sdp
                             }));
+                            await flushCandidates();
                         }
                     }
 
-                    // 3. Both handle ICE candidates
+                    // 3. Lawyer handles presence 'join' from Client (re-dispatch offer if not connected)
+                    if (myRole === 'lawyer' && signal.type === 'join') {
+                        if (pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'completed') {
+                            if (pc.localDescription && pc.localDescription.type === 'offer') {
+                                console.log("[Review Call] Client announced presence. Resending offer...");
+                                await documentReviewService.sendSignal(id, {
+                                    sender: 'lawyer',
+                                    type: 'offer',
+                                    sdp: pc.localDescription.sdp
+                                });
+                            }
+                        }
+                    }
+
+                    // 4. Both handle ICE candidates
                     if (signal.type === 'candidate' && signal.candidate) {
                         const candKey = `${signal.sender}-${signal.candidate.slice(0, 40)}`;
                         if (!processedCandidatesRef.current.has(candKey)) {
@@ -343,7 +376,11 @@ export default function ReviewConsultationRoom() {
                             try {
                                 const parsed = JSON.parse(signal.candidate);
                                 if (parsed && parsed.candidate) {
-                                    await pc.addIceCandidate(new RTCIceCandidate(parsed));
+                                    if (pc.remoteDescription && pc.remoteDescription.type) {
+                                        await pc.addIceCandidate(new RTCIceCandidate(parsed));
+                                    } else {
+                                        pendingCandidatesRef.current.push(parsed);
+                                    }
                                 }
                             } catch (e) {
                                 // Candidate add error ignore
@@ -457,6 +494,8 @@ export default function ReviewConsultationRoom() {
     const handleGoBack = () => {
         if (isLawyerOrAdmin) {
             navigate('/admin/document-reviews');
+        } else if (window.history.length > 1) {
+            navigate(-1);
         } else {
             navigate('/documents/workspace');
         }
@@ -753,12 +792,32 @@ export default function ReviewConsultationRoom() {
                                     {/* Document Clauses Text Preview */}
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between text-xs text-slate-400 font-semibold">
-                                            <span>Document Content ({reviewRequest?.reviewedContent ? 'Lawyer Revised' : 'Original Draft'})</span>
+                                            <span>Document Preview</span>
+                                            {reviewRequest?.reviewedContent && (
+                                                <div className="flex items-center gap-1 bg-slate-800/90 p-0.5 rounded-lg border border-slate-700">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setDocVersionTab('reviewed')}
+                                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${docVersionTab === 'reviewed' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                                                    >
+                                                        ⚖️ Lawyer Revised
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setDocVersionTab('original')}
+                                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${docVersionTab === 'original' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                                                    >
+                                                        📄 Original Draft
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-serif text-slate-300 leading-relaxed max-h-[500px] overflow-y-auto space-y-2">
                                             <div
                                                 dangerouslySetInnerHTML={{
-                                                    __html: reviewRequest?.reviewedContent || reviewRequest?.originalContent || '<p>No document content available.</p>'
+                                                    __html: (docVersionTab === 'reviewed' && reviewRequest?.reviewedContent)
+                                                        ? reviewRequest.reviewedContent
+                                                        : (reviewRequest?.originalContent || reviewRequest?.reviewedContent || '<p>No document content available.</p>')
                                                 }}
                                             />
                                         </div>
@@ -814,3 +873,4 @@ export default function ReviewConsultationRoom() {
         </div>
     );
 }
+
